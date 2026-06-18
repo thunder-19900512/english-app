@@ -27,12 +27,11 @@ const getQuestionForPhrase = (keyPhrase: string) => {
 const checkAnswer = (input: string, expectedPhrase: string, targetWord: string) => {
   const normalize = (s: string) => {
     return s.toLowerCase()
-      .replace(/'d/g, '') // ignore 'd
-      .replace(/['.,!?〜◯]/g, '') // ignore punctuation
-      .replace(/a /g, '') // ignore 'a '
-      .replace(/an /g, '') // ignore 'an '
-      .replace(/the /g, '') // ignore 'the '
-      .replace(/\\s+/g, ''); // ignore all spaces
+      .replace(/\bi am\b/g, 'im')
+      .replace(/\bi would\b/g, 'id')
+      .replace(/['.,!?〜◯\-]/g, '') // ignore punctuation
+      .replace(/\b(a|an|the)\b/g, '') // ignore articles safely
+      .replace(/\s+/g, ''); // ignore all spaces properly
   };
   
   const expected = expectedPhrase.replace(/◯◯/g, targetWord);
