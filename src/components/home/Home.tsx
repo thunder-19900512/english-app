@@ -205,11 +205,10 @@ export const Home: React.FC = () => {
 
                       <div 
                         className="glass-card flex-col flex-center animate-pop" 
-                        style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(162, 155, 254, 0.2)' }}
-                        onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/game/wordsearch`)}
+                        style={{ padding: '1.5rem', background: 'rgba(162, 155, 254, 0.2)', opacity: 0.5, cursor: 'not-allowed' }}
                       >
                         <Search size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
-                        <h3 style={{ margin: 0 }}>言葉さがし</h3>
+                        <h3 style={{ margin: 0 }}>言葉さがし<br/><span style={{ fontSize: '0.8rem', color: '#666' }}>(じゅんび中)</span></h3>
                       </div>
                     </div>
                   </div>

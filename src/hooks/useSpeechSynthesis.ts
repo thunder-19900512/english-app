@@ -43,14 +43,15 @@ export const useSpeechSynthesis = () => {
   };
 
   const speak = useCallback((text: string) => {
+    const baseUrl = import.meta.env.BASE_URL;
     if (text.length === 1 && AUDIO_LETTERS.includes(text)) {
-      const audio = new Audio(`/audio/${text}.ogg`);
+      const audio = new Audio(`${baseUrl}audio/${text}.ogg`);
       audio.play().catch(e => {
         console.warn('Failed to play audio file, falling back to TTS:', e);
         fallbackSpeak(text);
       });
     } else if (['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng', 'ar', 'or', 'ir', 'air', 'ear', 'wor'].includes(text)) {
-      const audio = new Audio(`/audio/${text}.mp3`);
+      const audio = new Audio(`${baseUrl}audio/${text}.mp3`);
       audio.play().catch(e => {
         console.warn('Failed to play audio file, falling back to TTS:', e);
         fallbackSpeak(text);
