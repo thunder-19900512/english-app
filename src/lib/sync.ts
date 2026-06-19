@@ -5,28 +5,29 @@ let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 export const pushToSupabase = async (studentId: string): Promise<void> => {
   if (!supabase) return;
 
-  // Debounce the actual push logic to prevent race conditions when multiple saves happen simultaneously
+  // Capture current state synchronously before debounce
+  const name = localStorage.getItem('studentName') || 'ゲスト';
+  const points = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
+  
+  const countsStr = localStorage.getItem(`clearCounts_${studentId}`);
+  const clear_counts = countsStr ? JSON.parse(countsStr) : {};
+  
+  const dictStr = localStorage.getItem(`dictProgress_${studentId}`);
+  const dictionary_progress = dictStr ? JSON.parse(dictStr) : {};
+  
+  const refStr = localStorage.getItem(`reflections_${studentId}`);
+  const reflections = refStr ? JSON.parse(refStr) : [];
+  
+  const studentDataStr = localStorage.getItem(`student_${studentId}`);
+  const badges = studentDataStr ? JSON.parse(studentDataStr).badges || [] : [];
+
+  // Debounce the actual push logic
   return new Promise((resolve) => {
     if (syncTimeout) {
       clearTimeout(syncTimeout);
     }
     
     syncTimeout = setTimeout(async () => {
-      const name = localStorage.getItem('studentName') || 'ゲスト';
-      const points = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
-      
-      const countsStr = localStorage.getItem(`clearCounts_${studentId}`);
-      const clear_counts = countsStr ? JSON.parse(countsStr) : {};
-      
-      const dictStr = localStorage.getItem(`dictProgress_${studentId}`);
-      const dictionary_progress = dictStr ? JSON.parse(dictStr) : {};
-      
-      const refStr = localStorage.getItem(`reflections_${studentId}`);
-      const reflections = refStr ? JSON.parse(refStr) : [];
-      
-      const studentDataStr = localStorage.getItem(`student_${studentId}`);
-      const badges = studentDataStr ? JSON.parse(studentDataStr).badges || [] : [];
-      
       try {
         const { error } = await supabase
           .from('students')
