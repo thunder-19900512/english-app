@@ -53,14 +53,35 @@ export const pullFromSupabase = async (studentId: string) => {
   if (data) {
     // Restore to local storage
     if (data.name) localStorage.setItem('studentName', data.name);
-    if (data.points !== undefined) localStorage.setItem(`points_${studentId}`, data.points.toString());
+    // Merge points (take the max)
+    const localPoints = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
+    const dbPoints = data.points || 0;
+    const maxPoints = Math.max(localPoints, dbPoints);
+    localStorage.setItem(`points_${studentId}`, maxPoints.toString());
     
-    const studentData = { id: studentId, name: data.name, badges: data.badges || [], lastAccess: data.last_access };
+    // Merge badges (union)
+    const localStudentDataStr = localStorage.getItem(`student_${studentId}`);
+    const localBadges = localStudentDataStr ? JSON.parse(localStudentDataStr).badges || [] : [];
+    const dbBadges = data.badges || [];
+    const mergedBadges = Array.from(new Set([...localBadges, ...dbBadges]));
+    
+    const studentData = { id: studentId, name: data.name, badges: mergedBadges, lastAccess: data.last_access };
     localStorage.setItem(`student_${studentId}`, JSON.stringify(studentData));
     
-    if (data.clear_counts) localStorage.setItem(`clearCounts_${studentId}`, JSON.stringify(data.clear_counts));
-    if (data.dictionary_progress) localStorage.setItem(`dict_progress_${studentId}`, JSON.stringify(data.dictionary_progress));
-    if (data.reflections) localStorage.setItem(`reflections_${studentId}`, JSON.stringify(data.reflections));
+    // For clear_counts, dictionary_progress, reflections, we ideally merge deeply, 
+    // but for simplicity we will just overwrite if local is empty, or keep local if it has data but DB is empty.
+    // A robust way is to just use DB data, but since points and badges are the most critical, they are merged.
+    if (data.clear_counts && Object.keys(data.clear_counts).length > 0) localStorage.setItem(`clearCounts_${studentId}`, JSON.stringify(data.clear_counts));
+    if (data.dictionary_progress && Object.keys(data.dictionary_progress).length > 0) localStorage.setItem(`dict_progress_${studentId}`, JSON.stringify(data.dictionary_progress));
+    
+    // Merge reflections
+    const localReflectionsStr = localStorage.getItem(`reflections_${studentId}`);
+    const localReflections = localReflectionsStr ? JSON.parse(localReflectionsStr) : [];
+    const dbReflections = data.reflections || [];
+    const mergedReflectionsMap = new Map();
+    [...localReflections, ...dbReflections].forEach(r => mergedReflectionsMap.set(r.id, r));
+    const mergedReflections = Array.from(mergedReflectionsMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    localStorage.setItem(`reflections_${studentId}`, JSON.stringify(mergedReflections));
     
     return true;
   }
