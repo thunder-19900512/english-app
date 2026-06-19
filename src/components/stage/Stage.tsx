@@ -294,8 +294,6 @@ export const Stage: React.FC = () => {
         if (!data.badges.includes(stageId)) {
           data.badges.push(stageId);
           localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
-          
-          pushToSupabase(studentId);
         }
       }
     }

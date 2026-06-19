@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase } from '../lib/sync';
 
 export const usePoints = () => {
-  const [totalPoints, setTotalPoints] = useState<number>(0);
   const studentId = localStorage.getItem('studentId');
 
   const getPoints = useCallback(() => {
@@ -10,6 +9,16 @@ export const usePoints = () => {
     const pts = localStorage.getItem(`points_${studentId}`);
     return pts ? parseInt(pts, 10) : 0;
   }, [studentId]);
+
+  const [totalPoints, setTotalPoints] = useState<number>(getPoints());
+
+  useEffect(() => {
+    const handlePointsUpdate = () => {
+      setTotalPoints(getPoints());
+    };
+    window.addEventListener('pointsUpdated', handlePointsUpdate);
+    return () => window.removeEventListener('pointsUpdated', handlePointsUpdate);
+  }, [getPoints]);
 
   const addPoints = useCallback((
     stageKey: string, 
@@ -49,6 +58,7 @@ export const usePoints = () => {
     const newTotal = currentPoints + earned;
     localStorage.setItem(`points_${studentId}`, newTotal.toString());
     setTotalPoints(newTotal);
+    window.dispatchEvent(new Event('pointsUpdated'));
 
     // Sync to Supabase in the background
     pushToSupabase(studentId);
