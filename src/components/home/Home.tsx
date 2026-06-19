@@ -4,6 +4,7 @@ import { stages } from '../../data/stages';
 import { Trophy, Lock, BookOpen, Target, Keyboard, Mic, Search, CheckCircle, Star, MessageCircleQuestion } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { vocabulary } from '../../data/vocabulary';
+import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 
 export const Home: React.FC = () => {
@@ -18,9 +19,7 @@ export const Home: React.FC = () => {
   useEffect(() => {
     // Auto-sync local data to Supabase when returning to home
     if (studentId) {
-      import('../../lib/sync').then(({ pushToSupabase }) => {
-        pushToSupabase(studentId);
-      });
+      pushToSupabase(studentId);
     }
   }, [studentId]);
 

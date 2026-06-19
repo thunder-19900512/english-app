@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { pushToSupabase } from '../lib/sync';
 
 export interface DictCategoryProgress {
   practice: boolean;
@@ -41,9 +42,7 @@ export const useDictionaryProgress = () => {
       localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
       
       // Sync to Supabase in the background
-      import('../lib/sync').then(({ pushToSupabase }) => {
-        pushToSupabase(studentId);
-      });
+      pushToSupabase(studentId);
 
       setProgress(currentDictProgress);
     }

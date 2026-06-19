@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { pushToSupabase } from '../lib/sync';
 
 export interface Reflection {
   id: string;
@@ -39,9 +40,7 @@ export const useReflections = () => {
       localStorage.setItem(`reflections_${studentId}`, JSON.stringify(updated));
       
       // Sync to Supabase in the background
-      import('../lib/sync').then(({ pushToSupabase }) => {
-        pushToSupabase(studentId);
-      });
+      pushToSupabase(studentId);
 
       return updated;
     });

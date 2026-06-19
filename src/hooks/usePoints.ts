@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { pushToSupabase } from '../lib/sync';
 
 export const usePoints = () => {
   const [totalPoints, setTotalPoints] = useState<number>(0);
@@ -50,9 +51,7 @@ export const usePoints = () => {
     setTotalPoints(newTotal);
 
     // Sync to Supabase in the background
-    import('../lib/sync').then(({ pushToSupabase }) => {
-      pushToSupabase(studentId);
-    });
+    pushToSupabase(studentId);
 
     return earned;
   }, [studentId, getPoints]);

@@ -6,6 +6,7 @@ import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
+import { pushToSupabase } from '../../lib/sync';
 import { usePoints } from '../../hooks/usePoints';
 
 const phonicsEmojis: Record<string, string> = {
@@ -294,9 +295,7 @@ export const Stage: React.FC = () => {
           data.badges.push(stageId);
           localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
           
-          import('../../lib/sync').then(({ pushToSupabase }) => {
-            pushToSupabase(studentId);
-          });
+          pushToSupabase(studentId);
         }
       }
     }

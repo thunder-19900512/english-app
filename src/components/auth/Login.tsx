@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { STUDENTS } from '../../data/students';
+import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ export const Login: React.FC = () => {
     localStorage.setItem('studentName', studentName);
     
     // Pull existing data from Supabase
-    const { pullFromSupabase, pushToSupabase } = await import('../../lib/sync');
     const hasData = await pullFromSupabase(studentId);
     
     // Initialize local entry if new
