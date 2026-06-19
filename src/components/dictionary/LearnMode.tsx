@@ -41,12 +41,15 @@ export const LearnMode: React.FC = () => {
           
           if (newSpoken.size === words.length && !speakCleared && words.length > 0) {
             // All words spoken! (higher points)
-            const pts = addPoints(`dict_learn_speak_${decodedCategory}`, {
-              isPerfect: true, // Bonus for speaking
-              isNewRecord: false
-            });
-            setSpeakCleared(true);
-            setShowCelebration({ type: 'speak', points: pts });
+            const savePoints = async () => {
+              const pts = await addPoints(`dict_learn_speak_${decodedCategory}`, {
+                multiplier: 0.5
+              });
+              setEarnedPoints(pts);
+              setSpeakCleared(true);
+              setShowCelebration({ type: 'speak', points: pts });
+            };
+            savePoints();
           }
         }
       }
@@ -64,12 +67,15 @@ export const LearnMode: React.FC = () => {
 
     if (newSet.size === words.length && !listenCleared && words.length > 0) {
       // All words clicked! (lower points)
-      const pts = addPoints(`dict_learn_listen_${decodedCategory}`, {
-        isPerfect: false,
-        isNewRecord: false
-      });
-      setListenCleared(true);
-      setShowCelebration({ type: 'listen', points: pts });
+      const savePoints = async () => {
+        const pts = await addPoints(`dict_learn_listen_${decodedCategory}`, {
+          multiplier: 0.5
+        });
+        setEarnedPoints(pts);
+        setListenCleared(true);
+        setShowCelebration({ type: 'listen', points: pts });
+      };
+      savePoints();
     }
   };
 

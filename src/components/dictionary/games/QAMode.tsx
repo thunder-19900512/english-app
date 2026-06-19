@@ -128,12 +128,14 @@ export const QAMode: React.FC = () => {
 
     if (newQC >= TOTAL_QUESTIONS) {
       if (newCC >= PASS_MARK) {
-        const pts = addPoints(`dict_qa_${decodedCategory}`, {
-          isPerfect: newCC === TOTAL_QUESTIONS,
-          isNewRecord: false,
-          multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
-        });
-        setEarnedPoints(pts);
+        const savePoints = async () => {
+          const pts = await addPoints(`dict_qa_${decodedCategory}`, {
+            isPerfect: newCC === TOTAL_QUESTIONS,
+            multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
+          });
+          setEarnedPoints(pts);
+        };
+        savePoints();
         setShowCelebration(true);
       } else {
         setShowFailure(true);

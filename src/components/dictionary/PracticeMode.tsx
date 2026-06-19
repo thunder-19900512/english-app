@@ -140,12 +140,15 @@ export const PracticeMode: React.FC = () => {
           }
         }
         
-        const pts = addPoints(`dict_practice_${decodedCategory}`, {
-          isPerfect: newCC === TOTAL_QUESTIONS,
-          isNewRecord: isNewBest,
-          multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
-        });
-        setEarnedPoints(pts);
+        const savePoints = async () => {
+          const pts = await addPoints(`dict_practice_${decodedCategory}`, {
+            isPerfect: newCC === TOTAL_QUESTIONS,
+            isNewRecord: isNewBest,
+            multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
+          });
+          setEarnedPoints(pts);
+        };
+        savePoints();
 
         setShowCelebration(true);
       } else {

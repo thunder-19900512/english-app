@@ -83,12 +83,14 @@ export const VoiceBattle: React.FC = () => {
       if (newCC >= PASS_MARK) {
         saveProgress(decodedCategory, { voice: true });
         
-        const pts = addPoints(`dict_voice_${decodedCategory}`, {
-          isPerfect: newCC === TOTAL_QUESTIONS,
-          isNewRecord: false, // No timer for voice battle yet to keep it simple
-          multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
-        });
-        setEarnedPoints(pts);
+        const savePoints = async () => {
+          const pts = await addPoints(`dict_voice_${decodedCategory}`, {
+            isPerfect: newCC === TOTAL_QUESTIONS,
+            multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
+          });
+          setEarnedPoints(pts);
+        };
+        savePoints();
 
         setShowCelebration(true);
       } else {

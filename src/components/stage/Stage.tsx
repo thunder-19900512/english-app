@@ -171,7 +171,7 @@ export const Stage: React.FC = () => {
     setTranscript('');
   };
 
-  const proceedToNextTurn = (isCorrect: boolean) => {
+  const proceedToNextTurn = async (isCorrect: boolean) => {
     const newQC = questionCount + 1;
     const newCC = isCorrect ? correctCount + 1 : correctCount;
     
@@ -209,7 +209,7 @@ export const Stage: React.FC = () => {
           }
         }
 
-        const pts = addPoints(`stage_${id}_${mode}`, {
+        const pts = await addPoints(`stage_${id}_${mode}`, {
           isPerfect: newCC === TOTAL_QUESTIONS,
           isNewRecord: isNewBest,
           multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { pushToSupabase } from '../lib/sync';
+import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 
 export const usePoints = () => {
   const studentId = localStorage.getItem('studentId');
@@ -20,7 +20,7 @@ export const usePoints = () => {
     return () => window.removeEventListener('pointsUpdated', handlePointsUpdate);
   }, [getPoints]);
 
-  const addPoints = useCallback((
+  const addPoints = useCallback(async (
     stageKey: string, 
     options: { isPerfect?: boolean, isNewRecord?: boolean, multiplier?: number } = {}
   ) => {
@@ -52,6 +52,9 @@ export const usePoints = () => {
     // Update clear counts
     clearCounts[stageKey] = currentCount + 1;
     localStorage.setItem(countsKey, JSON.stringify(clearCounts));
+
+    // Pull latest data from Supabase before adding points
+    await pullFromSupabase(studentId);
 
     // Update total points
     const currentPoints = getPoints();

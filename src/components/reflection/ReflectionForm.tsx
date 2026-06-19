@@ -19,13 +19,13 @@ export const ReflectionForm: React.FC = () => {
   const lastReflectionDate = reflections.length > 0 ? new Date(reflections[0].date) : null;
   const canEarnPoints = !lastReflectionDate || (new Date().getTime() - lastReflectionDate.getTime() >= HALF_DAY_MS);
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
     if (stars === 0) return; // Require at least 1 star
     saveReflection(stars, comment);
     
     if (canEarnPoints) {
       // Give some small points (multiplier 0.25 -> 5 points first time)
-      const pts = addPoints('daily_reflection', { multiplier: 0.25 });
+      const pts = await addPoints('daily_reflection', { multiplier: 0.25 });
       setEarnedPoints(pts);
     } else {
       setEarnedPoints(0);
