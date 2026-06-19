@@ -154,8 +154,9 @@ export const Stage: React.FC = () => {
     }
   }, [transcript, mode, quizIndex]);
 
-  const TOTAL_QUESTIONS = 10;
-  const PASS_MARK = 8;
+  const DEFAULT_TOTAL_QUESTIONS = 10;
+  const TOTAL_QUESTIONS = stage ? Math.min(DEFAULT_TOTAL_QUESTIONS, stage.items.length) : DEFAULT_TOTAL_QUESTIONS;
+  const PASS_MARK = Math.max(1, Math.floor(TOTAL_QUESTIONS * 0.8));
 
   const moveToNextQuestion = () => {
     setQuizIndex((prev) => {
@@ -210,7 +211,8 @@ export const Stage: React.FC = () => {
 
         const pts = addPoints(`stage_${id}_${mode}`, {
           isPerfect: newCC === TOTAL_QUESTIONS,
-          isNewRecord: isNewBest
+          isNewRecord: isNewBest,
+          multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
         });
         setEarnedPoints(pts);
 
