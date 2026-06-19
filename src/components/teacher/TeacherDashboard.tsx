@@ -12,6 +12,7 @@ interface StudentData {
   badges: number[];
   lastAccess: string;
   points: number;
+  reflections: any[];
 }
 
 export const TeacherDashboard: React.FC = () => {
@@ -20,6 +21,7 @@ export const TeacherDashboard: React.FC = () => {
   const [password, setPassword] = useState('');
   const [studentsData, setStudentsData] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,7 +50,8 @@ export const TeacherDashboard: React.FC = () => {
           name: student.name, // Keep static name or db name
           badges: dbEntry.badges || [],
           lastAccess: dbEntry.last_access || 'Never',
-          points: dbEntry.points || 0
+          points: dbEntry.points || 0,
+          reflections: dbEntry.reflections || []
         };
       } else {
         return {
@@ -56,7 +59,8 @@ export const TeacherDashboard: React.FC = () => {
           name: student.name,
           badges: [],
           lastAccess: 'Never',
-          points: 0
+          points: 0,
+          reflections: []
         };
       }
     });
@@ -115,6 +119,7 @@ export const TeacherDashboard: React.FC = () => {
               <th style={{ padding: '1rem' }}>Phonics進捗</th>
               <th style={{ padding: '1rem' }}>最終アクセス</th>
               <th style={{ padding: '1rem' }}>ステータス</th>
+              <th style={{ padding: '1rem' }}>ふりかえり</th>
             </tr>
           </thead>
           <tbody>
@@ -124,9 +129,9 @@ export const TeacherDashboard: React.FC = () => {
               const isStuck = hasStarted && !allCleared;
 
               return (
-                <tr 
-                  key={student.id} 
-                  style={{ 
+                <React.Fragment key={student.id}>
+                  <tr 
+                    style={{ 
                     borderBottom: '1px solid var(--glass-border)',
                     background: allCleared ? 'rgba(0, 184, 148, 0.1)' : 'transparent'
                   }}
@@ -169,8 +174,37 @@ export const TeacherDashboard: React.FC = () => {
                       <span className="text-muted">未開始</span>
                     )}
                   </td>
+                  <td style={{ padding: '1rem' }}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setExpandedStudentId(expandedStudentId === student.id ? null : student.id)}
+                      disabled={student.reflections.length === 0}
+                      style={{ padding: '0.5rem', fontSize: '0.9rem' }}
+                    >
+                      {student.reflections.length > 0 ? `ふりかえり (${student.reflections.length})` : 'なし'}
+                    </Button>
+                  </td>
                 </tr>
-              );
+                {expandedStudentId === student.id && student.reflections.length > 0 && (
+                  <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
+                    <td colSpan={7} style={{ padding: '1rem 2rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-primary)' }}>ふりかえり履歴</h4>
+                        {student.reflections.map((r: any) => (
+                          <div key={r.id} style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #eee' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                              <strong style={{ color: 'var(--color-text-muted)' }}>{new Date(r.date).toLocaleString('ja-JP')}</strong>
+                              <span style={{ color: '#f39c12', fontSize: '1.2rem' }}>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '1.1rem', lineHeight: 1.5 }}>{r.comment}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
             })}
           </tbody>
         </table>
