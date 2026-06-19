@@ -13,6 +13,16 @@ export const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'phonics' | 'dictionary'>('phonics');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
+  const studentId = localStorage.getItem('studentId');
+
+  useEffect(() => {
+    // Auto-sync local data to Supabase when returning to home
+    if (studentId) {
+      import('../../lib/sync').then(({ pushToSupabase }) => {
+        pushToSupabase(studentId);
+      });
+    }
+  }, [studentId]);
 
   // Get unique categories for dictionary
   const categories = Array.from(new Set(vocabulary.map(v => v.category)));
