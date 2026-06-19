@@ -41,15 +41,14 @@ export const LearnMode: React.FC = () => {
           
           if (newSpoken.size === words.length && !speakCleared && words.length > 0) {
             // All words spoken! (higher points)
-            const savePoints = async () => {
-              const pts = await addPoints(`dict_learn_speak_${decodedCategory}`, {
-                multiplier: 0.5
-              });
-              setEarnedPoints(pts);
-              setSpeakCleared(true);
-              setShowCelebration({ type: 'speak', points: pts });
-            };
-            savePoints();
+          const savePoints = async () => {
+            const pts = await addPoints(`dict_learn_speak_${decodedCategory}`, {
+              multiplier: 0.5
+            });
+            setSpeakCleared(true);
+            setShowCelebration({ type: 'speak', points: pts });
+          };
+          savePoints();
           }
         }
       }
@@ -71,7 +70,6 @@ export const LearnMode: React.FC = () => {
         const pts = await addPoints(`dict_learn_listen_${decodedCategory}`, {
           multiplier: 0.5
         });
-        setEarnedPoints(pts);
         setListenCleared(true);
         setShowCelebration({ type: 'listen', points: pts });
       };

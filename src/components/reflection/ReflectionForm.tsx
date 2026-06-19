@@ -19,7 +19,7 @@ export const ReflectionForm: React.FC = () => {
   const lastReflectionDate = reflections.length > 0 ? new Date(reflections[0].date) : null;
   const canEarnPoints = !lastReflectionDate || (new Date().getTime() - lastReflectionDate.getTime() >= HALF_DAY_MS);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async () => {
     if (stars === 0) return; // Require at least 1 star
     saveReflection(stars, comment);
     
