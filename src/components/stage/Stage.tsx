@@ -6,7 +6,6 @@ import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
-import { pushToSupabase } from '../../lib/sync';
 import { usePoints } from '../../hooks/usePoints';
 
 const phonicsEmojis: Record<string, string> = {
