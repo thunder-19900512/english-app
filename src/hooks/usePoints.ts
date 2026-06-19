@@ -20,6 +20,26 @@ export const usePoints = () => {
     return () => window.removeEventListener('pointsUpdated', handlePointsUpdate);
   }, [getPoints]);
 
+  const consumePoints = useCallback(async (amount: number): Promise<boolean> => {
+    if (!studentId) return false;
+    
+    // Always sync latest points first
+    await pullFromSupabase(studentId);
+    
+    const currentPoints = getPoints();
+    if (currentPoints < amount) {
+      return false; // Not enough points
+    }
+    
+    const newTotal = currentPoints - amount;
+    localStorage.setItem(`points_${studentId}`, newTotal.toString());
+    setTotalPoints(newTotal);
+    window.dispatchEvent(new Event('pointsUpdated'));
+    pushToSupabase(studentId);
+    
+    return true;
+  }, [studentId, getPoints]);
+
   const addPoints = useCallback(async (
     stageKey: string, 
     options: { isPerfect?: boolean, isNewRecord?: boolean, multiplier?: number } = {}
@@ -69,5 +89,5 @@ export const usePoints = () => {
     return earned;
   }, [studentId, getPoints]);
 
-  return { getPoints, addPoints, totalPoints, setTotalPoints };
+  return { getPoints, addPoints, consumePoints, totalPoints, setTotalPoints };
 };

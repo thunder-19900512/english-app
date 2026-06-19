@@ -15,6 +15,8 @@ import { SpellingGame } from './components/dictionary/games/SpellingGame';
 import { VoiceBattle } from './components/dictionary/games/VoiceBattle';
 import { WordSearch } from './components/dictionary/games/WordSearch';
 import { QAMode } from './components/dictionary/games/QAMode';
+import { AIAssistant } from './components/dictionary/games/AIAssistant';
+import { StoryMode } from './components/dictionary/games/StoryMode';
 import { ReflectionForm } from './components/reflection/ReflectionForm';
 import { ReflectionHistory } from './components/reflection/ReflectionHistory';
 
@@ -39,6 +41,8 @@ const App: React.FC = () => {
             <Route path="/dictionary/:category/game/voice" element={<VoiceBattle />} />
             <Route path="/dictionary/:category/game/wordsearch" element={<WordSearch />} />
             <Route path="/dictionary/:category/game/qa" element={<QAMode />} />
+            <Route path="/ai" element={<AIAssistant />} />
+            <Route path="/story" element={<StoryMode />} />
             
             <Route path="/reflection" element={<ReflectionForm />} />
             <Route path="/reflection/history" element={<ReflectionHistory />} />

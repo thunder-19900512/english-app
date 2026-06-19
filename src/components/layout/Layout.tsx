@@ -2,10 +2,13 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Home, LogOut, Star } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
+import { useAppSettings } from '../../hooks/useAppSettings';
+import { GlobalLockScreen } from '../ui/GlobalLockScreen';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const { totalPoints } = usePoints();
+  const { isScreenLocked } = useAppSettings();
 
   // Basic mock auth check (to be replaced with real context later)
   const studentId = localStorage.getItem('studentId');
@@ -18,6 +21,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container">
+      <GlobalLockScreen isLocked={isScreenLocked} />
       {studentId && (
         <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

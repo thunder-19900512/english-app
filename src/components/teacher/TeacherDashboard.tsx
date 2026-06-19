@@ -1,213 +1,288 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
-import { stages } from '../../data/stages';
+import { ArrowLeft, Key, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { STUDENTS } from '../../data/students';
-
-interface StudentData {
-  id: string;
-  name: string;
-  badges: number[];
-  lastAccess: string;
-  points: number;
-  reflections: any[];
-}
 
 export const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [studentsData, setStudentsData] = useState<StudentData[]>([]);
-  const [loading, setLoading] = useState(false);
+  
+  const [geminiKey, setGeminiKey] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
+  const [isError, setIsError] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const [isScreenLocked, setIsScreenLocked] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchStudents();
+  // Handle PIN
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === '7777') {
+      setIsAuthenticated(true);
+      fetchSettings();
+    } else {
+      alert('PINが違います');
+      setPin('');
     }
-  }, [isAuthenticated]);
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    
-    // Fetch from Supabase
-    const { data: supabaseData, error } = await supabase.from('students').select('*');
-    if (error) {
-      console.error('Failed to fetch from Supabase', error);
-      setLoading(false);
-      return;
-    }
-
-    const dataMap = new Map(supabaseData?.map(s => [s.id, s]) || []);
-
-    const combinedData: StudentData[] = STUDENTS.map(student => {
-      const dbEntry = dataMap.get(student.id);
-      if (dbEntry) {
-        return {
-          id: student.id,
-          name: student.name, // Keep static name or db name
-          badges: dbEntry.badges || [],
-          lastAccess: dbEntry.last_access || 'Never',
-          points: dbEntry.points || 0,
-          reflections: dbEntry.reflections || []
-        };
-      } else {
-        return {
-          id: student.id,
-          name: student.name,
-          badges: [],
-          lastAccess: 'Never',
-          points: 0,
-          reflections: []
-        };
-      }
-    });
-
-    setStudentsData(combinedData);
-    setLoading(false);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === 'teacher123') {
-      setIsAuthenticated(true);
+  const fetchSettings = async () => {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('students')
+      .select('dictionary_progress')
+      .eq('id', 'app_settings_v1')
+      .single();
+      
+    if (data && data.dictionary_progress) {
+      if (data.dictionary_progress.geminiApiKey) {
+        setGeminiKey(data.dictionary_progress.geminiApiKey);
+      }
+      if (data.dictionary_progress.isScreenLocked !== undefined) {
+        setIsScreenLocked(data.dictionary_progress.isScreenLocked);
+      }
+    }
+
+    // Fetch students data
+    const { data: studentsData } = await supabase
+      .from('students')
+      .select('*')
+      .neq('id', 'app_settings_v1')
+      .order('last_access', { ascending: false });
+      
+    if (studentsData) {
+      setStudents(studentsData);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!supabase) return;
+    
+    const cleanedKey = geminiKey.trim();
+    if (cleanedKey === '') {
+      setIsError(true);
+      setSaveStatus('エラー: APIキーを入力してください。');
+      return;
+    }
+    
+    if (cleanedKey.startsWith('ya29')) {
+      setIsError(true);
+      setSaveStatus('エラー: これはOAuthトークンです。APIキーを入力してください。');
+      return;
+    }
+    
+    setSaveStatus('保存中...');
+    setIsError(false);
+    
+    const { error } = await supabase
+      .from('students')
+      .upsert({
+        id: 'app_settings_v1',
+        name: 'System Settings',
+        dictionary_progress: {
+          geminiApiKey: cleanedKey,
+          isScreenLocked: isScreenLocked
+        }
+      }, { onConflict: 'id' });
+      
+    if (error) {
+      setIsError(true);
+      setSaveStatus('通信エラーが発生しました');
+      console.error(error);
     } else {
-      alert('Incorrect password');
+      setIsError(false);
+      setSaveStatus('保存しました！');
+      setTimeout(() => setSaveStatus(''), 3000);
     }
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="flex-col flex-center" style={{ height: '100vh', gap: '2rem' }}>
-        <h2 className="text-primary">先生用ログイン</h2>
-        <form onSubmit={handleLogin} className="glass-card flex-col gap-md">
-          <input 
-            type="password" 
-            placeholder="パスワードを入力" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: '1rem', fontSize: '1.2rem', borderRadius: 'var(--radius-sm)', border: '1px solid #ccc' }}
-          />
-          <Button type="submit">ログイン</Button>
-          <Button variant="outline" onClick={() => navigate('/')}>アプリにもどる</Button>
-        </form>
+      <div className="flex-col flex-center" style={{ flex: 1 }}>
+        <div className="glass-card flex-col flex-center" style={{ padding: '3rem', gap: '1rem' }}>
+          <h2 className="text-primary">先生用ダッシュボード</h2>
+          <p>PINコードを入力してください</p>
+          <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <input 
+              type="password" 
+              value={pin}
+              onChange={e => setPin(e.target.value)}
+              style={{ fontSize: '2rem', textAlign: 'center', width: '150px', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+              maxLength={4}
+              autoComplete="one-time-code"
+              name="teacher_pin"
+            />
+            <Button type="submit">ログイン</Button>
+          </form>
+          <Button variant="outline" onClick={() => navigate(-1)} style={{ marginTop: '1rem' }}>戻る</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-col gap-lg" style={{ padding: '2rem', flex: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button variant="outline" onClick={() => navigate('/')} icon={ArrowLeft}>
-          ダッシュボードを出る
-        </Button>
-        <h1 className="text-primary">先生用ダッシュボード</h1>
-        <Button variant="outline" onClick={fetchStudents} disabled={loading}>
-          {loading ? '更新中...' : '最新の情報に更新'}
-        </Button>
+    <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <Button variant="outline" onClick={() => navigate(-1)} icon={ArrowLeft}>もどる</Button>
+        <h1 className="text-primary" style={{ margin: 0 }}>先生用ダッシュボード</h1>
       </div>
 
-      <div className="glass-card" style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--color-primary)' }}>
-              <th style={{ padding: '1rem' }}>ID</th>
-              <th style={{ padding: '1rem' }}>名前</th>
-              <th style={{ padding: '1rem' }}>ポイント</th>
-              <th style={{ padding: '1rem' }}>Phonics進捗</th>
-              <th style={{ padding: '1rem' }}>最終アクセス</th>
-              <th style={{ padding: '1rem' }}>ステータス</th>
-              <th style={{ padding: '1rem' }}>ふりかえり</th>
-            </tr>
-          </thead>
-          <tbody>
-            {studentsData.map((student) => {
-              const allCleared = student.badges.length === stages.length;
-              const hasStarted = student.badges.length > 0;
-              const isStuck = hasStarted && !allCleared;
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        <div className="glass-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <Key color="var(--color-accent)" />
+            <h2 style={{ margin: 0 }}>AI機能設定 (Gemini API)</h2>
+          </div>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            GitHub等にパスワードが漏れないように、ここにAPIキーを入力してデータベースに保存します。<br/>
+            Google AI Studioで取得したキーを入力してください。
+          </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <input 
+              type={showKey ? "text" : "password"}
+              value={geminiKey}
+              onChange={e => setGeminiKey(e.target.value)}
+              placeholder="AIzaSy..."
+              style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace' }}
+              autoComplete="new-password"
+              name="gemini_api_key"
+            />
+            <Button variant="outline" onClick={() => setShowKey(!showKey)}>
+              {showKey ? '隠す' : '見る'}
+            </Button>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Button onClick={handleSave} icon={Save}>APIキーを保存する</Button>
+            {saveStatus && <span style={{ color: isError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{saveStatus}</span>}
+          </div>
+        </div>
+        
+        <div className="glass-card">
+          <h2>クラス管理機能</h2>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            全員の画面を強制的に切り替えて、先生の指示に注目させることができます。
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
+              <span style={{ fontWeight: 'bold' }}>画面ロック状態</span>
+              <span style={{ color: isScreenLocked ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>
+                {isScreenLocked ? '🔒 ロック中（注目モード）' : '🔓 解除中'}
+              </span>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Button 
+                style={{ flex: 1, background: isScreenLocked ? '#ccc' : 'var(--color-error)' }}
+                disabled={isScreenLocked}
+                onClick={async () => {
+                  setIsScreenLocked(true);
+                  if (!supabase) return;
+                  await supabase.from('students').upsert({
+                    id: 'app_settings_v1',
+                    name: 'System Settings',
+                    dictionary_progress: { geminiApiKey: geminiKey, isScreenLocked: true }
+                  }, { onConflict: 'id' });
+                }}
+              >
+                🔒 全員をロックする
+              </Button>
+              <Button 
+                style={{ flex: 1, background: !isScreenLocked ? '#ccc' : 'var(--color-success)' }}
+                disabled={!isScreenLocked}
+                onClick={async () => {
+                  setIsScreenLocked(false);
+                  if (!supabase) return;
+                  await supabase.from('students').upsert({
+                    id: 'app_settings_v1',
+                    name: 'System Settings',
+                    dictionary_progress: { geminiApiKey: geminiKey, isScreenLocked: false }
+                  }, { onConflict: 'id' });
+                }}
+              >
+                🔓 ロックを解除する
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card" style={{ marginTop: '2rem' }}>
+        <h2>生徒の学習状況・ふりかえり</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          クラス全員の学習状況を一覧で確認できます。名前をクリックすると「ふりかえり」が読めます。
+        </p>
+
+        {students.length === 0 ? (
+          <div style={{ padding: '2rem', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px', color: '#666' }}>
+            まだ生徒のデータがありません
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {students.map(student => {
+              const isExpanded = expandedStudentId === student.id;
+              const lastAccess = student.last_access ? new Date(student.last_access).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '未アクセス';
+              const reflections = student.reflections || [];
 
               return (
-                <React.Fragment key={student.id}>
-                  <tr 
-                    style={{ 
-                    borderBottom: '1px solid var(--glass-border)',
-                    background: allCleared ? 'rgba(0, 184, 148, 0.1)' : 'transparent'
-                  }}
-                >
-                  <td style={{ padding: '1rem' }}>{student.id}</td>
-                  <td style={{ padding: '1rem', fontWeight: 'bold' }}>{student.name}</td>
-                  <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>
-                    ★ {student.points}
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.2rem' }}>
-                      {stages.map(s => (
-                        <div 
-                          key={s.id} 
-                          style={{ 
-                            width: '20px', 
-                            height: '20px', 
-                            borderRadius: '50%', 
-                            background: student.badges.includes(s.id) ? 'var(--color-success)' : '#e0e0e0',
-                            display: 'inline-block'
-                          }} 
-                          title={`Stage ${s.id}`}
-                        />
-                      ))}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                    {student.lastAccess !== 'Never' ? new Date(student.lastAccess).toLocaleString('ja-JP') : 'なし'}
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    {allCleared ? (
-                      <span className="text-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Check size={16} /> マスター！
-                      </span>
-                    ) : isStuck ? (
-                      <span style={{ color: 'orange', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <AlertCircle size={16} /> 進行中
-                      </span>
-                    ) : (
-                      <span className="text-muted">未開始</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setExpandedStudentId(expandedStudentId === student.id ? null : student.id)}
-                      disabled={student.reflections.length === 0}
-                      style={{ padding: '0.5rem', fontSize: '0.9rem' }}
-                    >
-                      {student.reflections.length > 0 ? `ふりかえり (${student.reflections.length})` : 'なし'}
-                    </Button>
-                  </td>
-                </tr>
-                {expandedStudentId === student.id && student.reflections.length > 0 && (
-                  <tr style={{ background: 'rgba(0,0,0,0.02)' }}>
-                    <td colSpan={7} style={{ padding: '1rem 2rem' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-primary)' }}>ふりかえり履歴</h4>
-                        {student.reflections.map((r: any) => (
-                          <div key={r.id} style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #eee' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                              <strong style={{ color: 'var(--color-text-muted)' }}>{new Date(r.date).toLocaleString('ja-JP')}</strong>
-                              <span style={{ color: '#f39c12', fontSize: '1.2rem' }}>{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: '1.1rem', lineHeight: 1.5 }}>{r.comment}</p>
-                          </div>
-                        ))}
+                <div key={student.id} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Summary Header */}
+                  <div 
+                    style={{ padding: '1rem 1.5rem', background: isExpanded ? '#f8fafc' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }}
+                    onClick={() => setExpandedStudentId(isExpanded ? null : student.id)}
+                    className="hover-scale"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', width: '150px' }}>
+                        {student.name}
                       </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', fontWeight: 'bold' }}>
+                        ★ {student.points || 0} P
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3b82f6', fontWeight: 'bold' }}>
+                        🏅 バッジ {student.badges?.length || 0}個
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                      最終アクセス: {lastAccess}
+                      <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                    </div>
+                  </div>
+
+                  {/* Expanded Content: Reflections */}
+                  {isExpanded && (
+                    <div style={{ padding: '1.5rem', background: 'white', borderTop: '1px solid #e2e8f0' }}>
+                      <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#475569' }}>ふりかえりノート</h3>
+                      {reflections.length === 0 ? (
+                        <p style={{ color: '#94a3b8', margin: 0, fontStyle: 'italic' }}>まだふりかえりを書いていません</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {reflections.map((ref: any) => (
+                            <div key={ref.id} style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                <span style={{ color: '#64748b' }}>{new Date(ref.date).toLocaleDateString('ja-JP')}</span>
+                                <span style={{ letterSpacing: '2px' }}>
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <span key={i} style={{ color: i < ref.stars ? '#f59e0b' : '#cbd5e1' }}>★</span>
+                                  ))}
+                                </span>
+                              </div>
+                              <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{ref.comment}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
             })}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );

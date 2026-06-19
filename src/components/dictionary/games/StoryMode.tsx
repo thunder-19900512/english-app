@@ -1,0 +1,519 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, BookOpen, Star, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Button } from '../../ui/Button';
+import { useAppSettings } from '../../../hooks/useAppSettings';
+import { usePoints } from '../../../hooks/usePoints';
+import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
+import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
+import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
+import { MicButton } from '../../ui/MicButton';
+import { vocabulary } from '../../../data/vocabulary';
+import type { Vocabulary } from '../../../data/vocabulary';
+
+type GameState = 'config' | 'generating' | 'playing' | 'completed';
+
+interface StoryFragment {
+  type: 'text' | 'blank' | 'newline';
+  content: string;
+  wordId?: string;
+  filledWith?: string; // wordId
+}
+
+const DIFFICULTY_LEVELS = [
+  { level: 1, label: 'レベル1: 超かんたん (小学1〜3年生)', prompt: 'Extremely simple English for beginners. Use ONLY short SVO (Subject-Verb-Object) or SVC sentences (max 5-6 words). Ensure the sentences connect logically to tell a cohesive, easy-to-understand mini-story.' },
+  { level: 2, label: 'レベル2: 英検5級レベル (中1程度)', prompt: 'Eiken Grade 5 level (CEFR A1). Basic beginner English, simple present/past tense, very basic vocabulary.' },
+  { level: 3, label: 'レベル3: 英検4級レベル (中2程度)', prompt: 'Eiken Grade 4 level (CEFR A1-A2). Elementary English, basic conjunctions, future tense, basic daily life vocabulary.' },
+  { level: 4, label: 'レベル4: 英検3級レベル (中卒程度)', prompt: 'Eiken Grade 3 level (CEFR A2). Pre-intermediate English, present perfect, relative pronouns, standard middle school vocabulary.' },
+  { level: 5, label: 'レベル5: 英検2級レベル (高卒程度)', prompt: 'Eiken Grade 2 level (CEFR B1). Intermediate English, complex sentences, high school level vocabulary, social topics.' },
+  { level: 6, label: 'レベル6: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
+];
+
+export const StoryMode: React.FC = () => {
+  const navigate = useNavigate();
+  const { geminiApiKey } = useAppSettings();
+  const { addPoints } = usePoints();
+  const { speak } = useSpeechSynthesis();
+  const { progress } = useDictionaryProgress();
+
+  const [gameState, setGameState] = useState<GameState>('config');
+  const [difficulty, setDifficulty] = useState(1);
+  const [sentenceCount, setSentenceCount] = useState(3);
+  
+  const [storyFragments, setStoryFragments] = useState<StoryFragment[]>([]);
+  const [targetWords, setTargetWords] = useState<Vocabulary[]>([]);
+  const [activeBlankIndex, setActiveBlankIndex] = useState<number | null>(null);
+  const [japaneseTranslation, setJapaneseTranslation] = useState<string>('');
+  const [showTranslation, setShowTranslation] = useState(false);
+  
+  const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
+  const [hasReadAloud, setHasReadAloud] = useState(false);
+
+  useEffect(() => {
+    if (!isRecording && transcript && gameState === 'completed' && !hasReadAloud) {
+      // Calculate bonus based on story length and difficulty
+      const bonus = sentenceCount * difficulty * 3;
+      addPoints('story_mode', { multiplier: bonus / 10 });
+      setHasReadAloud(true);
+    }
+  }, [isRecording, transcript, gameState, hasReadAloud]);
+
+  // Pick mastered words based on progress
+  const getMasteredWords = () => {
+    const masteredCategories = Object.keys(progress).filter(cat => 
+      progress[cat].spelling || progress[cat].wordsearch || progress[cat].practice
+    );
+    
+    let pool = vocabulary.filter(v => masteredCategories.includes(v.category));
+    if (pool.length < 5) {
+      // Fallback if not enough mastered words
+      pool = vocabulary; 
+    }
+    
+    // Pick random words depending on length
+    const wordCount = Math.min(pool.length, Math.max(3, Math.floor(sentenceCount / 2)));
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, wordCount);
+  };
+
+  const generateStory = async () => {
+    if (!geminiApiKey) return;
+    setGameState('generating');
+    setHasReadAloud(false);
+    setTranscript('');
+    
+    const wordsToUse = getMasteredWords();
+    setTargetWords(wordsToUse);
+    const wordListEn = wordsToUse.map(w => w.english);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
+      const data = await response.json();
+      
+      const availableModels = data.models
+        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('flash'))
+        .map((m: any) => m.name.replace('models/', ''))
+        .sort((a: string, b: string) => b.localeCompare(a)); // Sort descending to try newer models first
+
+      const genAI = new GoogleGenerativeAI(geminiApiKey);
+
+      const prompt = `You are writing an interactive English story for a Japanese student.
+      
+RULES:
+1. The story MUST be exactly ${sentenceCount} sentences long.
+2. Output EACH sentence on a NEW LINE.
+3. The sentences MUST connect logically to form a clear, cohesive narrative. Do NOT just write disconnected sentences. The story must make sense as a whole.
+4. CRITICAL: Provide STRONG CONTEXT CLUES so that there is ONLY ONE logically correct target word for each blank. Do NOT make the words interchangeable (e.g. avoid "I eat {apple}" and "I eat {banana}").
+5. The difficulty level is: ${DIFFICULTY_LEVELS[difficulty - 1].prompt}
+6. You MUST include these specific words in the story: ${wordListEn.join(', ')}
+7. Whenever you use one of those specific words, you MUST enclose it in curly braces, exactly as provided. Example: {${wordListEn[0]}}
+8. Do NOT use curly braces for any other words.
+9. Output the English story text first. Then write exactly "---" on a new line. Then provide the natural Japanese translation of the story, also with each sentence on a new line.`;
+
+      let text = '';
+      let success = false;
+      let lastError: any = null;
+
+      for (const modelName of availableModels) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          text = result.response.text();
+          success = true;
+          console.log(`Successfully generated using ${modelName}`);
+          break;
+        } catch (e: any) {
+          console.warn(`Model ${modelName} failed:`, e);
+          lastError = e;
+        }
+      }
+
+      if (!success) {
+        throw lastError || new Error("利用可能なモデルが見つかりませんでした");
+      }
+      
+      const parts = text.split('---');
+      const englishText = parts[0].trim();
+      const japaneseText = parts.length > 1 ? parts[1].trim() : '';
+      
+      setJapaneseTranslation(japaneseText);
+      setShowTranslation(false);
+      parseStory(englishText, wordsToUse);
+      setGameState('playing');
+    } catch (err: any) {
+      console.error(err);
+      alert(`システムエラー: ${err.message || '不明なエラー'} (APIキーが正しいか、制限されていないか確認してください)`);
+      setGameState('config');
+    }
+  };
+
+  const parseStory = (text: string, words: Vocabulary[]) => {
+    // Regex to split by {word}
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    const fragments: StoryFragment[] = [];
+    
+    lines.forEach((line, lineIdx) => {
+      const parts = line.split(/(\{.*?\})/g);
+      
+      parts.forEach(part => {
+        if (part.startsWith('{') && part.endsWith('}')) {
+          const wordText = part.slice(1, -1).toLowerCase().trim();
+          const matchedWord = words.find(w => w.english.toLowerCase() === wordText);
+          if (matchedWord) {
+            fragments.push({ type: 'blank', content: wordText, wordId: matchedWord.id });
+          } else {
+            // If AI hallucinated a braced word, just treat it as text
+            fragments.push({ type: 'text', content: part.replace(/[{}]/g, '') });
+          }
+        } else if (part) {
+          fragments.push({ type: 'text', content: part });
+        }
+      });
+      
+      if (lineIdx < lines.length - 1) {
+        fragments.push({ type: 'newline', content: '' });
+      }
+    });
+    
+    setStoryFragments(fragments);
+    
+    // Auto-select the first blank
+    const firstBlankIndex = fragments.findIndex(f => f.type === 'blank');
+    if (firstBlankIndex !== -1) {
+      setActiveBlankIndex(firstBlankIndex);
+    }
+  };
+
+  const handleBlankClick = (index: number) => {
+    if (gameState !== 'playing') return;
+    setActiveBlankIndex(index);
+  };
+
+  const handleWordSelect = (wordId: string) => {
+    if (activeBlankIndex === null) return;
+    
+    const newFragments = [...storyFragments];
+    newFragments[activeBlankIndex].filledWith = wordId;
+    setStoryFragments(newFragments);
+    
+    // Check if completed
+    const allBlanks = newFragments.filter(f => f.type === 'blank');
+    const isCompleted = allBlanks.every(f => f.filledWith);
+    
+    if (isCompleted) {
+      setActiveBlankIndex(null);
+      const isCorrect = allBlanks.every(f => f.filledWith === f.wordId);
+      if (isCorrect) {
+        handleWin(newFragments);
+      }
+    } else {
+      // Auto-select the next unfilled blank
+      const nextBlankIndex = newFragments.findIndex((f, idx) => idx > activeBlankIndex && f.type === 'blank' && !f.filledWith);
+      if (nextBlankIndex !== -1) {
+        setActiveBlankIndex(nextBlankIndex);
+      } else {
+        // If no more blanks after this one, wrap around to the beginning
+        const firstUnfilledIndex = newFragments.findIndex(f => f.type === 'blank' && !f.filledWith);
+        setActiveBlankIndex(firstUnfilledIndex !== -1 ? firstUnfilledIndex : null);
+      }
+    }
+  };
+
+  const handleWin = (fragments: StoryFragment[]) => {
+    setGameState('completed');
+    // Calculate points based on difficulty and length
+    const earned = sentenceCount * difficulty * 2;
+    addPoints('story_mode', { multiplier: earned / 10 }); // scale points
+    
+    // Construct full text to speak
+    const fullText = fragments.map(f => f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content).join('');
+    speak(fullText);
+  };
+
+  if (!geminiApiKey) {
+    return (
+      <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
+        <AlertTriangle size={60} color="var(--color-error)" />
+        <h2 className="text-primary">AIのじゅんびができていません</h2>
+        <p>先生用ダッシュボードから、APIキーを設定してください。</p>
+        <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-col" style={{ flex: 1, paddingBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
+        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
+        <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIおはなしづくり</h1>
+        <div style={{ width: '80px' }}></div>
+      </div>
+
+      {gameState === 'config' && (
+        <div className="glass-card flex-col gap-lg" style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+          <h2 style={{ textAlign: 'center', margin: 0 }}>どんなおはなしをつくる？</h2>
+          
+          <div>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>文章の長さ（{sentenceCount}文）</label>
+            <input 
+              type="range" 
+              min="3" 
+              max="10" 
+              value={sentenceCount} 
+              onChange={e => setSentenceCount(Number(e.target.value))}
+              style={{ width: '100%', marginBottom: '1rem', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
+              <span>短い (3文)</span>
+              <span>長い (10文)</span>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>難易度</label>
+            <select 
+              value={difficulty} 
+              onChange={e => setDifficulty(Number(e.target.value))}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', borderRadius: '8px', border: '1px solid #ccc' }}
+            >
+              {DIFFICULTY_LEVELS.map(lvl => (
+                <option key={lvl.level} value={lvl.level}>{lvl.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <Button 
+            size="lg" 
+            onClick={generateStory} 
+            icon={Sparkles}
+            style={{ marginTop: '1rem', background: 'var(--color-accent)', color: 'black' }}
+          >
+            おはなしをつくる！
+          </Button>
+        </div>
+      )}
+
+      {gameState === 'generating' && (
+        <div className="flex-col flex-center gap-md" style={{ flex: 1 }}>
+          <Sparkles className="animate-pulse" size={60} color="var(--color-accent)" />
+          <h2 className="text-primary">AIがおはなしを作っています...</h2>
+          <p>あなたの習った単語を使っているよ！</p>
+        </div>
+      )}
+
+      {(gameState === 'playing' || gameState === 'completed') && (
+        <div className="flex-col gap-lg" style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+          <div className="glass-card" style={{ padding: '2rem', fontSize: '1.5rem', lineHeight: '2.5', fontFamily: 'var(--font-heading)' }}>
+            {storyFragments.map((fragment, idx) => {
+              if (fragment.type === 'newline') {
+                return <span key={idx}> </span>; // Render newline as space for inline story
+              }
+              if (fragment.type === 'text') {
+                // Split text into words and spaces to make each word clickable
+                const wordsAndSpaces = fragment.content.split(/(\s+)/);
+                return (
+                  <span key={idx}>
+                    {wordsAndSpaces.map((ws, i) => {
+                      if (!ws.trim()) return <span key={i}>{ws}</span>;
+                      // Remove punctuation for speaking, but keep it for display
+                      const cleanWord = ws.replace(/[.,!?]/g, '');
+                      return (
+                        <span 
+                          key={i} 
+                          onClick={() => cleanWord && speak(cleanWord)}
+                          style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-primary)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
+                          title="クリックして発音を聞く"
+                        >
+                          {ws}
+                        </span>
+                      );
+                    })}
+                  </span>
+                );
+              }
+              
+              const isFilled = !!fragment.filledWith;
+              const filledWord = isFilled ? targetWords.find(w => w.id === fragment.filledWith) : null;
+              const isCorrect = gameState === 'completed' && fragment.filledWith === fragment.wordId;
+              const isError = gameState === 'playing' && isFilled && fragment.filledWith !== fragment.wordId;
+              
+              return (
+                <span 
+                  key={idx} 
+                  onClick={() => {
+                    if (isFilled && filledWord) {
+                      speak(filledWord.english);
+                    }
+                    handleBlankClick(idx);
+                  }}
+                  className="animate-pop"
+                  style={{
+                    display: 'inline-block',
+                    minWidth: '100px',
+                    height: '40px',
+                    margin: '0 0.5rem',
+                    borderBottom: isFilled ? 'none' : `3px dashed ${activeBlankIndex === idx ? 'var(--color-primary)' : '#ccc'}`,
+                    background: isCorrect ? 'var(--color-success)' : isError ? 'var(--color-error)' : isFilled ? 'var(--color-primary)' : 'transparent',
+                    color: isFilled ? 'white' : 'transparent',
+                    borderRadius: isFilled ? '20px' : '0',
+                    padding: isFilled ? '0 1rem' : '0',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    verticalAlign: 'middle',
+                    lineHeight: '40px',
+                    boxShadow: isFilled ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.2s',
+                    position: 'relative'
+                  }}
+                >
+                  {isFilled ? filledWord?.english : ''}
+                  {activeBlankIndex === idx && !isFilled && (
+                    <div className="animate-pulse" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '1rem', color: 'var(--color-primary)', whiteSpace: 'nowrap' }}>
+                      ここをえらぶ
+                    </div>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+
+          {gameState === 'completed' ? (
+            <div className="glass-card flex-col flex-center animate-pop" style={{ padding: '2rem', background: '#f0fdf4', border: '2px solid var(--color-success)' }}>
+              <CheckCircle size={60} color="var(--color-success)" />
+              <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! おはなしが完成したよ！</h2>
+              
+              {!hasReadAloud ? (
+                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)', width: '100%' }}>
+                  <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🎤 声に出して読んでみよう！</h3>
+                  <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>文ごとの「🔈」を押して発音を聞いてから、マイクを押して読んでみてね。ボーナスポイントがもらえるよ！</p>
+                  
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', margin: '1rem 0', padding: '1rem', background: '#f8f9fa', borderRadius: '12px' }}>
+                    {(() => {
+                      const sentences: StoryFragment[][] = [];
+                      let currentSentence: StoryFragment[] = [];
+                      storyFragments.forEach(f => {
+                        if (f.type === 'newline') {
+                          if (currentSentence.length > 0) {
+                            sentences.push(currentSentence);
+                            currentSentence = [];
+                          }
+                        } else {
+                          currentSentence.push(f);
+                        }
+                      });
+                      if (currentSentence.length > 0) sentences.push(currentSentence);
+
+                      return sentences.map((sentence, sIdx) => {
+                        const sentenceText = sentence.map(f => f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content).join('');
+                        return (
+                          <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button 
+                              onClick={() => speak(sentenceText)}
+                              className="hover-scale"
+                              style={{ background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-sm)' }}
+                            >
+                              🔈
+                            </button>
+                            <span style={{ fontSize: '1.3rem', fontFamily: 'var(--font-heading)', color: '#333' }}>
+                              {sentenceText}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  {transcript && (
+                    <div style={{ padding: '1rem', background: '#f0fdf4', border: '1px solid var(--color-success)', borderRadius: '8px', color: '#444', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
+                      あなたの声: 「 {transcript} 」
+                    </div>
+                  )}
+                  
+                  <MicButton 
+                    isRecording={isRecording} 
+                    onClick={() => {
+                      if (isRecording) {
+                        stopListening();
+                      } else {
+                        setTranscript('');
+                        startListening();
+                      }
+                    }} 
+                  />
+                </div>
+              ) : (
+                <div className="animate-pop" style={{ background: '#fffbeb', padding: '1rem 2rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '1.5rem', border: '2px solid #fde68a' }}>
+                  🎉 すばらしい！音読ボーナスポイントGET！
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                <Button onClick={() => setGameState('config')}>もう一度遊ぶ</Button>
+                <Button variant="outline" onClick={() => speak(storyFragments.map(f => f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content).join(''))}>
+                  🔈 もう一度聞く
+                </Button>
+              </div>
+              
+              {japaneseTranslation && (
+                <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255,255,255,0.8)', padding: '1.5rem', borderRadius: '12px', marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🇯🇵 おはなしの意味</h3>
+                    <Button variant="outline" onClick={() => setShowTranslation(!showTranslation)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                      {showTranslation ? 'かくす' : '意味を見る'}
+                    </Button>
+                  </div>
+                  {showTranslation && (
+                    <div className="animate-pop" style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#444', whiteSpace: 'pre-wrap' }}>
+                      {japaneseTranslation}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="glass-card" style={{ padding: '2rem' }}>
+              <h3 style={{ marginTop: 0, textAlign: 'center' }}>下から単語を選んでね</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+                {targetWords.map(word => {
+                  const isUsed = storyFragments.some(f => f.type === 'blank' && f.filledWith === word.id);
+                  return (
+                    <button
+                      key={word.id}
+                      onClick={() => {
+                        if (!isUsed) speak(word.english);
+                        handleWordSelect(word.id);
+                      }}
+                      disabled={isUsed || activeBlankIndex === null}
+                      className="hover-scale"
+                      style={{
+                        padding: '1rem 1.5rem',
+                        fontSize: '1.2rem',
+                        borderRadius: '20px',
+                        border: '2px solid var(--color-primary)',
+                        background: isUsed ? '#f0f0f0' : 'white',
+                        color: isUsed ? '#ccc' : 'var(--color-primary)',
+                        cursor: isUsed || activeBlankIndex === null ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: isUsed ? 0.5 : 1
+                      }}
+                    >
+                      <span>{word.emoji}</span>
+                      <span>{word.english}</span>
+                      <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>({word.japanese})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

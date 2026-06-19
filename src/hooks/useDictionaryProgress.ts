@@ -6,6 +6,7 @@ export interface DictCategoryProgress {
   spelling: boolean;
   voice: boolean;
   wordsearch: boolean;
+  wordsearch_best_time?: number;
 }
 
 export const useDictionaryProgress = () => {

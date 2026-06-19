@@ -416,7 +416,7 @@ export const Stage: React.FC = () => {
         </div>
       </div>
 
-      <div className={`glass-card flex-col flex-center ${stage.colorClass}`} style={{ flex: 1, gap: '2rem' }}>
+      <div className={`glass-card flex-col flex-center ${stage.colorClass}`} style={{ flex: 1, gap: '1rem' }}>
         {stage.explanation && (
           <div className="glass-card" style={{ padding: '1rem', marginBottom: '1rem', background: 'rgba(255,255,255,0.8)' }}>
             <p style={{ fontSize: '1.1rem', margin: 0, color: 'var(--color-primary)' }}>💡 {stage.explanation}</p>
@@ -432,9 +432,9 @@ export const Stage: React.FC = () => {
                   {stage.practiceItems.map((item, idx) => (
                     <div 
                       key={`prac-${idx}`} 
-                      className="stage-tile" 
+                      className="stage-tile hover-scale" 
                       onClick={() => speak(item)}
-                      style={{ padding: '1rem', fontSize: '2rem', minHeight: '80px', minWidth: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                      style={{ padding: '0.5rem', fontSize: '1.5rem', minHeight: '60px', minWidth: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                     >
                       {phonicsEmojis[item] && <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{phonicsEmojis[item]}</span>}
                       <span>{item}</span>
@@ -449,7 +449,7 @@ export const Stage: React.FC = () => {
               {stage.items.map((item, idx) => (
                 <div 
                   key={idx} 
-                  className="stage-tile" 
+                  className="stage-tile hover-scale" 
                   onClick={() => speak(item)}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
@@ -492,10 +492,10 @@ export const Stage: React.FC = () => {
                 {options.map((option, idx) => (
                   <button
                     key={idx}
-                    className="btn btn-secondary"
+                    className="btn btn-secondary hover-scale"
                     style={{ 
-                      padding: '2rem', 
-                      fontSize: '2rem', 
+                      padding: '1rem', 
+                      fontSize: '1.8rem', 
                       fontFamily: 'var(--font-heading)',
                       background: choiceError ? 'var(--color-error)' : 'var(--color-secondary)',
                       display: 'flex',
@@ -510,7 +510,7 @@ export const Stage: React.FC = () => {
                         Wait, the prompt says initially NO emoji. So only show emoji if mistakes >= 1.
                     */}
                     {mistakes >= 1 && phonicsEmojis[option] && (
-                      <span className="animate-pop" style={{ fontSize: '3rem' }}>{phonicsEmojis[option]}</span>
+                      <span className="animate-pop" style={{ fontSize: '2.5rem' }}>{phonicsEmojis[option]}</span>
                     )}
                     <span>{option}</span>
                   </button>
