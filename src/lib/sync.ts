@@ -52,7 +52,11 @@ export const pullFromSupabase = async (studentId: string) => {
   
   if (data) {
     // Restore to local storage
-    if (data.name) localStorage.setItem('studentName', data.name);
+    const currentName = localStorage.getItem('studentName') || data.name;
+    if (!localStorage.getItem('studentName') && data.name) {
+      localStorage.setItem('studentName', data.name);
+    }
+    
     // Merge points (take the max)
     const localPoints = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
     const dbPoints = data.points || 0;
@@ -65,7 +69,7 @@ export const pullFromSupabase = async (studentId: string) => {
     const dbBadges = data.badges || [];
     const mergedBadges = Array.from(new Set([...localBadges, ...dbBadges]));
     
-    const studentData = { id: studentId, name: data.name, badges: mergedBadges, lastAccess: data.last_access };
+    const studentData = { id: studentId, name: currentName, badges: mergedBadges, lastAccess: data.last_access };
     localStorage.setItem(`student_${studentId}`, JSON.stringify(studentData));
     
     // For clear_counts, dictionary_progress, reflections, we ideally merge deeply, 
