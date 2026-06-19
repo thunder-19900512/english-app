@@ -1,37 +1,55 @@
 import { supabase } from './supabase';
 
-export const pushToSupabase = async (studentId: string) => {
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+
+export const pushToSupabase = async (studentId: string): Promise<void> => {
   if (!supabase) return;
 
-  const name = localStorage.getItem('studentName') || 'ゲスト';
-  const points = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
-  
-  const studentDataStr = localStorage.getItem(`student_${studentId}`);
-  const badges = studentDataStr ? JSON.parse(studentDataStr).badges || [] : [];
-  
-  const clearCountsStr = localStorage.getItem(`clearCounts_${studentId}`);
-  const clearCounts = clearCountsStr ? JSON.parse(clearCountsStr) : {};
-  
-  const dictProgressStr = localStorage.getItem(`dict_progress_${studentId}`);
-  const dictionaryProgress = dictProgressStr ? JSON.parse(dictProgressStr) : {};
-  
-  const reflectionsStr = localStorage.getItem(`reflections_${studentId}`);
-  const reflections = reflectionsStr ? JSON.parse(reflectionsStr) : [];
-
-  const { error } = await supabase
-    .from('students')
-    .upsert({
-      id: studentId,
-      name,
-      points,
-      badges,
-      clear_counts: clearCounts,
-      dictionary_progress: dictionaryProgress,
-      reflections,
-      last_access: new Date().toISOString()
-    }, { onConflict: 'id' });
+  // Debounce the actual push logic to prevent race conditions when multiple saves happen simultaneously
+  return new Promise((resolve) => {
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+    }
     
-  if (error) console.error('Failed to sync to Supabase', error);
+    syncTimeout = setTimeout(async () => {
+      const name = localStorage.getItem('studentName') || 'ゲスト';
+      const points = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
+      
+      const countsStr = localStorage.getItem(`clearCounts_${studentId}`);
+      const clear_counts = countsStr ? JSON.parse(countsStr) : {};
+      
+      const dictStr = localStorage.getItem(`dictProgress_${studentId}`);
+      const dictionary_progress = dictStr ? JSON.parse(dictStr) : {};
+      
+      const refStr = localStorage.getItem(`reflections_${studentId}`);
+      const reflections = refStr ? JSON.parse(refStr) : [];
+      
+      const studentDataStr = localStorage.getItem(`student_${studentId}`);
+      const badges = studentDataStr ? JSON.parse(studentDataStr).badges || [] : [];
+      
+      try {
+        const { error } = await supabase
+          .from('students')
+          .upsert({
+            id: studentId,
+            name,
+            points,
+            badges,
+            clear_counts,
+            dictionary_progress,
+            reflections,
+            last_access: new Date().toISOString()
+          }, { onConflict: 'id' });
+          
+        if (error) {
+          console.error('Failed to sync to Supabase', error);
+        }
+      } catch (err) {
+        console.error('Network error during sync', err);
+      }
+      resolve();
+    }, 500); // 500ms debounce
+  });
 };
 
 export const pullFromSupabase = async (studentId: string) => {
