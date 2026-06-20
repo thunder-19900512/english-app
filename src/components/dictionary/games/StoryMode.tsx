@@ -233,20 +233,12 @@ RULES:
         setActiveBlankIndex(null);
         handleWin(newFragments);
       } else {
-        // Automatically clear incorrect blanks after a short delay
-        setTimeout(() => {
-          setStoryFragments(prev => {
-            const corrected = prev.map(f => {
-              if (f.type === 'blank' && f.filledWith !== f.wordId) {
-                return { ...f, filledWith: undefined };
-              }
-              return f;
-            });
-            const firstEmpty = corrected.findIndex(f => f.type === 'blank' && !f.filledWith);
-            setActiveBlankIndex(firstEmpty !== -1 ? firstEmpty : null);
-            return corrected;
-          });
-        }, 1500);
+        // Do not use timeouts to clear blanks automatically as it causes overlapping state bugs.
+        // Instead, find the first incorrect blank and set it as active so the user can choose again.
+        const firstIncorrect = newFragments.findIndex(f => f.type === 'blank' && f.filledWith !== f.wordId);
+        if (firstIncorrect !== -1) {
+          setActiveBlankIndex(firstIncorrect);
+        }
       }
     } else {
       // Auto-select the next unfilled blank

@@ -16,57 +16,12 @@ const phonicsEmojis: Record<string, string> = {
   smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼'
 };
 
-const WIKI_AUDIO_MAP: Record<string, string> = {
-  // Consonants
-  'b': 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Voiced_bilabial_plosive.ogg',
-  'c': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
-  'k': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
-  'ck': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
-  'd': 'https://upload.wikimedia.org/wikipedia/commons/1/16/Voiced_alveolar_plosive.ogg',
-  'f': 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Voiceless_labiodental_fricative.ogg',
-  'g': 'https://upload.wikimedia.org/wikipedia/commons/1/12/Voiced_velar_plosive_02.ogg',
-  'h': 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Voiceless_glottal_fricative.ogg',
-  'j': 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Voiced_palato-alveolar_affricate.ogg',
-  'l': 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Alveolar_lateral_approximant.ogg',
-  'm': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Bilabial_nasal.ogg',
-  'n': 'https://upload.wikimedia.org/wikipedia/commons/0/00/Alveolar_nasal.ogg',
-  'p': 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Voiceless_bilabial_plosive.ogg',
-  'qu': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
-  'r': 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Alveolar_approximant.ogg',
-  's': 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Voiceless_alveolar_sibilant.ogg',
-  't': 'https://upload.wikimedia.org/wikipedia/commons/0/02/Voiceless_alveolar_plosive.ogg',
-  'v': 'https://upload.wikimedia.org/wikipedia/commons/9/90/Voiced_labiodental_fricative.ogg',
-  'w': 'https://upload.wikimedia.org/wikipedia/commons/1/18/Voiced_labio-velar_approximant.ogg',
-  'x': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
-  'y': 'https://upload.wikimedia.org/wikipedia/commons/0/05/Palatal_approximant.ogg',
-  'z': 'https://upload.wikimedia.org/wikipedia/commons/c/c0/Voiced_alveolar_sibilant.ogg',
-  
-  // Digraphs
-  'sh': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/Voiceless_palato-alveolar_fricative.ogg',
-  'ch': 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Voiceless_palato-alveolar_affricate.ogg',
-  'th': 'https://upload.wikimedia.org/wikipedia/commons/8/80/Voiceless_dental_fricative.ogg',
-  'ph': 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Voiceless_labiodental_fricative.ogg',
-  'wh': 'https://upload.wikimedia.org/wikipedia/commons/1/18/Voiced_labio-velar_approximant.ogg',
-  'ng': 'https://upload.wikimedia.org/wikipedia/commons/2/29/Velar_nasal.ogg',
-
-  // Short Vowels
-  'a': 'https://upload.wikimedia.org/wikipedia/commons/e/e6/Near-open_front_unrounded_vowel.ogg',
-  'e': 'https://upload.wikimedia.org/wikipedia/commons/7/71/Open-mid_front_unrounded_vowel.ogg',
-  'i': 'https://upload.wikimedia.org/wikipedia/commons/2/23/Near-close_near-front_unrounded_vowel.ogg',
-  'o': 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Open_back_unrounded_vowel.ogg',
-  'u': 'https://upload.wikimedia.org/wikipedia/commons/8/87/Open-mid_back_unrounded_vowel.ogg',
-
-  // Long Vowels / Magic E (approximations using nearest pure vowels)
-  'ee': 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Close_front_unrounded_vowel.ogg',
-  'ea': 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Close_front_unrounded_vowel.ogg',
-  'oo': 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Close_back_rounded_vowel.ogg',
-  'a_e': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
-  'ai': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
-  'ay': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
-  'o_e': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
-  'oa': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
-  'ow': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
-};
+const LOCAL_PHONEMES = new Set([
+  'a', 'b', 'c', 'k', 'ck', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'o', 'p', 'qu', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  'sh', 'ch', 'th', 'ph', 'wh', 'ng',
+  'ee', 'ea', 'oo', 'a_e', 'ai', 'ay', 'o_e', 'oa', 'ow',
+  'ar', 'or', 'ir', 'ur', 'er', 'ear', 'air', 'wor'
+]);
 
 const getLevenshteinDistance = (a: string, b: string): number => {
   const matrix = [];
@@ -97,25 +52,12 @@ export const Stage: React.FC = () => {
   const navigate = useNavigate();
   const stage = stages.find(s => s.id === parseInt(id || '1'));
   
-  const getWikiAudioMp3Url = (oggUrl: string) => {
-    try {
-      const urlObj = new URL(oggUrl);
-      const parts = urlObj.pathname.split('/');
-      const filename = parts[parts.length - 1];
-      // /wikipedia/commons/2/2c/filename.ogg -> transcoded/2/2c/filename.ogg/filename.ogg.mp3
-      return `https://upload.wikimedia.org/wikipedia/commons/transcoded/${parts[3]}/${parts[4]}/${filename}/${filename}.mp3`;
-    } catch (e) {
-      return oggUrl;
-    }
-  };
-
   const speak = useCallback((text: string) => {
     const ltext = text.toLowerCase();
     
     // Play authentic IPA audio if it's a known phoneme block
-    if (WIKI_AUDIO_MAP[ltext]) {
-      const mp3Url = getWikiAudioMp3Url(WIKI_AUDIO_MAP[ltext]);
-      const audio = new Audio(mp3Url);
+    if (LOCAL_PHONEMES.has(ltext)) {
+      const audio = new Audio(`/audio/${ltext}.mp3`);
       audio.play().catch(e => console.error("Audio play failed:", e));
       return;
     }
@@ -143,7 +85,8 @@ export const Stage: React.FC = () => {
   }, [stage, mode]);
 
   const currentItems = getCurrentItems();
-  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizIndexRaw, setQuizIndex] = useState(0);
+  const quizIndex = currentItems.length > 0 ? Math.min(quizIndexRaw, currentItems.length - 1) : 0;
   
   // Game session states
   const [questionCount, setQuestionCount] = useState(0);
@@ -264,7 +207,7 @@ export const Stage: React.FC = () => {
         if (mode === 'blend' && stage.blendItems) {
           // Play sequentially
           stage.blendItems[quizIndex].phonemes.forEach((p, i) => {
-            setTimeout(() => speak(PHONEME_TTS[p.toLowerCase()] || p), i * 1000);
+            setTimeout(() => speak(p), i * 1000);
           });
         } else if (['choice', 'typing', 'quiz', 'alien', 'story'].includes(mode)) {
           const items = getCurrentItems();
@@ -297,9 +240,12 @@ export const Stage: React.FC = () => {
       const normTarget = targetWord.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
       
       if (mode === 'story') {
-        const isClose = getLevenshteinDistance(normInput, normTarget) <= Math.max(3, normTarget.length * 0.2);
-        if (normInput === normTarget || isClose) {
-          handleCorrectAnswer();
+        // Must speak at least 80% of the target length to prevent early progression
+        if (normInput.length >= normTarget.length * 0.8) {
+          const isClose = getLevenshteinDistance(normInput, normTarget) <= Math.max(2, normTarget.length * 0.15);
+          if (normInput === normTarget || isClose) {
+            handleCorrectAnswer();
+          }
         }
       } else {
         if (normInput === normTarget || normInput.includes(normTarget)) {
@@ -814,7 +760,7 @@ export const Stage: React.FC = () => {
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                {stage.blendItems[quizIndex].phonemes.map((p, i) => (
-                  <Button key={i} onClick={() => speak(PHONEME_TTS[p.toLowerCase()] || p)} variant="outline" style={{ fontSize: '2.5rem', padding: '1.5rem', borderRadius: '50%' }}>
+                  <Button key={i} onClick={() => speak(p)} variant="outline" style={{ fontSize: '2.5rem', padding: '1.5rem', borderRadius: '50%' }}>
                     🔈
                   </Button>
                ))}
@@ -822,7 +768,7 @@ export const Stage: React.FC = () => {
             
             <Button size="lg" icon={Volume2} onClick={() => {
                  stage.blendItems![quizIndex].phonemes.forEach((p, i) => {
-                   setTimeout(() => speak(PHONEME_TTS[p.toLowerCase()] || p), i * 1000);
+                   setTimeout(() => speak(p), i * 1000);
                  });
             }} style={{ marginBottom: '2rem' }}>
                順番にぜんぶ聞く
