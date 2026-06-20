@@ -81,7 +81,7 @@ export const Stage: React.FC = () => {
   const [mistakes, setMistakes] = useState(0);
   const [showAnswerState, setShowAnswerState] = useState(false);
   const [labState, setLabState] = useState<'base' | 'added'>('base');
-  const [alienInput, setAlienInput] = useState('');
+  const [alienInputBlocks, setAlienInputBlocks] = useState<string[]>([]);
   
   const [showCelebration, setShowCelebration] = useState(false);
   const [showFailure, setShowFailure] = useState(false);
@@ -142,6 +142,31 @@ export const Stage: React.FC = () => {
     const newOptions = [target, ...distractors].sort(() => 0.5 - Math.random());
     setOptions(newOptions);
   }, [stage, mode, getCurrentItems]);
+
+  const getAlienWordBlocks = useCallback((word: string) => {
+    if (!stage) return word.split('');
+    const practice = stage.practiceItems || [];
+    let blocks: string[] = [];
+    let i = 0;
+    while (i < word.length) {
+      // Also check standard consonant digraphs just in case
+      const commonDigraphs = ['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng', ...practice];
+      let found = false;
+      for (const p of commonDigraphs) {
+        if (word.startsWith(p, i)) {
+          blocks.push(p);
+          i += p.length;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        blocks.push(word[i]);
+        i++;
+      }
+    }
+    return blocks;
+  }, [stage]);
 
   useEffect(() => {
     if (mode === 'choice') {
@@ -234,7 +259,7 @@ export const Stage: React.FC = () => {
     setTypingInput('');
     setTranscript('');
     setLabState('base');
-    setAlienInput('');
+    setAlienInputBlocks([]);
   };
 
   const proceedToNextTurn = async (isCorrect: boolean) => {
@@ -349,7 +374,7 @@ export const Stage: React.FC = () => {
     setNewRecordMsg('');
     setEarnedPoints(null);
     setElapsedTime(0);
-    setAlienInput('');
+    setAlienInputBlocks([]);
     setStartTime(Date.now());
     moveToNextQuestion();
   };
@@ -762,38 +787,57 @@ export const Stage: React.FC = () => {
               宇宙人の声を聞く
             </Button>
             
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', minHeight: '60px' }}>
-              {Array.from({ length: stage.alienWords[quizIndex].length }).map((_, idx) => (
-                <div key={idx} style={{ 
-                  width: '50px', height: '60px', borderBottom: '4px solid var(--color-primary)', 
-                  fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--color-primary)',
-                  display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
-                }}>
-                  {alienInput[idx] || ''}
-                </div>
-              ))}
-            </div>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', maxWidth: '500px', justifyContent: 'center', marginTop: '2rem' }}>
-              {'abcdefghijklmnopqrstuvwxyz'.split('').map(letter => (
-                <button key={letter} className="btn btn-outline hover-scale" style={{ fontSize: '1.5rem', padding: '0.5rem 1rem', background: 'white' }} onClick={() => {
-                  if (alienInput.length >= stage.alienWords![quizIndex].length) return;
-                  const newVal = alienInput + letter;
-                  setAlienInput(newVal);
-                  if (newVal === stage.alienWords![quizIndex]) {
-                    handleCorrectAnswer();
-                  } else if (newVal.length === stage.alienWords![quizIndex].length) {
-                    handleMistake();
-                    setTimeout(() => setAlienInput(''), 1000);
-                  }
-                }}>
-                  {letter}
-                </button>
-              ))}
-              <Button variant="secondary" onClick={() => setAlienInput(prev => prev.slice(0, -1))} style={{ padding: '0.5rem 1rem' }}>
-                消す
-              </Button>
-            </div>
+            {(() => {
+              const targetBlocks = getAlienWordBlocks(stage.alienWords[quizIndex]);
+              const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+              const extraBlocks = stage.practiceItems || [];
+              const allPossibleBlocks = Array.from(new Set([...alphabet, ...extraBlocks, ...targetBlocks]));
+              // Generate some options: the required blocks + random distractors
+              const optionsBlocks = [...targetBlocks];
+              while (optionsBlocks.length < 10) {
+                 const rand = allPossibleBlocks[Math.floor(Math.random() * allPossibleBlocks.length)];
+                 if (!optionsBlocks.includes(rand)) optionsBlocks.push(rand);
+              }
+              const displayOptions = [...new Set(optionsBlocks)].sort(() => 0.5 - Math.random());
+
+              return (
+                <>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', minHeight: '60px' }}>
+                    {targetBlocks.map((_, idx) => (
+                      <div key={idx} style={{ 
+                        width: '60px', height: '60px', borderBottom: '4px solid var(--color-primary)', 
+                        fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--color-primary)',
+                        display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+                      }}>
+                        {alienInputBlocks[idx] || ''}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', maxWidth: '500px', justifyContent: 'center', marginTop: '2rem' }}>
+                    {displayOptions.map(block => (
+                      <button key={block} className="btn btn-outline hover-scale" style={{ fontSize: '1.5rem', padding: '0.5rem 1rem', background: 'white' }} onClick={() => {
+                        if (alienInputBlocks.length >= targetBlocks.length) return;
+                        const newBlocks = [...alienInputBlocks, block];
+                        setAlienInputBlocks(newBlocks);
+                        
+                        if (newBlocks.join('') === targetBlocks.join('')) {
+                          handleCorrectAnswer();
+                        } else if (newBlocks.length === targetBlocks.length) {
+                          handleMistake();
+                          setTimeout(() => setAlienInputBlocks([]), 1000);
+                        }
+                      }}>
+                        {block}
+                      </button>
+                    ))}
+                    <Button variant="secondary" onClick={() => setAlienInputBlocks(prev => prev.slice(0, -1))} style={{ padding: '0.5rem 1rem' }}>
+                      消す
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
