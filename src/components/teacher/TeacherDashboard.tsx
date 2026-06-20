@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Key, Save } from 'lucide-react';
+import { ArrowLeft, Key, Save, Book, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const TeacherDashboard: React.FC = () => {

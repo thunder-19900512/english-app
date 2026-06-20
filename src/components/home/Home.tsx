@@ -92,6 +92,16 @@ export const Home: React.FC = () => {
 
           <div 
             className="glass-card flex-col flex-center animate-pop hover-scale"
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(85, 239, 196, 0.2)', border: '2px solid #00b894' }}
+            onClick={() => navigate('/textbook')}
+          >
+            <Book size={40} color="#00b894" style={{ marginBottom: '0.5rem' }} />
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>教科書モード</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズにちょうせん！</p>
+          </div>
+
+          <div 
+            className="glass-card flex-col flex-center animate-pop hover-scale"
             style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(162, 155, 254, 0.2)', border: '2px solid #a29bfe' }}
             onClick={() => navigate('/ai')}
           >

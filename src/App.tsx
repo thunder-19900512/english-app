@@ -19,6 +19,7 @@ import { AIAssistant } from './components/dictionary/games/AIAssistant';
 import { StoryMode } from './components/dictionary/games/StoryMode';
 import { ReflectionForm } from './components/reflection/ReflectionForm';
 import { ReflectionHistory } from './components/reflection/ReflectionHistory';
+import { TextbookMode } from './components/textbook/TextbookMode';
 
 
 const App: React.FC = () => {
@@ -43,6 +44,7 @@ const App: React.FC = () => {
             <Route path="/dictionary/:category/game/qa" element={<QAMode />} />
             <Route path="/ai" element={<AIAssistant />} />
             <Route path="/story" element={<StoryMode />} />
+            <Route path="/textbook" element={<TextbookMode />} />
             
             <Route path="/reflection" element={<ReflectionForm />} />
             <Route path="/reflection/history" element={<ReflectionHistory />} />
