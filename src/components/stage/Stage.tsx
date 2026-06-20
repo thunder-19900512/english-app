@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { stages } from '../../data/stages';
-import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
@@ -17,15 +16,56 @@ const phonicsEmojis: Record<string, string> = {
   smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼'
 };
 
-const PHONEME_TTS: Record<string, string> = {
-  'a': 'aah', 'b': 'buh', 'c': 'kuh', 'd': 'duh', 'e': 'eh', 
-  'f': 'fff', 'g': 'guh', 'h': 'huh', 'i': 'ih', 'j': 'juh', 
-  'k': 'kuh', 'l': 'lll', 'm': 'mmm', 'n': 'nnn', 'o': 'aw', 
-  'p': 'puh', 'q': 'kwuh', 'r': 'rrr', 's': 'sss', 't': 'tuh', 
-  'u': 'uh', 'v': 'vuh', 'w': 'wuh', 'x': 'ks', 'y': 'yuh', 'z': 'zzz',
-  'sh': 'shh', 'ch': 'ch', 'th': 'th', 'ph': 'fff', 'wh': 'wuh', 'ck': 'kuh', 'ng': 'ng',
-  'ey': 'ay', 'ay': 'eye', 'ow': 'oh', 'oo': 'ooh', 'iy': 'ee',
-  'ar': 'ar', 'er': 'er', 'or': 'or', 'air': 'air'
+const WIKI_AUDIO_MAP: Record<string, string> = {
+  // Consonants
+  'b': 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Voiced_bilabial_plosive.ogg',
+  'c': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
+  'k': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
+  'ck': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
+  'd': 'https://upload.wikimedia.org/wikipedia/commons/1/16/Voiced_alveolar_plosive.ogg',
+  'f': 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Voiceless_labiodental_fricative.ogg',
+  'g': 'https://upload.wikimedia.org/wikipedia/commons/1/12/Voiced_velar_plosive_02.ogg',
+  'h': 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Voiceless_glottal_fricative.ogg',
+  'j': 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Voiced_palato-alveolar_affricate.ogg',
+  'l': 'https://upload.wikimedia.org/wikipedia/commons/c/cf/Alveolar_lateral_approximant.ogg',
+  'm': 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Bilabial_nasal.ogg',
+  'n': 'https://upload.wikimedia.org/wikipedia/commons/0/00/Alveolar_nasal.ogg',
+  'p': 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Voiceless_bilabial_plosive.ogg',
+  'qu': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
+  'r': 'https://upload.wikimedia.org/wikipedia/commons/1/1f/Alveolar_approximant.ogg',
+  's': 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Voiceless_alveolar_sibilant.ogg',
+  't': 'https://upload.wikimedia.org/wikipedia/commons/0/02/Voiceless_alveolar_plosive.ogg',
+  'v': 'https://upload.wikimedia.org/wikipedia/commons/9/90/Voiced_labiodental_fricative.ogg',
+  'w': 'https://upload.wikimedia.org/wikipedia/commons/1/18/Voiced_labio-velar_approximant.ogg',
+  'x': 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Voiceless_velar_plosive.ogg',
+  'y': 'https://upload.wikimedia.org/wikipedia/commons/0/05/Palatal_approximant.ogg',
+  'z': 'https://upload.wikimedia.org/wikipedia/commons/c/c0/Voiced_alveolar_sibilant.ogg',
+  
+  // Digraphs
+  'sh': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/Voiceless_palato-alveolar_fricative.ogg',
+  'ch': 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Voiceless_palato-alveolar_affricate.ogg',
+  'th': 'https://upload.wikimedia.org/wikipedia/commons/8/80/Voiceless_dental_fricative.ogg',
+  'ph': 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Voiceless_labiodental_fricative.ogg',
+  'wh': 'https://upload.wikimedia.org/wikipedia/commons/1/18/Voiced_labio-velar_approximant.ogg',
+  'ng': 'https://upload.wikimedia.org/wikipedia/commons/2/29/Velar_nasal.ogg',
+
+  // Short Vowels
+  'a': 'https://upload.wikimedia.org/wikipedia/commons/e/e6/Near-open_front_unrounded_vowel.ogg',
+  'e': 'https://upload.wikimedia.org/wikipedia/commons/7/71/Open-mid_front_unrounded_vowel.ogg',
+  'i': 'https://upload.wikimedia.org/wikipedia/commons/2/23/Near-close_near-front_unrounded_vowel.ogg',
+  'o': 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Open_back_unrounded_vowel.ogg',
+  'u': 'https://upload.wikimedia.org/wikipedia/commons/8/87/Open-mid_back_unrounded_vowel.ogg',
+
+  // Long Vowels / Magic E (approximations using nearest pure vowels)
+  'ee': 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Close_front_unrounded_vowel.ogg',
+  'ea': 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Close_front_unrounded_vowel.ogg',
+  'oo': 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Close_back_rounded_vowel.ogg',
+  'a_e': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
+  'ai': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
+  'ay': 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Close-mid_front_unrounded_vowel.ogg',
+  'o_e': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
+  'oa': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
+  'ow': 'https://upload.wikimedia.org/wikipedia/commons/8/84/Close-mid_back_rounded_vowel.ogg',
 };
 
 const getLevenshteinDistance = (a: string, b: string): number => {
@@ -57,7 +97,24 @@ export const Stage: React.FC = () => {
   const navigate = useNavigate();
   const stage = stages.find(s => s.id === parseInt(id || '1'));
   
-  const { speak } = useSpeechSynthesis();
+  const speak = useCallback((text: string) => {
+    const ltext = text.toLowerCase();
+    
+    // Play authentic IPA audio if it's a known phoneme block
+    if (WIKI_AUDIO_MAP[ltext]) {
+      const audio = new Audio(WIKI_AUDIO_MAP[ltext]);
+      audio.play().catch(e => console.error("Audio play failed:", e));
+      return;
+    }
+
+    // Fallback to TTS for full words or unknown texts
+    const msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    msg.lang = 'en-US';
+    msg.rate = 0.8;
+    window.speechSynthesis.speak(msg);
+  }, []);
+
   const { isRecording, transcript, error, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { addPoints } = usePoints();
 
