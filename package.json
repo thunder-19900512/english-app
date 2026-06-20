@@ -15,6 +15,7 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.108.2",
     "lucide-react": "^1.18.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.50.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.17.0"

@@ -3,10 +3,20 @@ import { supabase } from '../lib/supabase';
 
 export const useAppSettings = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [azureSpeechKey, setAzureSpeechKey] = useState<string | null>(null);
+  const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
 
   useEffect(() => {
     if (!supabase) return;
+
+    const applySettings = (progress: any) => {
+      if (!progress) return;
+      if (progress.geminiApiKey !== undefined) setApiKey(progress.geminiApiKey);
+      if (progress.azureSpeechKey !== undefined) setAzureSpeechKey(progress.azureSpeechKey);
+      if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
+      if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
+    };
 
     const fetchSettings = async () => {
       const { data } = await supabase
@@ -14,14 +24,9 @@ export const useAppSettings = () => {
         .select('dictionary_progress')
         .eq('id', 'app_settings_v1')
         .single();
-        
+
       if (data && data.dictionary_progress) {
-        if (data.dictionary_progress.geminiApiKey) {
-          setApiKey(data.dictionary_progress.geminiApiKey);
-        }
-        if (data.dictionary_progress.isScreenLocked !== undefined) {
-          setIsScreenLocked(data.dictionary_progress.isScreenLocked);
-        }
+        applySettings(data.dictionary_progress);
       }
     };
     fetchSettings();
@@ -35,11 +40,7 @@ export const useAppSettings = () => {
         table: 'students',
         filter: "id=eq.app_settings_v1"
       }, (payload) => {
-        const newProgress = payload.new.dictionary_progress;
-        if (newProgress) {
-          if (newProgress.geminiApiKey !== undefined) setApiKey(newProgress.geminiApiKey);
-          if (newProgress.isScreenLocked !== undefined) setIsScreenLocked(newProgress.isScreenLocked);
-        }
+        applySettings(payload.new.dictionary_progress);
       })
       .subscribe();
 
@@ -48,5 +49,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, isScreenLocked };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked };
 };

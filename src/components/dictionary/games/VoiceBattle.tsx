@@ -3,11 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { vocabulary, type Vocabulary } from '../../../data/vocabulary';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
+import { useAppSettings } from '../../../hooks/useAppSettings';
+import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
 import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
 import { ArrowLeft, Trophy, Star, RefreshCw } from 'lucide-react';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
+
+// 発音バトルの合格ライン（Azure発音判定の正確さスコア 0-100）。小学生向けに少しやさしめ。
+const PASS_SCORE = 60;
 
 const MONSTERS = ['👹', '👺', '🐉', '👾', '👻', '🦖', '🦈', '🕷️', '🐍', '🦇'];
 
@@ -18,8 +23,13 @@ export const VoiceBattle: React.FC = () => {
   
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
+  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
+  const { assess, isAssessing, isAvailable: azureAvailable } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
+
+  // Azureの発音採点で出た最新スコア（フィードバック表示用）
+  const [lastScore, setLastScore] = useState<number | null>(null);
 
   const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory]);
 
@@ -55,6 +65,7 @@ export const VoiceBattle: React.FC = () => {
     setMonsterState('idle');
     setMistakes(0);
     setTranscript('');
+    setLastScore(null);
   }, [setTranscript]);
 
   useEffect(() => {
@@ -101,8 +112,36 @@ export const VoiceBattle: React.FC = () => {
     }
   }, [questionCount, correctCount, decodedCategory, saveProgress, addPoints, generateQuestion, shuffledWords, TOTAL_QUESTIONS, DEFAULT_TOTAL_QUESTIONS]);
 
+  // Azureの発音採点で1回チャレンジする（Azure設定があるときのみ使用）
+  const handleAzureAttempt = useCallback(async () => {
+    if (!targetWord || monsterState !== 'idle' || isAssessing) return;
+
+    const result = await assess(targetWord.english);
+    if (!result) {
+      // 採点に失敗（設定ミスや通信エラー）。今回はノーカウントで、もう一度促す。
+      return;
+    }
+
+    setLastScore(result.accuracyScore);
+    setTranscript(result.recognizedText);
+
+    if (result.accuracyScore >= PASS_SCORE) {
+      setMonsterState('hit');
+      speak('Good!');
+      setTimeout(() => proceedToNextTurn(true), 1000);
+    } else {
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes);
+      if (nextMistakes >= 3) {
+        setMonsterState('attack');
+        setTimeout(() => proceedToNextTurn(false), 1000);
+      }
+    }
+  }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes]);
+
   useEffect(() => {
-    if (transcript && targetWord && monsterState === 'idle') {
+    // Web Speech APIでの判定はAzure未設定のときだけ動かす
+    if (!azureAvailable && transcript && targetWord && monsterState === 'idle') {
       const isCorrect = checkIsCorrect(transcript, targetWord.english);
       if (isCorrect) {
         setMonsterState('hit');
@@ -123,7 +162,7 @@ export const VoiceBattle: React.FC = () => {
         }
       }
     }
-  }, [transcript, targetWord, checkIsCorrect, monsterState, mistakes, speak, proceedToNextTurn, setTranscript]);
+  }, [azureAvailable, transcript, targetWord, checkIsCorrect, monsterState, mistakes, speak, proceedToNextTurn, setTranscript]);
 
   const resetSession = () => {
     const newShuffled = [...words].sort(() => 0.5 - Math.random());
@@ -133,6 +172,7 @@ export const VoiceBattle: React.FC = () => {
     setShowCelebration(false);
     setShowFailure(false);
     setEarnedPoints(null);
+    setLastScore(null);
     generateQuestion(0, newShuffled);
   };
 
@@ -232,23 +272,42 @@ export const VoiceBattle: React.FC = () => {
               {targetWord.english}
             </h2>
             <div style={{ marginTop: '1rem', color: '#666' }}>
-              マイクを押して発音してね！ (残り {3 - mistakes} 回)
+              {azureAvailable
+                ? (isAssessing ? '聞いているよ…ハッキリ発音してね！' : `マイクを押して発音してね！ (残り ${3 - mistakes} 回)`)
+                : `マイクを押して発音してね！ (残り ${3 - mistakes} 回)`}
             </div>
           </>
         )}
       </div>
 
-      <div style={{ minHeight: '80px', display: 'flex', alignItems: 'center' }}>
+      <div style={{ minHeight: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
         {transcript && monsterState === 'idle' && (
           <div className="badge animate-pop" style={{ background: '#fff', fontSize: '1.5rem', padding: '1rem 2rem' }}>
             {transcript}
           </div>
         )}
+        {azureAvailable && lastScore !== null && monsterState === 'idle' && (
+          <div
+            className="animate-pop"
+            style={{
+              fontSize: '1.3rem',
+              fontWeight: 'bold',
+              color: lastScore >= PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
+            }}
+          >
+            発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一回！）'}
+          </div>
+        )}
       </div>
 
-      <MicButton 
-        isRecording={isRecording} 
-        onClick={isRecording ? stopListening : startListening} 
+      <MicButton
+        isRecording={azureAvailable ? isAssessing : isRecording}
+        disabled={azureAvailable && isAssessing}
+        onClick={
+          azureAvailable
+            ? handleAzureAttempt
+            : (isRecording ? stopListening : startListening)
+        }
       />
 
     </div>

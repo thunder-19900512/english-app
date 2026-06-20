@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Key, Save } from 'lucide-react';
+import { ArrowLeft, Key, Save, Mic } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const TeacherDashboard: React.FC = () => {
@@ -10,9 +10,14 @@ export const TeacherDashboard: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const [geminiKey, setGeminiKey] = useState('');
+  const [azureKey, setAzureKey] = useState('');
+  const [azureRegion, setAzureRegion] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const [isError, setIsError] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [azureSaveStatus, setAzureSaveStatus] = useState('');
+  const [azureIsError, setAzureIsError] = useState(false);
+  const [showAzureKey, setShowAzureKey] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
@@ -41,6 +46,12 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.geminiApiKey) {
         setGeminiKey(data.dictionary_progress.geminiApiKey);
       }
+      if (data.dictionary_progress.azureSpeechKey) {
+        setAzureKey(data.dictionary_progress.azureSpeechKey);
+      }
+      if (data.dictionary_progress.azureSpeechRegion) {
+        setAzureRegion(data.dictionary_progress.azureSpeechRegion);
+      }
       if (data.dictionary_progress.isScreenLocked !== undefined) {
         setIsScreenLocked(data.dictionary_progress.isScreenLocked);
       }
@@ -58,36 +69,45 @@ export const TeacherDashboard: React.FC = () => {
     }
   };
 
+  // Saves the full settings object so individual saves/toggles never wipe other fields.
+  const persistSettings = async (overrides: Record<string, any> = {}) => {
+    if (!supabase) return { error: new Error('no supabase') };
+    return supabase
+      .from('students')
+      .upsert({
+        id: 'app_settings_v1',
+        name: 'System Settings',
+        dictionary_progress: {
+          geminiApiKey: geminiKey.trim(),
+          azureSpeechKey: azureKey.trim(),
+          azureSpeechRegion: azureRegion.trim(),
+          isScreenLocked: isScreenLocked,
+          ...overrides
+        }
+      }, { onConflict: 'id' });
+  };
+
   const handleSave = async () => {
     if (!supabase) return;
-    
+
     const cleanedKey = geminiKey.trim();
     if (cleanedKey === '') {
       setIsError(true);
       setSaveStatus('エラー: APIキーを入力してください。');
       return;
     }
-    
+
     if (cleanedKey.startsWith('ya29')) {
       setIsError(true);
       setSaveStatus('エラー: これはOAuthトークンです。APIキーを入力してください。');
       return;
     }
-    
+
     setSaveStatus('保存中...');
     setIsError(false);
-    
-    const { error } = await supabase
-      .from('students')
-      .upsert({
-        id: 'app_settings_v1',
-        name: 'System Settings',
-        dictionary_progress: {
-          geminiApiKey: cleanedKey,
-          isScreenLocked: isScreenLocked
-        }
-      }, { onConflict: 'id' });
-      
+
+    const { error } = await persistSettings({ geminiApiKey: cleanedKey });
+
     if (error) {
       setIsError(true);
       setSaveStatus('通信エラーが発生しました');
@@ -96,6 +116,36 @@ export const TeacherDashboard: React.FC = () => {
       setIsError(false);
       setSaveStatus('保存しました！');
       setTimeout(() => setSaveStatus(''), 3000);
+    }
+  };
+
+  const handleAzureSave = async () => {
+    if (!supabase) return;
+
+    const cleanedKey = azureKey.trim();
+    const cleanedRegion = azureRegion.trim();
+    if (cleanedKey === '' || cleanedRegion === '') {
+      setAzureIsError(true);
+      setAzureSaveStatus('エラー: キーとリージョンの両方を入力してください。');
+      return;
+    }
+
+    setAzureSaveStatus('保存中...');
+    setAzureIsError(false);
+
+    const { error } = await persistSettings({
+      azureSpeechKey: cleanedKey,
+      azureSpeechRegion: cleanedRegion
+    });
+
+    if (error) {
+      setAzureIsError(true);
+      setAzureSaveStatus('通信エラーが発生しました');
+      console.error(error);
+    } else {
+      setAzureIsError(false);
+      setAzureSaveStatus('保存しました！');
+      setTimeout(() => setAzureSaveStatus(''), 3000);
     }
   };
 
@@ -161,7 +211,50 @@ export const TeacherDashboard: React.FC = () => {
             {saveStatus && <span style={{ color: isError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{saveStatus}</span>}
           </div>
         </div>
-        
+
+        <div className="glass-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <Mic color="var(--color-accent)" />
+            <h2 style={{ margin: 0 }}>発音判定設定 (Azure Speech)</h2>
+          </div>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            「発音バトル」で発音の正確さを採点するために使います。<br/>
+            Azureの「キーとエンドポイント」からコピーした<strong>キー</strong>と<strong>リージョン</strong>（例: japaneast）を入力してください。
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+            <input
+              type={showAzureKey ? "text" : "password"}
+              value={azureKey}
+              onChange={e => setAzureKey(e.target.value)}
+              placeholder="Azure Speech キー"
+              style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace' }}
+              autoComplete="new-password"
+              name="azure_speech_key"
+            />
+            <Button variant="outline" onClick={() => setShowAzureKey(!showAzureKey)}>
+              {showAzureKey ? '隠す' : '見る'}
+            </Button>
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <input
+              type="text"
+              value={azureRegion}
+              onChange={e => setAzureRegion(e.target.value)}
+              placeholder="リージョン (例: japaneast)"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace', boxSizing: 'border-box' }}
+              autoComplete="off"
+              name="azure_speech_region"
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Button onClick={handleAzureSave} icon={Save}>発音判定の設定を保存</Button>
+            {azureSaveStatus && <span style={{ color: azureIsError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{azureSaveStatus}</span>}
+          </div>
+        </div>
+
         <div className="glass-card">
           <h2>クラス管理機能</h2>
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
@@ -181,12 +274,7 @@ export const TeacherDashboard: React.FC = () => {
                 disabled={isScreenLocked}
                 onClick={async () => {
                   setIsScreenLocked(true);
-                  if (!supabase) return;
-                  await supabase.from('students').upsert({
-                    id: 'app_settings_v1',
-                    name: 'System Settings',
-                    dictionary_progress: { geminiApiKey: geminiKey, isScreenLocked: true }
-                  }, { onConflict: 'id' });
+                  await persistSettings({ isScreenLocked: true });
                 }}
               >
                 🔒 全員をロックする
@@ -196,12 +284,7 @@ export const TeacherDashboard: React.FC = () => {
                 disabled={!isScreenLocked}
                 onClick={async () => {
                   setIsScreenLocked(false);
-                  if (!supabase) return;
-                  await supabase.from('students').upsert({
-                    id: 'app_settings_v1',
-                    name: 'System Settings',
-                    dictionary_progress: { geminiApiKey: geminiKey, isScreenLocked: false }
-                  }, { onConflict: 'id' });
+                  await persistSettings({ isScreenLocked: false });
                 }}
               >
                 🔓 ロックを解除する
