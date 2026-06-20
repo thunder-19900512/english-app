@@ -49,15 +49,33 @@ export const StoryMode: React.FC = () => {
   
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const [hasReadAloud, setHasReadAloud] = useState(false);
+  const [storySentences, setStorySentences] = useState<string[]>([]);
+  const [selectedSentenceIndex, setSelectedSentenceIndex] = useState<number | null>(null);
+  const [readAloudFeedback, setReadAloudFeedback] = useState<'success' | 'fail' | null>(null);
+
+  const normalizeText = (text: string) => text.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
 
   useEffect(() => {
-    if (!isRecording && transcript && gameState === 'completed' && !hasReadAloud) {
-      // Calculate bonus based on story length and difficulty
-      const bonus = sentenceCount * difficulty * 3;
-      addPoints('story_mode', { multiplier: bonus / 10 });
-      setHasReadAloud(true);
+    if (!isRecording && transcript && gameState === 'completed' && !hasReadAloud && selectedSentenceIndex !== null) {
+      const targetSentence = storySentences[selectedSentenceIndex];
+      const normInput = normalizeText(transcript);
+      const normTarget = normalizeText(targetSentence);
+      
+      // Check if they are somewhat similar (e.g., includes or > 70% match or simple inclusion)
+      // For leniency, if it includes a significant portion or vice versa
+      const isCorrect = normInput === normTarget || normInput.includes(normTarget) || normTarget.includes(normInput) || 
+                        (normInput.length > normTarget.length * 0.6 && normTarget.includes(normInput.slice(0, normTarget.length * 0.6)));
+
+      if (isCorrect) {
+        setReadAloudFeedback('success');
+        const bonus = sentenceCount * difficulty * 3;
+        addPoints('story_mode_reading', { multiplier: bonus / 10 });
+        setHasReadAloud(true);
+      } else {
+        setReadAloudFeedback('fail');
+      }
     }
-  }, [isRecording, transcript, gameState, hasReadAloud]);
+  }, [isRecording, transcript, gameState, hasReadAloud, selectedSentenceIndex, storySentences]);
 
   // Pick mastered words based on progress
   const getMasteredWords = () => {
@@ -187,6 +205,14 @@ RULES:
 
   const handleBlankClick = (index: number) => {
     if (gameState !== 'playing') return;
+    
+    // If clicking a filled blank, clear it so user can choose again
+    const newFragments = [...storyFragments];
+    if (newFragments[index].filledWith) {
+      newFragments[index].filledWith = undefined;
+      setStoryFragments(newFragments);
+    }
+    
     setActiveBlankIndex(index);
   };
 
@@ -202,10 +228,25 @@ RULES:
     const isCompleted = allBlanks.every(f => f.filledWith);
     
     if (isCompleted) {
-      setActiveBlankIndex(null);
       const isCorrect = allBlanks.every(f => f.filledWith === f.wordId);
       if (isCorrect) {
+        setActiveBlankIndex(null);
         handleWin(newFragments);
+      } else {
+        // Automatically clear incorrect blanks after a short delay
+        setTimeout(() => {
+          setStoryFragments(prev => {
+            const corrected = prev.map(f => {
+              if (f.type === 'blank' && f.filledWith !== f.wordId) {
+                return { ...f, filledWith: undefined };
+              }
+              return f;
+            });
+            const firstEmpty = corrected.findIndex(f => f.type === 'blank' && !f.filledWith);
+            setActiveBlankIndex(firstEmpty !== -1 ? firstEmpty : null);
+            return corrected;
+          });
+        }, 1500);
       }
     } else {
       // Auto-select the next unfilled blank
@@ -229,6 +270,19 @@ RULES:
     // Construct full text to speak
     const fullText = fragments.map(f => f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content).join('');
     speak(fullText);
+
+    const sentences: string[] = [];
+    let current = '';
+    fragments.forEach(f => {
+      if (f.type === 'newline') {
+         if (current.trim()) sentences.push(current.trim());
+         current = '';
+      } else {
+         current += f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content;
+      }
+    });
+    if (current.trim()) sentences.push(current.trim());
+    setStorySentences(sentences);
   };
 
   if (!geminiApiKey) {
@@ -388,43 +442,40 @@ RULES:
               {!hasReadAloud ? (
                 <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)', width: '100%' }}>
                   <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🎤 声に出して読んでみよう！</h3>
-                  <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>文ごとの「🔈」を押して発音を聞いてから、マイクを押して読んでみてね。ボーナスポイントがもらえるよ！</p>
+                  <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>読みたい文を選んでから、マイクを押して読んでみてね。上手に読めたらボーナスポイント！</p>
                   
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', margin: '1rem 0', padding: '1rem', background: '#f8f9fa', borderRadius: '12px' }}>
-                    {(() => {
-                      const sentences: StoryFragment[][] = [];
-                      let currentSentence: StoryFragment[] = [];
-                      storyFragments.forEach(f => {
-                        if (f.type === 'newline') {
-                          if (currentSentence.length > 0) {
-                            sentences.push(currentSentence);
-                            currentSentence = [];
-                          }
-                        } else {
-                          currentSentence.push(f);
-                        }
-                      });
-                      if (currentSentence.length > 0) sentences.push(currentSentence);
-
-                      return sentences.map((sentence, sIdx) => {
-                        const sentenceText = sentence.map(f => f.type === 'blank' ? targetWords.find(w => w.id === f.wordId)?.english : f.content).join('');
-                        return (
-                          <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <button 
-                              onClick={() => speak(sentenceText)}
-                              className="hover-scale"
-                              style={{ background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-sm)' }}
-                            >
-                              🔈
-                            </button>
-                            <span style={{ fontSize: '1.3rem', fontFamily: 'var(--font-heading)', color: '#333' }}>
-                              {sentenceText}
-                            </span>
-                          </div>
-                        );
-                      });
-                    })()}
+                    {storySentences.map((sentenceText, sIdx) => (
+                      <div 
+                        key={sIdx} 
+                        onClick={() => setSelectedSentenceIndex(sIdx)}
+                        style={{ 
+                          display: 'flex', alignItems: 'center', gap: '1rem', 
+                          padding: '0.8rem', borderRadius: '8px', cursor: 'pointer',
+                          background: selectedSentenceIndex === sIdx ? 'rgba(0, 184, 148, 0.1)' : 'transparent',
+                          border: selectedSentenceIndex === sIdx ? '2px solid var(--color-primary)' : '2px solid transparent',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); speak(sentenceText); }}
+                          className="hover-scale"
+                          style={{ background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-sm)' }}
+                        >
+                          🔈
+                        </button>
+                        <span style={{ fontSize: '1.3rem', fontFamily: 'var(--font-heading)', color: '#333' }}>
+                          {sentenceText}
+                        </span>
+                      </div>
+                    ))}
                   </div>
+
+                  {readAloudFeedback === 'fail' && !isRecording && transcript && (
+                    <div style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>
+                      ❌ もう少し！もう一度チャレンジしてね。
+                    </div>
+                  )}
 
                   {transcript && (
                     <div style={{ padding: '1rem', background: '#f0fdf4', border: '1px solid var(--color-success)', borderRadius: '8px', color: '#444', fontStyle: 'italic', width: '100%', textAlign: 'center' }}>
@@ -434,15 +485,24 @@ RULES:
                   
                   <MicButton 
                     isRecording={isRecording} 
+                    disabled={selectedSentenceIndex === null}
                     onClick={() => {
+                      if (selectedSentenceIndex === null) {
+                        alert('まずは読みたい文をえらんでね！');
+                        return;
+                      }
                       if (isRecording) {
                         stopListening();
                       } else {
                         setTranscript('');
+                        setReadAloudFeedback(null);
                         startListening();
                       }
                     }} 
                   />
+                  {selectedSentenceIndex === null && (
+                    <div style={{ fontSize: '0.9rem', color: '#888' }}>※上の文をタップしてえらんでね</div>
+                  )}
                 </div>
               ) : (
                 <div className="animate-pop" style={{ background: '#fffbeb', padding: '1rem 2rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '1.5rem', border: '2px solid #fde68a' }}>
