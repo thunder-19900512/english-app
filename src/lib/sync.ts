@@ -12,14 +12,14 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   const countsStr = localStorage.getItem(`clearCounts_${studentId}`);
   const clear_counts = countsStr ? JSON.parse(countsStr) : {};
   
-  const dictStr = localStorage.getItem(`dictProgress_${studentId}`);
-  const dictionary_progress = dictStr ? JSON.parse(dictStr) : {};
-  
   const refStr = localStorage.getItem(`reflections_${studentId}`);
   const reflections = refStr ? JSON.parse(refStr) : [];
-  
+
   const studentDataStr = localStorage.getItem(`student_${studentId}`);
-  const badges = studentDataStr ? JSON.parse(studentDataStr).badges || [] : [];
+  const parsedStudentData = studentDataStr ? JSON.parse(studentDataStr) : {};
+  const badges = parsedStudentData.badges || [];
+  // Dictionary progress is stored inside the student_<id> object (see useDictionaryProgress)
+  const dictionary_progress = parsedStudentData.dictProgress || {};
 
   // Debounce the actual push logic
   return new Promise((resolve) => {
@@ -82,20 +82,32 @@ export const pullFromSupabase = async (studentId: string) => {
     const maxPoints = Math.max(localPoints, dbPoints);
     localStorage.setItem(`points_${studentId}`, maxPoints.toString());
     
-    // Merge badges (union)
+    // Read existing local student object once
     const localStudentDataStr = localStorage.getItem(`student_${studentId}`);
-    const localBadges = localStudentDataStr ? JSON.parse(localStudentDataStr).badges || [] : [];
+    const localStudentData = localStudentDataStr ? JSON.parse(localStudentDataStr) : {};
+
+    // Merge badges (union)
+    const localBadges = localStudentData.badges || [];
     const dbBadges = data.badges || [];
     const mergedBadges = Array.from(new Set([...localBadges, ...dbBadges]));
-    
-    const studentData = { id: studentId, name: currentName, badges: mergedBadges, lastAccess: data.last_access };
+
+    // Merge dictionary progress (stored inside the student_<id> object as dictProgress).
+    // Prefer DB values per category, but keep any local categories the DB doesn't have.
+    const localDictProgress = localStudentData.dictProgress || {};
+    const dbDictProgress = data.dictionary_progress || {};
+    const mergedDictProgress = { ...localDictProgress, ...dbDictProgress };
+
+    const studentData = {
+      id: studentId,
+      name: currentName,
+      badges: mergedBadges,
+      dictProgress: mergedDictProgress,
+      lastAccess: data.last_access,
+    };
     localStorage.setItem(`student_${studentId}`, JSON.stringify(studentData));
-    
-    // For clear_counts, dictionary_progress, reflections, we ideally merge deeply, 
-    // but for simplicity we will just overwrite if local is empty, or keep local if it has data but DB is empty.
-    // A robust way is to just use DB data, but since points and badges are the most critical, they are merged.
+
+    // For clear_counts and reflections we keep DB data if present.
     if (data.clear_counts && Object.keys(data.clear_counts).length > 0) localStorage.setItem(`clearCounts_${studentId}`, JSON.stringify(data.clear_counts));
-    if (data.dictionary_progress && Object.keys(data.dictionary_progress).length > 0) localStorage.setItem(`dict_progress_${studentId}`, JSON.stringify(data.dictionary_progress));
     
     // Merge reflections
     const localReflectionsStr = localStorage.getItem(`reflections_${studentId}`);

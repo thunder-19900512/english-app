@@ -243,11 +243,9 @@ export const WordSearch: React.FC = () => {
       // Check for personal best
       const currentBest = progress[category || '']?.wordsearch_best_time;
       let newBest = currentBest;
-      let isPersonalBest = false;
 
       if (!currentBest || totalSeconds < currentBest) {
         newBest = totalSeconds;
-        isPersonalBest = true;
         setIsNewRecord(true);
       }
 

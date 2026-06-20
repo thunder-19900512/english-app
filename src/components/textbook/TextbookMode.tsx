@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, HelpCircle, Mic, Send } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Mic, Send } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import { usePoints } from '../../hooks/usePoints';
@@ -282,7 +282,9 @@ export const TextbookMode: React.FC = () => {
         </>
       )}
 
-      {quizState === 'playing' && selectedQuiz && (
+      {quizState === 'playing' && selectedQuiz && (() => {
+        const currentQuestion = selectedQuiz.questions[currentQuestionIndex];
+        return (
         <div className="glass-card animate-pop" style={{ padding: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <div>
@@ -290,7 +292,7 @@ export const TextbookMode: React.FC = () => {
                 {selectedQuiz.unitName}
               </h3>
               <span style={{ display: 'inline-block', background: '#e2e8f0', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginTop: '0.5rem' }}>
-                📺 {selectedQuiz.questions[currentQuestionIndex].videoRef}
+                📺 {currentQuestion.videoRef}
               </span>
             </div>
             <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '1.1rem' }}>
@@ -300,15 +302,15 @@ export const TextbookMode: React.FC = () => {
 
           <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '16px', marginBottom: '2rem', borderLeft: '4px solid var(--color-primary)' }}>
             <p style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', lineHeight: '1.6' }}>
-              {selectedQuiz.questions[currentQuestionIndex].question}
+              {currentQuestion.question}
             </p>
           </div>
 
-          {selectedQuiz.questions[currentQuestionIndex].type === 'choice' && (
+          {currentQuestion.type === 'choice' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {selectedQuiz.questions[currentQuestionIndex].options.map((option, idx) => {
+              {currentQuestion.options.map((option, idx) => {
                 const isSelected = selectedOption === idx;
-                const isCorrectAnswer = idx === selectedQuiz.questions[currentQuestionIndex].correctIndex;
+                const isCorrectAnswer = idx === currentQuestion.correctIndex;
                 
                 let bgColor = 'white';
                 let borderColor = '#e2e8f0';
@@ -350,7 +352,7 @@ export const TextbookMode: React.FC = () => {
             </div>
           )}
 
-          {selectedQuiz.questions[currentQuestionIndex].type === 'typing' && (
+          {currentQuestion.type === 'typing' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <input
@@ -374,7 +376,7 @@ export const TextbookMode: React.FC = () => {
               </div>
               {isChecking && feedback === 'incorrect' && (
                 <div style={{ color: 'var(--color-error)', fontWeight: 'bold', marginTop: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '8px' }}>
-                  ❌ おしい！正解は: {selectedQuiz.questions[currentQuestionIndex].correctAnswer}
+                  ❌ おしい！正解は: {currentQuestion.correctAnswer}
                 </div>
               )}
               {isChecking && feedback === 'correct' && (
@@ -385,7 +387,8 @@ export const TextbookMode: React.FC = () => {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {quizState === 'bonus' && selectedQuiz && (
         <div className="glass-card animate-pop" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }}>

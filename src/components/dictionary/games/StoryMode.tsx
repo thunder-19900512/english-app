@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Star, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Button } from '../../ui/Button';
 import { useAppSettings } from '../../../hooks/useAppSettings';

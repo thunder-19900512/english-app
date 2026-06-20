@@ -9,7 +9,7 @@ export const useAppSettings = () => {
     if (!supabase) return;
 
     const fetchSettings = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('students')
         .select('dictionary_progress')
         .eq('id', 'app_settings_v1')
