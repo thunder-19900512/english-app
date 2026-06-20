@@ -183,14 +183,18 @@ export const AIAssistant: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (isRecording && transcript) {
+      setInputText(transcript);
+    }
+  }, [transcript, isRecording]);
+
   const onMicClick = () => {
     if (isRecording) {
       stopListening();
-      if (transcript.trim().length > 0) {
-        handleSend(transcript);
-      }
     } else {
       setTranscript('');
+      setInputText('');
       startListening();
     }
   };
@@ -325,12 +329,6 @@ export const AIAssistant: React.FC = () => {
 
       {/* Input Area */}
       <div className="glass-card" style={{ padding: '1rem' }}>
-        {transcript && (
-          <div className="animate-pop" style={{ padding: '0.5rem', color: 'var(--color-primary)', fontWeight: 'bold', textAlign: 'center' }}>
-            「 {transcript} 」
-          </div>
-        )}
-        
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
           <MicButton isRecording={isRecording} onClick={onMicClick} />
           
