@@ -97,12 +97,25 @@ export const Stage: React.FC = () => {
   const navigate = useNavigate();
   const stage = stages.find(s => s.id === parseInt(id || '1'));
   
+  const getWikiAudioMp3Url = (oggUrl: string) => {
+    try {
+      const urlObj = new URL(oggUrl);
+      const parts = urlObj.pathname.split('/');
+      const filename = parts[parts.length - 1];
+      // /wikipedia/commons/2/2c/filename.ogg -> transcoded/2/2c/filename.ogg/filename.ogg.mp3
+      return `https://upload.wikimedia.org/wikipedia/commons/transcoded/${parts[3]}/${parts[4]}/${filename}/${filename}.mp3`;
+    } catch (e) {
+      return oggUrl;
+    }
+  };
+
   const speak = useCallback((text: string) => {
     const ltext = text.toLowerCase();
     
     // Play authentic IPA audio if it's a known phoneme block
     if (WIKI_AUDIO_MAP[ltext]) {
-      const audio = new Audio(WIKI_AUDIO_MAP[ltext]);
+      const mp3Url = getWikiAudioMp3Url(WIKI_AUDIO_MAP[ltext]);
+      const audio = new Audio(mp3Url);
       audio.play().catch(e => console.error("Audio play failed:", e));
       return;
     }
