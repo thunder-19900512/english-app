@@ -50,14 +50,26 @@ export const Stage: React.FC = () => {
   const { isRecording, transcript, error, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { addPoints } = usePoints();
 
-  const [mode, setMode] = useState<'input' | 'choice' | 'typing' | 'quiz'>('input');
-  const [quizIndex, setQuizIndex] = useState(() => stage ? Math.floor(Math.random() * stage.items.length) : 0);
+  const [mode, setMode] = useState<'input' | 'choice' | 'typing' | 'quiz' | 'lab' | 'blend' | 'alien' | 'story'>('input');
+  
+  const getCurrentItems = useCallback(() => {
+    if (!stage) return [];
+    if (mode === 'lab') return stage.labItems || [];
+    if (mode === 'blend') return stage.blendItems || [];
+    if (mode === 'alien') return stage.alienWords || [];
+    if (mode === 'story') return stage.stories || [];
+    return stage.items || [];
+  }, [stage, mode]);
+
+  const currentItems = getCurrentItems();
+  const [quizIndex, setQuizIndex] = useState(0);
   
   // Game session states
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [showAnswerState, setShowAnswerState] = useState(false);
+  const [labState, setLabState] = useState<'base' | 'added'>('base');
   
   const [showCelebration, setShowCelebration] = useState(false);
   const [showFailure, setShowFailure] = useState(false);
@@ -84,8 +96,21 @@ export const Stage: React.FC = () => {
   // Generate options for choice mode
   const generateOptions = useCallback((currentIndex: number) => {
     if (!stage) return;
-    const target = stage.items[currentIndex];
-    const allItems = stages.flatMap(s => s.items);
+    
+    let target = '';
+    let allItems: string[] = [];
+    
+    if (mode === 'blend' && stage.blendItems) {
+      target = stage.blendItems[currentIndex].word;
+      allItems = stages.flatMap(s => s.blendItems?.map(b => b.word) || []);
+    } else {
+      const items = getCurrentItems() as string[];
+      target = items[currentIndex];
+      allItems = stages.flatMap(s => s.items);
+    }
+
+    if (!target) return;
+
     const others = allItems.filter(item => {
       if (item === target) return false;
       const i = item.toLowerCase();
@@ -104,7 +129,7 @@ export const Stage: React.FC = () => {
     const distractors = sortedOthers.slice(0, 2);
     const newOptions = [target, ...distractors].sort(() => 0.5 - Math.random());
     setOptions(newOptions);
-  }, [stage]);
+  }, [stage, mode, getCurrentItems]);
 
   useEffect(() => {
     if (mode === 'choice') {
@@ -129,7 +154,17 @@ export const Stage: React.FC = () => {
     if (['choice', 'typing', 'quiz'].includes(mode) && !showCelebration && !showFailure && !showAnswerState && !showCorrectMark && stage) {
       // Small delay to ensure smooth transition
       const timer = setTimeout(() => {
-        speak(stage.items[quizIndex]);
+        if (mode === 'blend' && stage.blendItems) {
+          // Play sequentially
+          stage.blendItems[quizIndex].phonemes.forEach((p, i) => {
+            setTimeout(() => speak(p), i * 1000);
+          });
+        } else if (['choice', 'typing', 'quiz', 'alien', 'story'].includes(mode)) {
+          const items = getCurrentItems();
+          if (typeof items[quizIndex] === 'string') {
+             speak(items[quizIndex] as string);
+          }
+        }
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -146,29 +181,42 @@ export const Stage: React.FC = () => {
   }, [startTime, showCelebration, showFailure, mode]);
 
   useEffect(() => {
-    if (mode === 'quiz' && transcript) {
-      const targetWord = stage?.items[quizIndex].toLowerCase() || '';
-      if (transcript.includes(targetWord) || targetWord.includes(transcript)) {
+    if (['quiz', 'alien', 'story'].includes(mode) && transcript) {
+      let targetWord = '';
+      if (mode === 'quiz') targetWord = stage?.items[quizIndex]?.toLowerCase() || '';
+      else if (mode === 'alien') targetWord = stage?.alienWords?.[quizIndex]?.toLowerCase() || '';
+      else if (mode === 'story') targetWord = stage?.stories?.[quizIndex]?.toLowerCase() || '';
+      
+      const normInput = transcript.toLowerCase().replace(/[.,!?]/g, '');
+      const normTarget = targetWord.toLowerCase().replace(/[.,!?]/g, '');
+      
+      if (normInput.includes(normTarget) || normTarget.includes(normInput) || 
+          (normTarget.length > 5 && getLevenshteinDistance(normInput, normTarget) < 3)) {
         handleCorrectAnswer();
       }
     }
-  }, [transcript, mode, quizIndex]);
+  }, [transcript, mode, quizIndex, stage]);
 
   const DEFAULT_TOTAL_QUESTIONS = 10;
-  const TOTAL_QUESTIONS = stage ? Math.min(DEFAULT_TOTAL_QUESTIONS, stage.items.length) : DEFAULT_TOTAL_QUESTIONS;
+  const TOTAL_QUESTIONS = currentItems.length > 0 ? Math.min(DEFAULT_TOTAL_QUESTIONS, currentItems.length) : 0;
   const PASS_MARK = Math.max(1, Math.floor(TOTAL_QUESTIONS * 0.8));
 
   const moveToNextQuestion = () => {
     setQuizIndex((prev) => {
-      if (stage!.items.length <= 1) return 0;
-      let next = Math.floor(Math.random() * stage!.items.length);
+      if (currentItems.length <= 1) return 0;
+      // For lab and story, sequential makes more sense. For others, random.
+      if (mode === 'lab' || mode === 'story') {
+        return (prev + 1) % currentItems.length;
+      }
+      let next = Math.floor(Math.random() * currentItems.length);
       while (next === prev) {
-        next = Math.floor(Math.random() * stage!.items.length);
+        next = Math.floor(Math.random() * currentItems.length);
       }
       return next;
     });
     setTypingInput('');
     setTranscript('');
+    setLabState('base');
   };
 
   const proceedToNextTurn = async (isCorrect: boolean) => {
@@ -252,7 +300,8 @@ export const Stage: React.FC = () => {
 
   const handleOptionClick = (option: string) => {
     if (showAnswerState) return;
-    if (checkIsCorrect(option, stage!.items[quizIndex])) {
+    const target = mode === 'blend' && stage?.blendItems ? stage.blendItems[quizIndex].word : stage!.items[quizIndex];
+    if (checkIsCorrect(option, target)) {
       handleCorrectAnswer();
     } else {
       handleMistake();
@@ -386,33 +435,19 @@ export const Stage: React.FC = () => {
           もどる
         </Button>
         <h1 className="text-primary">{stage.title}</h1>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Button 
-            variant={mode === 'input' ? 'primary' : 'outline'} 
-            onClick={() => { setMode('input'); resetSession(); }}
-          >
-            きく
-          </Button>
-          <Button 
-            variant={mode === 'choice' ? 'primary' : 'outline'} 
-            onClick={() => { setMode('choice'); resetSession(); }}
-          >
-            えらぶ
-          </Button>
-          <Button 
-            variant={mode === 'typing' ? 'primary' : 'outline'} 
-            onClick={() => { setMode('typing'); resetSession(); }}
-          >
-            タイピング
-          </Button>
-          {stage.id !== 1 && (
-            <Button 
-              variant={mode === 'quiz' ? 'secondary' : 'outline'} 
-              onClick={() => { setMode('quiz'); resetSession(); }}
-            >
-              マイク
-            </Button>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button variant={mode === 'input' ? 'primary' : 'outline'} onClick={() => { setMode('input'); resetSession(); }}>きく</Button>
+            <Button variant={mode === 'choice' ? 'primary' : 'outline'} onClick={() => { setMode('choice'); resetSession(); }}>えらぶ</Button>
+            <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>タイピング</Button>
+            {stage.id !== 1 && <Button variant={mode === 'quiz' ? 'secondary' : 'outline'} onClick={() => { setMode('quiz'); resetSession(); }}>マイク</Button>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px dashed #ccc', paddingTop: '0.5rem' }}>
+            {stage.labItems && <Button variant={mode === 'lab' ? 'primary' : 'outline'} onClick={() => { setMode('lab'); resetSession(); }}>🔬 ラボ</Button>}
+            {stage.blendItems && <Button variant={mode === 'blend' ? 'primary' : 'outline'} onClick={() => { setMode('blend'); resetSession(); }}>🧩 ブレンド</Button>}
+            {stage.alienWords && <Button variant={mode === 'alien' ? 'primary' : 'outline'} onClick={() => { setMode('alien'); resetSession(); }}>👽 宇宙人</Button>}
+            {stage.stories && <Button variant={mode === 'story' ? 'primary' : 'outline'} onClick={() => { setMode('story'); resetSession(); }}>📖 絵本</Button>}
+          </div>
         </div>
       </div>
 
@@ -619,6 +654,139 @@ export const Stage: React.FC = () => {
               </div>
             )}
           </>
+        )}
+        {mode === 'lab' && stage.labItems && (
+          <div className="flex-col flex-center gap-lg" style={{ padding: '2rem' }}>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>魔法の文字をくっつけてみよう！</p>
+            {renderStars()}
+            <p style={{ color: '#666' }}>{stage.labItems[quizIndex].description}</p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', fontSize: '5rem', fontFamily: 'var(--font-heading)' }}>
+               <div className="hover-scale" onClick={() => speak(stage.labItems![quizIndex].base)} style={{ cursor: 'pointer', padding: '1rem', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
+                  {stage.labItems[quizIndex].base}
+               </div>
+               <div style={{ fontSize: '3rem', color: '#888' }}>+</div>
+               <div 
+                  className="hover-scale" 
+                  style={{ background: 'var(--color-accent)', padding: '1rem 2rem', borderRadius: '16px', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
+                  onClick={() => {
+                     speak(stage.labItems![quizIndex].result);
+                     setLabState('added');
+                     setTimeout(() => {
+                       handleCorrectAnswer();
+                     }, 3000);
+                  }}
+               >
+                  {stage.labItems[quizIndex].added}
+               </div>
+            </div>
+            
+            {labState === 'added' && (
+               <div className="animate-pop text-primary" style={{ fontSize: '6rem', fontWeight: 'bold', marginTop: '2rem', color: 'var(--color-success)' }}>
+                  ✨ {stage.labItems[quizIndex].result} ✨
+               </div>
+            )}
+            
+            {labState === 'base' && (
+               <p className="animate-pulse" style={{ marginTop: '2rem', color: 'var(--color-primary)' }}>右側のボタンをタップして合体！</p>
+            )}
+          </div>
+        )}
+
+        {mode === 'blend' && stage.blendItems && (
+          <div className="flex-col flex-center gap-lg" style={{ padding: '1rem', width: '100%' }}>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>バラバラの音をくっつけると、どんな単語になるかな？</p>
+            {renderStars()}
+            
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
+               {stage.blendItems[quizIndex].phonemes.map((p, i) => (
+                  <Button key={i} onClick={() => speak(p)} variant="outline" style={{ fontSize: '2.5rem', padding: '1.5rem', borderRadius: '50%' }}>
+                    🔈
+                  </Button>
+               ))}
+            </div>
+            
+            <Button size="lg" icon={Volume2} onClick={() => {
+                 stage.blendItems![quizIndex].phonemes.forEach((p, i) => {
+                   setTimeout(() => speak(p), i * 1000);
+                 });
+            }} style={{ marginBottom: '2rem' }}>
+               順番にぜんぶ聞く
+            </Button>
+            
+            <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              {showCorrectMark && (
+                <div className="animate-pop" style={{ position: 'absolute', fontSize: '8rem', color: 'var(--color-success)', fontWeight: 'bold', zIndex: 10 }}>
+                  ◯
+                </div>
+              )}
+            </div>
+
+            <div className="badge-grid" style={{ width: '100%', maxWidth: '600px' }}>
+               {options.map((opt, i) => (
+                 <button key={i} className="btn btn-secondary hover-scale" style={{ padding: '1.5rem', fontSize: '2rem', fontFamily: 'var(--font-heading)' }} onClick={() => handleOptionClick(opt)}>
+                   {opt}
+                 </button>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {mode === 'alien' && stage.alienWords && (
+          <div className="flex-col flex-center gap-lg">
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>宇宙人の言葉を読んでみよう！</p>
+            {renderStars()}
+            
+            <div style={{ fontSize: '6rem', animation: 'float 3s infinite' }}>👽</div>
+            <div style={{ fontSize: '5rem', fontFamily: 'var(--font-heading)', color: 'var(--color-primary)', margin: '1rem 0' }}>
+              {stage.alienWords[quizIndex]}
+            </div>
+            
+            <MicButton isRecording={isRecording} onClick={isRecording ? stopListening : startListening} />
+            
+            {transcript && (
+              <div className="animate-pop" style={{ marginTop: '1rem', padding: '1rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid var(--color-success)' }}>
+                あなたの発音: <strong>{transcript}</strong>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+               <Button variant="outline" onClick={() => speak(stage.alienWords![quizIndex])}>正解の音を聞く</Button>
+               <Button onClick={() => handleCorrectAnswer()}>読めた！(自分でおまけ)</Button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'story' && stage.stories && (
+          <div className="flex-col flex-center gap-lg" style={{ width: '100%' }}>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>絵本を音読してみよう！</p>
+            {renderStars()}
+            
+            <div style={{ width: '100%', maxWidth: '700px', fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: '#333', textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow-sm)', margin: '1rem 0', lineHeight: '1.5' }}>
+              {stage.stories[quizIndex]}
+            </div>
+            
+            <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              {showCorrectMark && (
+                <div className="animate-pop" style={{ position: 'absolute', fontSize: '8rem', color: 'var(--color-success)', fontWeight: 'bold', zIndex: 10 }}>
+                  ◯
+                </div>
+              )}
+            </div>
+
+            <MicButton isRecording={isRecording} onClick={isRecording ? stopListening : startListening} />
+            
+            {transcript && (
+              <div className="animate-pop" style={{ marginTop: '1rem', padding: '1rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid var(--color-success)', textAlign: 'center' }}>
+                あなたの声: <strong>{transcript}</strong>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <Button variant="outline" icon={Volume2} onClick={() => speak(stage.stories![quizIndex])}>お手本を聞く</Button>
+              <Button onClick={() => handleCorrectAnswer()}>OKにする</Button>
+            </div>
+          </div>
         )}
       </div>
     </div>
