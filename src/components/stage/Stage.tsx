@@ -17,6 +17,17 @@ const phonicsEmojis: Record<string, string> = {
   smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼'
 };
 
+const PHONEME_TTS: Record<string, string> = {
+  'a': 'aah', 'b': 'buh', 'c': 'kuh', 'd': 'duh', 'e': 'eh', 
+  'f': 'fff', 'g': 'guh', 'h': 'huh', 'i': 'ih', 'j': 'juh', 
+  'k': 'kuh', 'l': 'lll', 'm': 'mmm', 'n': 'nnn', 'o': 'aw', 
+  'p': 'puh', 'q': 'kwuh', 'r': 'rrr', 's': 'sss', 't': 'tuh', 
+  'u': 'uh', 'v': 'vuh', 'w': 'wuh', 'x': 'ks', 'y': 'yuh', 'z': 'zzz',
+  'sh': 'shh', 'ch': 'ch', 'th': 'th', 'ph': 'fff', 'wh': 'wuh', 'ck': 'kuh', 'ng': 'ng',
+  'ey': 'ay', 'ay': 'eye', 'ow': 'oh', 'oo': 'ooh', 'iy': 'ee',
+  'ar': 'ar', 'er': 'er', 'or': 'or', 'air': 'air'
+};
+
 const getLevenshteinDistance = (a: string, b: string): number => {
   const matrix = [];
   for (let i = 0; i <= b.length; i++) {
@@ -70,6 +81,7 @@ export const Stage: React.FC = () => {
   const [mistakes, setMistakes] = useState(0);
   const [showAnswerState, setShowAnswerState] = useState(false);
   const [labState, setLabState] = useState<'base' | 'added'>('base');
+  const [alienInput, setAlienInput] = useState('');
   
   const [showCelebration, setShowCelebration] = useState(false);
   const [showFailure, setShowFailure] = useState(false);
@@ -157,7 +169,7 @@ export const Stage: React.FC = () => {
         if (mode === 'blend' && stage.blendItems) {
           // Play sequentially
           stage.blendItems[quizIndex].phonemes.forEach((p, i) => {
-            setTimeout(() => speak(p), i * 1000);
+            setTimeout(() => speak(PHONEME_TTS[p.toLowerCase()] || p), i * 1000);
           });
         } else if (['choice', 'typing', 'quiz', 'alien', 'story'].includes(mode)) {
           const items = getCurrentItems();
@@ -181,18 +193,23 @@ export const Stage: React.FC = () => {
   }, [startTime, showCelebration, showFailure, mode]);
 
   useEffect(() => {
-    if (['quiz', 'alien', 'story'].includes(mode) && transcript) {
+    if (['quiz', 'story'].includes(mode) && transcript) {
       let targetWord = '';
       if (mode === 'quiz') targetWord = stage?.items[quizIndex]?.toLowerCase() || '';
-      else if (mode === 'alien') targetWord = stage?.alienWords?.[quizIndex]?.toLowerCase() || '';
       else if (mode === 'story') targetWord = stage?.stories?.[quizIndex]?.toLowerCase() || '';
       
-      const normInput = transcript.toLowerCase().replace(/[.,!?]/g, '');
-      const normTarget = targetWord.toLowerCase().replace(/[.,!?]/g, '');
+      const normInput = transcript.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
+      const normTarget = targetWord.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
       
-      if (normInput.includes(normTarget) || normTarget.includes(normInput) || 
-          (normTarget.length > 5 && getLevenshteinDistance(normInput, normTarget) < 3)) {
-        handleCorrectAnswer();
+      if (mode === 'story') {
+        const isClose = getLevenshteinDistance(normInput, normTarget) <= Math.max(3, normTarget.length * 0.2);
+        if (normInput === normTarget || isClose) {
+          handleCorrectAnswer();
+        }
+      } else {
+        if (normInput === normTarget || normInput.includes(normTarget)) {
+          handleCorrectAnswer();
+        }
       }
     }
   }, [transcript, mode, quizIndex, stage]);
@@ -217,6 +234,7 @@ export const Stage: React.FC = () => {
     setTypingInput('');
     setTranscript('');
     setLabState('base');
+    setAlienInput('');
   };
 
   const proceedToNextTurn = async (isCorrect: boolean) => {
@@ -331,6 +349,7 @@ export const Stage: React.FC = () => {
     setNewRecordMsg('');
     setEarnedPoints(null);
     setElapsedTime(0);
+    setAlienInput('');
     setStartTime(Date.now());
     moveToNextQuestion();
   };
@@ -700,7 +719,7 @@ export const Stage: React.FC = () => {
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                {stage.blendItems[quizIndex].phonemes.map((p, i) => (
-                  <Button key={i} onClick={() => speak(p)} variant="outline" style={{ fontSize: '2.5rem', padding: '1.5rem', borderRadius: '50%' }}>
+                  <Button key={i} onClick={() => speak(PHONEME_TTS[p.toLowerCase()] || p)} variant="outline" style={{ fontSize: '2.5rem', padding: '1.5rem', borderRadius: '50%' }}>
                     🔈
                   </Button>
                ))}
@@ -708,7 +727,7 @@ export const Stage: React.FC = () => {
             
             <Button size="lg" icon={Volume2} onClick={() => {
                  stage.blendItems![quizIndex].phonemes.forEach((p, i) => {
-                   setTimeout(() => speak(p), i * 1000);
+                   setTimeout(() => speak(PHONEME_TTS[p.toLowerCase()] || p), i * 1000);
                  });
             }} style={{ marginBottom: '2rem' }}>
                順番にぜんぶ聞く
@@ -734,25 +753,46 @@ export const Stage: React.FC = () => {
 
         {mode === 'alien' && stage.alienWords && (
           <div className="flex-col flex-center gap-lg">
-            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>宇宙人の言葉を読んでみよう！</p>
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>音を聞いて、宇宙人の言葉をつづってみよう！</p>
             {renderStars()}
             
             <div style={{ fontSize: '6rem', animation: 'float 3s infinite' }}>👽</div>
-            <div style={{ fontSize: '5rem', fontFamily: 'var(--font-heading)', color: 'var(--color-primary)', margin: '1rem 0' }}>
-              {stage.alienWords[quizIndex]}
+            
+            <Button size="lg" icon={Volume2} onClick={() => speak(stage.alienWords![quizIndex])} style={{ background: 'var(--color-accent)', color: 'black' }}>
+              宇宙人の声を聞く
+            </Button>
+            
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', minHeight: '60px' }}>
+              {Array.from({ length: stage.alienWords[quizIndex].length }).map((_, idx) => (
+                <div key={idx} style={{ 
+                  width: '50px', height: '60px', borderBottom: '4px solid var(--color-primary)', 
+                  fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--color-primary)',
+                  display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+                }}>
+                  {alienInput[idx] || ''}
+                </div>
+              ))}
             </div>
             
-            <MicButton isRecording={isRecording} onClick={isRecording ? stopListening : startListening} />
-            
-            {transcript && (
-              <div className="animate-pop" style={{ marginTop: '1rem', padding: '1rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid var(--color-success)' }}>
-                あなたの発音: <strong>{transcript}</strong>
-              </div>
-            )}
-            
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-               <Button variant="outline" onClick={() => speak(stage.alienWords![quizIndex])}>正解の音を聞く</Button>
-               <Button onClick={() => handleCorrectAnswer()}>読めた！(自分でおまけ)</Button>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', maxWidth: '500px', justifyContent: 'center', marginTop: '2rem' }}>
+              {'abcdefghijklmnopqrstuvwxyz'.split('').map(letter => (
+                <button key={letter} className="btn btn-outline hover-scale" style={{ fontSize: '1.5rem', padding: '0.5rem 1rem', background: 'white' }} onClick={() => {
+                  if (alienInput.length >= stage.alienWords![quizIndex].length) return;
+                  const newVal = alienInput + letter;
+                  setAlienInput(newVal);
+                  if (newVal === stage.alienWords![quizIndex]) {
+                    handleCorrectAnswer();
+                  } else if (newVal.length === stage.alienWords![quizIndex].length) {
+                    handleMistake();
+                    setTimeout(() => setAlienInput(''), 1000);
+                  }
+                }}>
+                  {letter}
+                </button>
+              ))}
+              <Button variant="secondary" onClick={() => setAlienInput(prev => prev.slice(0, -1))} style={{ padding: '0.5rem 1rem' }}>
+                消す
+              </Button>
             </div>
           </div>
         )}

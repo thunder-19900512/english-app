@@ -37,7 +37,7 @@ export const stages: StageData[] = [
       { word: 'bed', phonemes: ['b', 'e', 'd'] },
       { word: 'sun', phonemes: ['s', 'u', 'n'] }
     ],
-    alienWords: ['zop', 'lat', 'mib', 'ren', 'gug'],
+    alienWords: ['zop', 'lat', 'mab', 'ren', 'gug'],
     stories: [
       'The cat is on the bed.',
       'A bug is in the cup.',
@@ -60,7 +60,7 @@ export const stages: StageData[] = [
       { word: 'math', phonemes: ['m', 'a', 'th'] },
       { word: 'duck', phonemes: ['d', 'u', 'k'] }
     ],
-    alienWords: ['shup', 'chog', 'thip', 'whet', 'fack'],
+    alienWords: ['shup', 'chog', 'thip', 'whet', 'fick'],
     stories: [
       'The fish is in the shop.',
       'A duck is on the ship.',
