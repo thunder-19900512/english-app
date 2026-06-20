@@ -26,7 +26,11 @@ export interface TextbookQuiz {
 }
 
 const normalizeText = (text: string) => {
-  return text.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
+  return text
+    .normalize('NFKC') // 全角英数を半角に
+    .toLowerCase()
+    .replace(/[.,!?'"・。\、「」\-\s]/g, '') // 記号や空白をすべて削除
+    .trim();
 };
 
 export const TextbookMode: React.FC = () => {
@@ -120,7 +124,11 @@ export const TextbookMode: React.FC = () => {
 
     setIsChecking(true);
 
-    const isCorrect = normalizeText(typingInput) === normalizeText(currentQ.correctAnswer);
+    const normInput = normalizeText(typingInput);
+    const normTarget = normalizeText(currentQ.correctAnswer);
+    // 多少の揺れ（一部の一致など）を許容
+    const isCorrect = normInput === normTarget || normInput.includes(normTarget) || normTarget.includes(normInput);
+
     if (isCorrect) {
       setFeedback('correct');
       setEarnedPointsMultiplier(prev => prev + 3); // Weight 3 for typing
@@ -135,7 +143,11 @@ export const TextbookMode: React.FC = () => {
     if (isChecking) return;
     setIsChecking(true);
     
-    const isCorrect = normalizeText(input) === normalizeText(selectedQuiz!.keyPhrase);
+    const normInput = normalizeText(input);
+    const normTarget = normalizeText(selectedQuiz!.keyPhrase);
+    // 単文として完全に抜き出せなくても、キーワードが含まれていればOKとする
+    const isCorrect = normInput === normTarget || normInput.includes(normTarget) || normTarget.includes(normInput);
+
     if (isCorrect) {
       setFeedback('correct');
       setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus
@@ -379,8 +391,8 @@ export const TextbookMode: React.FC = () => {
         <div className="glass-card animate-pop" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }}>
           <h2 style={{ color: '#d97706', fontSize: '2rem', margin: '0 0 1rem 0' }}>🌟 ボーナス課題 🌟</h2>
           <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#451a03', marginBottom: '2rem' }}>
-            このUnitのキーフレーズを言ってみよう！<br/>
-            （マイクで話すか、タイピングしてね）
+            動画の最後に出てくるフレーズ（単文）を答えよう！<br/>
+            （マイクで話すか、タイピングしてね。多少間違えても大丈夫！）
           </p>
 
           <div style={{ padding: '2rem', background: 'white', borderRadius: '16px', border: '2px solid #fde68a', marginBottom: '2rem' }}>
