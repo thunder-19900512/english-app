@@ -50,13 +50,23 @@ export const Home: React.FC = () => {
           <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}さん！</h1>
           <p style={{ fontSize: '1.2rem', color: '#666', margin: 0 }}>きょうもえいごをたのしもう！</p>
         </div>
-        <div 
-          className="glass-card animate-pop hover-scale"
-          style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', background: 'rgba(253, 203, 110, 0.2)', border: '2px solid var(--color-accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          onClick={() => navigate('/reflection')}
-        >
-          <Star size={24} color="var(--color-accent)" />
-          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>今日のふりかえり</span>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div
+            className="glass-card animate-pop hover-scale"
+            style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onClick={() => navigate('/progress')}
+          >
+            <span style={{ fontSize: '1.4rem' }}>🗺️</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>じぶんの記録</span>
+          </div>
+          <div
+            className="glass-card animate-pop hover-scale"
+            style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', background: 'rgba(253, 203, 110, 0.2)', border: '2px solid var(--color-accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onClick={() => navigate('/reflection')}
+          >
+            <Star size={24} color="var(--color-accent)" />
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>今日のふりかえり</span>
+          </div>
         </div>
       </div>
 
@@ -80,17 +90,7 @@ export const Home: React.FC = () => {
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>英単語のれんしゅうと<br/>ミニゲームであそぼう！</p>
           </div>
 
-          <div 
-            className="glass-card flex-col flex-center animate-pop hover-scale"
-            style={{ padding: '2rem', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(217, 70, 239, 0.2) 100%)', border: '2px solid #d946ef' }}
-            onClick={() => navigate('/story')}
-          >
-            <Book size={40} color="#d946ef" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>おはなしづくり</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>覚えた単語で<br/>物語をつくろう！</p>
-          </div>
-
-          <div 
+          <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
             style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(85, 239, 196, 0.2)', border: '2px solid #00b894' }}
             onClick={() => navigate('/textbook')}
@@ -100,7 +100,17 @@ export const Home: React.FC = () => {
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズにちょうせん！</p>
           </div>
 
-          <div 
+          <div
+            className="glass-card flex-col flex-center animate-pop hover-scale"
+            style={{ padding: '2rem', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(217, 70, 239, 0.2) 100%)', border: '2px solid #d946ef' }}
+            onClick={() => navigate('/story')}
+          >
+            <Book size={40} color="#d946ef" style={{ marginBottom: '0.5rem' }} />
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>おはなしづくり</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>覚えた単語で<br/>物語をつくろう！</p>
+          </div>
+
+          <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
             style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(162, 155, 254, 0.2)', border: '2px solid #a29bfe' }}
             onClick={() => navigate('/ai')}

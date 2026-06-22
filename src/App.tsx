@@ -20,6 +20,7 @@ import { StoryMode } from './components/dictionary/games/StoryMode';
 import { ReflectionForm } from './components/reflection/ReflectionForm';
 import { ReflectionHistory } from './components/reflection/ReflectionHistory';
 import { TextbookMode } from './components/textbook/TextbookMode';
+import { MyProgress } from './components/progress/MyProgress';
 
 
 const App: React.FC = () => {
@@ -45,7 +46,8 @@ const App: React.FC = () => {
             <Route path="/ai" element={<AIAssistant />} />
             <Route path="/story" element={<StoryMode />} />
             <Route path="/textbook" element={<TextbookMode />} />
-            
+            <Route path="/progress" element={<MyProgress />} />
+
             <Route path="/reflection" element={<ReflectionForm />} />
             <Route path="/reflection/history" element={<ReflectionHistory />} />
           </Route>
