@@ -5,6 +5,8 @@ import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import { usePoints } from '../../hooks/usePoints';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
+import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 
 export type QuizQuestion = {
@@ -33,10 +35,23 @@ const normalizeText = (text: string) => {
     .trim();
 };
 
+// ボーナス課題（キーフレーズの音読）の合格ライン。Azure発音判定の総合スコア 0-100。
+const BONUS_PASS_SCORE = 60;
+
 export const TextbookMode: React.FC = () => {
   const navigate = useNavigate();
   const { addPoints } = usePoints();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
+  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
+  const {
+    assess,
+    isAssessing,
+    isAvailable: azureAvailable,
+    lastRecordingUrl,
+  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  // ボーナス課題のAzureスコア（表示用）と、ボーナス獲得済みフラグ（ポイント二重取り防止）
+  const [bonusScore, setBonusScore] = useState<number | null>(null);
+  const [bonusEarned, setBonusEarned] = useState(false);
   
   const [grade, setGrade] = useState<5 | 6 | null>(null);
   const [quizzes, setQuizzes] = useState<TextbookQuiz[]>([]);
@@ -87,6 +102,8 @@ export const TextbookMode: React.FC = () => {
     setQuizState('playing');
     setCurrentQuestionIndex(0);
     setEarnedPointsMultiplier(0);
+    setBonusScore(null);
+    setBonusEarned(false);
     resetQuestionState();
   };
 
@@ -150,7 +167,10 @@ export const TextbookMode: React.FC = () => {
 
     if (isCorrect) {
       setFeedback('correct');
-      setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus
+      if (!bonusEarned) {
+        setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus
+        setBonusEarned(true);
+      }
     } else {
       setFeedback('incorrect');
     }
@@ -160,12 +180,34 @@ export const TextbookMode: React.FC = () => {
     }, 1500);
   };
 
-  // Sync voice transcript to typing input for bonus
+  // Sync voice transcript to typing input for bonus (Azure未設定のWeb Speech時のみ)
   useEffect(() => {
-    if (quizState === 'bonus' && transcript) {
+    if (!azureAvailable && quizState === 'bonus' && transcript) {
       setTypingInput(transcript);
     }
-  }, [transcript, quizState]);
+  }, [azureAvailable, transcript, quizState]);
+
+  // Azureの発音採点でボーナス課題（キーフレーズの音読）を判定する。
+  // 自動で次に進まず、録音の聞き返しや読み直しを自分のペースでできるようにする。
+  const handleAzureBonus = async () => {
+    if (isAssessing || !selectedQuiz) return;
+
+    const result = await assess(selectedQuiz.keyPhrase);
+    if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
+
+    setBonusScore(result.pronunciationScore);
+    setTypingInput(result.recognizedText);
+
+    if (result.pronunciationScore >= BONUS_PASS_SCORE) {
+      setFeedback('correct');
+      if (!bonusEarned) {
+        setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus（一度だけ）
+        setBonusEarned(true);
+      }
+    } else {
+      setFeedback('incorrect');
+    }
+  };
 
   const proceedToNext = () => {
     setTimeout(() => {
@@ -418,13 +460,21 @@ export const TextbookMode: React.FC = () => {
                 }}
               />
               <button
-                onClick={isRecording ? stopListening : startListening}
-                disabled={isChecking}
+                onClick={() => {
+                  if (azureAvailable) {
+                    setBonusScore(null);
+                    handleAzureBonus();
+                  } else {
+                    isRecording ? stopListening() : startListening();
+                  }
+                }}
+                disabled={isChecking || (azureAvailable && isAssessing)}
+                title={azureAvailable ? '英語のフレーズを声に出して読んでね' : undefined}
                 style={{
                   padding: '0 1.5rem',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isRecording ? 'var(--color-error)' : 'var(--color-primary)',
+                  background: (azureAvailable ? isAssessing : isRecording) ? 'var(--color-error)' : 'var(--color-primary)',
                   color: 'white',
                   cursor: 'pointer',
                   display: 'flex',
@@ -433,27 +483,65 @@ export const TextbookMode: React.FC = () => {
                   transition: 'all 0.2s'
                 }}
               >
-                <Mic size={24} className={isRecording ? 'animate-pulse' : ''} />
+                <Mic size={24} className={(azureAvailable ? isAssessing : isRecording) ? 'animate-pulse' : ''} />
               </button>
+              {azureAvailable && lastRecordingUrl && !isAssessing && (
+                <button
+                  onClick={() => new Audio(lastRecordingUrl).play()}
+                  title="さっきの自分の声を聞く"
+                  style={{ padding: '0 1.2rem', borderRadius: '12px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.4rem', flexShrink: 0 }}
+                >
+                  🔊
+                </button>
+              )}
             </div>
-            
-            <Button 
-              onClick={() => handleBonusSubmit(typingInput)} 
+
+            {azureAvailable ? (
+              <p style={{ fontSize: '0.9rem', color: '#92400e', margin: 0 }}>
+                🎤 マイクを押して、英語のフレーズを声に出して読んでね（発音を採点するよ）。タイピングで答えてもOK。
+              </p>
+            ) : null}
+
+            <Button
+              onClick={() => handleBonusSubmit(typingInput)}
               disabled={isChecking || !typingInput.trim()}
               style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', background: '#d97706' }}
             >
-              回答する！
+              {azureAvailable ? 'タイピングで答える' : '回答する！'}
             </Button>
 
-            {isChecking && feedback === 'incorrect' && (
+            {azureAvailable && bonusScore !== null && (
+              <div
+                className="animate-pop"
+                style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 'bold',
+                  color: bonusScore >= BONUS_PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
+                }}
+              >
+                発音スコア: {Math.round(bonusScore)} 点 {bonusScore >= BONUS_PASS_SCORE ? '✅' : '（おしい！）'}
+              </div>
+            )}
+
+            {(isChecking || azureAvailable) && feedback === 'incorrect' && (
               <div style={{ color: 'var(--color-error)', fontWeight: 'bold', marginTop: '1rem', padding: '1rem', background: '#fee2e2', borderRadius: '8px' }}>
                 ❌ おしい！正解は: {selectedQuiz.keyPhrase}
               </div>
             )}
-            {isChecking && feedback === 'correct' && (
+            {(isChecking || azureAvailable) && feedback === 'correct' && (
               <div style={{ color: 'var(--color-success)', fontWeight: 'bold', marginTop: '1rem', padding: '1rem', background: '#dcfce7', borderRadius: '8px' }}>
                 🎉 大正解！ボーナスポイントGET！
               </div>
+            )}
+
+            {azureAvailable && (
+              <Button
+                variant="outline"
+                onClick={finishQuiz}
+                style={{ width: '100%', marginTop: '0.5rem' }}
+              >
+                {bonusEarned ? 'おわってけっかを見る →' : 'スキップしてけっかを見る →'}
+              </Button>
             )}
           </div>
         </div>

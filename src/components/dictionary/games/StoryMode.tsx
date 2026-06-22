@@ -7,6 +7,7 @@ import { useAppSettings } from '../../../hooks/useAppSettings';
 import { usePoints } from '../../../hooks/usePoints';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
+import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { MicButton } from '../../ui/MicButton';
 import { vocabulary } from '../../../data/vocabulary';
@@ -30,12 +31,23 @@ const DIFFICULTY_LEVELS = [
   { level: 6, label: 'レベル6: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
 ];
 
+// 音読の合格ライン（Azure発音判定の総合スコア 0-100）。小学生向けにやさしめ。
+const READ_PASS_SCORE = 60;
+
 export const StoryMode: React.FC = () => {
   const navigate = useNavigate();
-  const { geminiApiKey } = useAppSettings();
+  const { geminiApiKey, azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { addPoints } = usePoints();
   const { speak } = useSpeechSynthesis();
   const { progress } = useDictionaryProgress();
+  const {
+    assess,
+    isAssessing,
+    isAvailable: azureAvailable,
+    lastRecordingUrl,
+  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  // 音読のAzureスコア（表示用）
+  const [readScore, setReadScore] = useState<number | null>(null);
 
   const [gameState, setGameState] = useState<GameState>('config');
   const [difficulty, setDifficulty] = useState(1);
@@ -55,27 +67,51 @@ export const StoryMode: React.FC = () => {
 
   const normalizeText = (text: string) => text.toLowerCase().replace(/[.,!?'" ]/g, '').trim();
 
+  const giveReadAloudBonus = () => {
+    const bonus = sentenceCount * difficulty * 3;
+    addPoints('story_mode_reading', { multiplier: bonus / 10 });
+    setHasReadAloud(true);
+  };
+
+  // Web Speech APIでの音読判定はAzure未設定のときだけ動かす（文字が大体合っているか）。
+  // ボーナス取得後も「れんしゅう」として判定は出すが、ポイントは一度だけ。
   useEffect(() => {
-    if (!isRecording && transcript && gameState === 'completed' && !hasReadAloud && selectedSentenceIndex !== null) {
+    if (!azureAvailable && !isRecording && transcript && gameState === 'completed' && selectedSentenceIndex !== null) {
       const targetSentence = storySentences[selectedSentenceIndex];
       const normInput = normalizeText(transcript);
       const normTarget = normalizeText(targetSentence);
-      
+
       // Check if they are somewhat similar (e.g., includes or > 70% match or simple inclusion)
       // For leniency, if it includes a significant portion or vice versa
-      const isCorrect = normInput === normTarget || normInput.includes(normTarget) || normTarget.includes(normInput) || 
+      const isCorrect = normInput === normTarget || normInput.includes(normTarget) || normTarget.includes(normInput) ||
                         (normInput.length > normTarget.length * 0.6 && normTarget.includes(normInput.slice(0, normTarget.length * 0.6)));
 
       if (isCorrect) {
         setReadAloudFeedback('success');
-        const bonus = sentenceCount * difficulty * 3;
-        addPoints('story_mode_reading', { multiplier: bonus / 10 });
-        setHasReadAloud(true);
+        if (!hasReadAloud) giveReadAloudBonus();
       } else {
         setReadAloudFeedback('fail');
       }
     }
-  }, [isRecording, transcript, gameState, hasReadAloud, selectedSentenceIndex, storySentences]);
+  }, [azureAvailable, isRecording, transcript, gameState, hasReadAloud, selectedSentenceIndex, storySentences]);
+
+  // Azureの発音採点で音読を1回チャレンジする（Azure設定があるときのみ）。
+  const handleAzureRead = async () => {
+    if (selectedSentenceIndex === null || isAssessing) return;
+    const targetSentence = storySentences[selectedSentenceIndex];
+    const result = await assess(targetSentence);
+    if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
+
+    setReadScore(result.pronunciationScore);
+    setTranscript(result.recognizedText);
+
+    if (result.pronunciationScore >= READ_PASS_SCORE) {
+      setReadAloudFeedback('success');
+      if (!hasReadAloud) giveReadAloudBonus(); // ボーナスは一度だけ
+    } else {
+      setReadAloudFeedback('fail');
+    }
+  };
 
   // Pick mastered words based on progress
   const getMasteredWords = () => {
@@ -431,11 +467,21 @@ RULES:
               <CheckCircle size={60} color="var(--color-success)" />
               <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! おはなしが完成したよ！</h2>
               
-              {!hasReadAloud ? (
+              {hasReadAloud && (
+                <div className="animate-pop" style={{ background: '#fffbeb', padding: '0.8rem 1.5rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', border: '2px solid #fde68a' }}>
+                  🎉 音読ボーナスポイント獲得ずみ！
+                </div>
+              )}
+
+              {(
                 <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)', width: '100%' }}>
                   <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🎤 声に出して読んでみよう！</h3>
-                  <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>読みたい文を選んでから、マイクを押して読んでみてね。上手に読めたらボーナスポイント！</p>
-                  
+                  <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>
+                    {hasReadAloud
+                      ? '好きな文をえらんで、何度でも発音れんしゅうできるよ！🔈で見本も聞けるよ。'
+                      : '読みたい文を選んでから、マイクを押して読んでみてね。上手に読めたらボーナスポイント！'}
+                  </p>
+
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', margin: '1rem 0', padding: '1rem', background: '#f8f9fa', borderRadius: '12px' }}>
                     {storySentences.map((sentenceText, sIdx) => (
                       <div 
@@ -463,7 +509,20 @@ RULES:
                     ))}
                   </div>
 
-                  {readAloudFeedback === 'fail' && !isRecording && transcript && (
+                  {azureAvailable && readScore !== null && (
+                    <div
+                      className="animate-pop"
+                      style={{
+                        fontSize: '1.3rem',
+                        fontWeight: 'bold',
+                        color: readScore >= READ_PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
+                      }}
+                    >
+                      音読スコア: {Math.round(readScore)} 点 {readScore >= READ_PASS_SCORE ? '✅' : '（もう一回！）'}
+                    </div>
+                  )}
+
+                  {readAloudFeedback === 'fail' && !isRecording && !isAssessing && transcript && (
                     <div style={{ color: 'var(--color-error)', fontWeight: 'bold' }}>
                       ❌ もう少し！もう一度チャレンジしてね。
                     </div>
@@ -474,31 +533,46 @@ RULES:
                       あなたの声: 「 {transcript} 」
                     </div>
                   )}
-                  
-                  <MicButton 
-                    isRecording={isRecording} 
-                    disabled={selectedSentenceIndex === null}
-                    onClick={() => {
-                      if (selectedSentenceIndex === null) {
-                        alert('まずは読みたい文をえらんでね！');
-                        return;
-                      }
-                      if (isRecording) {
-                        stopListening();
-                      } else {
-                        setTranscript('');
-                        setReadAloudFeedback(null);
-                        startListening();
-                      }
-                    }} 
-                  />
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                    <MicButton
+                      isRecording={azureAvailable ? isAssessing : isRecording}
+                      disabled={selectedSentenceIndex === null || (azureAvailable && isAssessing)}
+                      onClick={() => {
+                        if (selectedSentenceIndex === null) {
+                          alert('まずは読みたい文をえらんでね！');
+                          return;
+                        }
+                        if (azureAvailable) {
+                          setTranscript('');
+                          setReadScore(null);
+                          setReadAloudFeedback(null);
+                          handleAzureRead();
+                          return;
+                        }
+                        if (isRecording) {
+                          stopListening();
+                        } else {
+                          setTranscript('');
+                          setReadAloudFeedback(null);
+                          startListening();
+                        }
+                      }}
+                    />
+                    {azureAvailable && lastRecordingUrl && !isAssessing && (
+                      <button
+                        onClick={() => new Audio(lastRecordingUrl).play()}
+                        title="さっきの自分の声を聞く"
+                        className="hover-scale"
+                        style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontSize: '1.6rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                      >
+                        🔊
+                      </button>
+                    )}
+                  </div>
                   {selectedSentenceIndex === null && (
                     <div style={{ fontSize: '0.9rem', color: '#888' }}>※上の文をタップしてえらんでね</div>
                   )}
-                </div>
-              ) : (
-                <div className="animate-pop" style={{ background: '#fffbeb', padding: '1rem 2rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '1.5rem', border: '2px solid #fde68a' }}>
-                  🎉 すばらしい！音読ボーナスポイントGET！
                 </div>
               )}
 

@@ -24,7 +24,7 @@ export const VoiceBattle: React.FC = () => {
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
 
@@ -128,7 +128,8 @@ export const VoiceBattle: React.FC = () => {
     if (result.accuracyScore >= PASS_SCORE) {
       setMonsterState('hit');
       speak('Good!');
-      setTimeout(() => proceedToNextTurn(true), 1000);
+      // スコアを見せてから次へ進む（少し長めに待つ）
+      setTimeout(() => proceedToNextTurn(true), 1500);
     } else {
       const nextMistakes = mistakes + 1;
       setMistakes(nextMistakes);
@@ -286,7 +287,7 @@ export const VoiceBattle: React.FC = () => {
             {transcript}
           </div>
         )}
-        {azureAvailable && lastScore !== null && monsterState === 'idle' && (
+        {azureAvailable && lastScore !== null && (monsterState === 'idle' || monsterState === 'hit') && (
           <div
             className="animate-pop"
             style={{
@@ -298,17 +299,58 @@ export const VoiceBattle: React.FC = () => {
             発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一回！）'}
           </div>
         )}
+        {azureAvailable && azureError && monsterState === 'idle' && (
+          <div
+            className="animate-pop"
+            style={{
+              fontSize: '0.95rem',
+              fontWeight: 'bold',
+              color: 'var(--color-error)',
+              maxWidth: '500px',
+              textAlign: 'center',
+              wordBreak: 'break-word'
+            }}
+          >
+            ⚠️ Azureエラー: {azureError}
+          </div>
+        )}
       </div>
 
-      <MicButton
-        isRecording={azureAvailable ? isAssessing : isRecording}
-        disabled={azureAvailable && isAssessing}
-        onClick={
-          azureAvailable
-            ? handleAzureAttempt
-            : (isRecording ? stopListening : startListening)
-        }
-      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+        <MicButton
+          isRecording={azureAvailable ? isAssessing : isRecording}
+          disabled={azureAvailable && isAssessing}
+          onClick={
+            azureAvailable
+              ? handleAzureAttempt
+              : (isRecording ? stopListening : startListening)
+          }
+        />
+
+        {azureAvailable && lastRecordingUrl && monsterState === 'idle' && (
+          <button
+            onClick={() => new Audio(lastRecordingUrl).play()}
+            title="さっきの自分の声を聞く"
+            className="hover-scale"
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              border: '2px solid var(--color-primary)',
+              background: 'white',
+              color: 'var(--color-primary)',
+              fontSize: '1.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            🔊
+          </button>
+        )}
+      </div>
 
     </div>
   );
