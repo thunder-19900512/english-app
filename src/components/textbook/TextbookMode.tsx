@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, Mic, Send } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
@@ -108,6 +108,18 @@ export const TextbookMode: React.FC = () => {
     setBonusEarned(false);
     resetQuestionState();
   };
+
+  // URLパラメータ（?grade=5&id=g5-u1）で特定Unitを直接ひらく（今日のミッション用）
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const g = searchParams.get('grade');
+    const id = searchParams.get('id');
+    if (g === '5' || g === '6') setGrade(Number(g) as 5 | 6);
+    if (id) {
+      const quiz = DEFAULT_QUIZZES.find(q => q.id === id);
+      if (quiz) handleQuizSelect(quiz);
+    }
+  }, [searchParams]);
 
   const resetQuestionState = () => {
     setSelectedOption(null);

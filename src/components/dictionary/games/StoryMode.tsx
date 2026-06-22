@@ -13,6 +13,7 @@ import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { MicButton } from '../../ui/MicButton';
 import { vocabulary } from '../../../data/vocabulary';
 import type { Vocabulary } from '../../../data/vocabulary';
+import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 
 type GameState = 'config' | 'generating' | 'playing' | 'completed';
 
@@ -166,7 +167,9 @@ RULES:
 6. You MUST include these specific words in the story: ${wordListEn.join(', ')}
 7. Whenever you use one of those specific words, you MUST enclose it in curly braces, exactly as provided. Example: {${wordListEn[0]}}
 8. Do NOT use curly braces for any other words.
-9. Output the English story text first. Then write exactly "---" on a new line. Then provide the natural Japanese translation of the story, also with each sentence on a new line.`;
+9. Output the English story text first. Then write exactly "---" on a new line. Then provide the natural Japanese translation of the story, also with each sentence on a new line.
+
+${SAFETY_INSTRUCTION}`;
 
       let text = '';
       let success = false;
@@ -190,6 +193,13 @@ RULES:
         throw lastError || new Error("利用可能なモデルが見つかりませんでした");
       }
       
+      // 安全装置：万一不適切な内容が生成されたら、表示せずに作り直しを促す。
+      if (isInappropriate(text)) {
+        alert('うまく作れませんでした。もう一度「おはなしをつくる」を押してみてね。');
+        setGameState('config');
+        return;
+      }
+
       const parts = text.split('---');
       const englishText = parts[0].trim();
       const japaneseText = parts.length > 1 ? parts[1].trim() : '';

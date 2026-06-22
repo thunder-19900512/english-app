@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
@@ -47,6 +47,18 @@ export const DialogueTrainer: React.FC = () => {
     setActiveLine(null);
     setMyRole('A');
   };
+
+  // URLパラメータ（?grade=5&id=g5-u1）で、特定のダイアログを直接ひらく（今日のミッション用）
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const g = searchParams.get('grade');
+    const id = searchParams.get('id');
+    if (id) {
+      const d = DIALOGUES.find(x => x.id === id);
+      if (d) { setGrade(d.grade); startDialogue(d); return; }
+    }
+    if (g === '5' || g === '6') setGrade(Number(g) as 5 | 6);
+  }, [searchParams]);
 
   const handleSpeak = (line: DialogueLine) => speak(cleanText(line.en));
 

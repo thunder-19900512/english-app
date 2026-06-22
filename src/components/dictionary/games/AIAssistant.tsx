@@ -8,6 +8,10 @@ import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
 import { ArrowLeft, Send, Sparkles, AlertTriangle, Coins } from 'lucide-react';
+import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
+
+// 不適切な入力・出力のときに出す、やさしい切り返し
+const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -87,12 +91,12 @@ export const AIAssistant: React.FC = () => {
         throw lastError || new Error("利用可能なモデルが見つかりませんでした");
       }
 
-      const model = genAI.getGenerativeModel({ 
+      const model = genAI.getGenerativeModel({
         model: targetModel,
-        systemInstruction: SYSTEM_PROMPTS[selectedMode]
+        systemInstruction: `${SYSTEM_PROMPTS[selectedMode]}\n${SAFETY_INSTRUCTION}`
       });
-      
-      const sysPrompt = `[SYSTEM INSTRUCTION]:\n${SYSTEM_PROMPTS[selectedMode]}\nSpeak English only. Respond with exactly ONE short sentence.`;
+
+      const sysPrompt = `[SYSTEM INSTRUCTION]:\n${SYSTEM_PROMPTS[selectedMode]}\n${SAFETY_INSTRUCTION}\nSpeak English only. Respond with exactly ONE short sentence.`;
       
       const initialGreeting = selectedMode === 'restaurant' ? 'Welcome! May I help you?' 
                             : selectedMode === 'directions' ? 'Excuse me! I am lost. Where is the station?' 
@@ -145,7 +149,16 @@ export const AIAssistant: React.FC = () => {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !chatSession) return;
-    
+
+    // 安全装置：不適切な入力はAIに送らず、ポイントも消費せず、やさしく切り返す。
+    if (isInappropriate(text)) {
+      setMessages(prev => [...prev, { role: 'model', text: REDIRECT_MESSAGE }]);
+      setTranscript('');
+      setInputText('');
+      speak("Let's keep it kind!");
+      return;
+    }
+
     // Check points
     const ok = await consumePoints(MESSAGE_COST);
     if (!ok) {
@@ -163,8 +176,10 @@ export const AIAssistant: React.FC = () => {
 
     try {
       const result = await chatSession.sendMessage(text);
-      const responseText = result.response.text();
-      
+      const rawResponse = result.response.text();
+      // 安全装置：万一AIの返答が不適切なら、安全な定型文に差し替える。
+      const responseText = isInappropriate(rawResponse) ? REDIRECT_MESSAGE : rawResponse;
+
       const updatedMessages: ChatMessage[] = [...newMessages, { role: 'model', text: responseText }];
       setMessages(updatedMessages);
       

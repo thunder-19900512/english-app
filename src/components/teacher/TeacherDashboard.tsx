@@ -1,8 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Key, Save, Mic } from 'lucide-react';
+import { ArrowLeft, Key, Save, Mic, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { DIALOGUES } from '../dialogue/dialogueData';
+import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
+
+// 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
+interface MissionOption { label: string; route: string; videoUrl?: string }
+const MISSION_OPTIONS: MissionOption[] = [
+  ...DIALOGUES.map(d => ({
+    label: `ダイアログ ${d.grade}年 ${d.unitName.replace(/:.*/, '')}`,
+    route: `/dialogue?grade=${d.grade}&id=${d.id}`,
+  })),
+  ...DEFAULT_QUIZZES.map(q => ({
+    label: `教科書 ${q.grade}年 ${q.unitName.replace(/:.*/, '')}`,
+    route: `/textbook?grade=${q.grade}&id=${q.id}`,
+    videoUrl: q.url,
+  })),
+];
 
 export const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +37,9 @@ export const TeacherDashboard: React.FC = () => {
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [missionRoute, setMissionRoute] = useState('');
+  const [missionStatus, setMissionStatus] = useState('');
+  const [currentMission, setCurrentMission] = useState<MissionOption | null>(null);
 
   // Handle PIN
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -55,6 +74,10 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.isScreenLocked !== undefined) {
         setIsScreenLocked(data.dictionary_progress.isScreenLocked);
       }
+      if (data.dictionary_progress.todayMission) {
+        setCurrentMission(data.dictionary_progress.todayMission);
+        setMissionRoute(data.dictionary_progress.todayMission.route || '');
+      }
     }
 
     // Fetch students data
@@ -82,9 +105,28 @@ export const TeacherDashboard: React.FC = () => {
           azureSpeechKey: azureKey.trim(),
           azureSpeechRegion: azureRegion.trim(),
           isScreenLocked: isScreenLocked,
+          todayMission: currentMission,
           ...overrides
         }
       }, { onConflict: 'id' });
+  };
+
+  const handleSetMission = async () => {
+    // 空（「ミッションなし」）を選んだ場合は解除として扱う
+    const opt = MISSION_OPTIONS.find(o => o.route === missionRoute) || null;
+    setCurrentMission(opt);
+    const { error } = await persistSettings({ todayMission: opt });
+    if (error) setMissionStatus('通信エラー');
+    else setMissionStatus(opt ? `設定しました：${opt.label}` : 'ミッションなしにしました');
+    setTimeout(() => setMissionStatus(''), 4000);
+  };
+
+  const handleClearMission = async () => {
+    setCurrentMission(null);
+    setMissionRoute('');
+    const { error } = await persistSettings({ todayMission: null });
+    setMissionStatus(error ? '通信エラー' : 'ミッションを解除しました');
+    setTimeout(() => setMissionStatus(''), 4000);
   };
 
   const handleSave = async () => {
@@ -178,6 +220,37 @@ export const TeacherDashboard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={() => navigate(-1)} icon={ArrowLeft}>もどる</Button>
         <h1 className="text-primary" style={{ margin: 0 }}>先生用ダッシュボード</h1>
+      </div>
+
+      {/* 今日のミッション設定 */}
+      <div className="glass-card" style={{ border: '2px solid #ee5253' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <Target color="#ee5253" />
+          <h2 style={{ margin: 0 }}>今日のミッション</h2>
+        </div>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          設定すると、児童のホーム画面の一番上に大きく表示され、ワンクリックでそのページに飛べます。
+        </p>
+        {currentMission && (
+          <div style={{ padding: '0.6rem 1rem', background: 'rgba(238,82,83,0.1)', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', color: '#c0392b' }}>
+            🎯 いま設定中：{currentMission.label}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <select
+            value={missionRoute}
+            onChange={e => setMissionRoute(e.target.value)}
+            style={{ flex: 1, minWidth: '240px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem' }}
+          >
+            <option value="">（ミッションなし）</option>
+            {MISSION_OPTIONS.map(o => (
+              <option key={o.route} value={o.route}>{o.label}</option>
+            ))}
+          </select>
+          <Button onClick={handleSetMission} icon={Save}>設定する</Button>
+          <Button variant="outline" onClick={handleClearMission}>解除</Button>
+        </div>
+        {missionStatus && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{missionStatus}</span>}
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>

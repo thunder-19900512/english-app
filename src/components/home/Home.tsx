@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { vocabulary } from '../../data/vocabulary';
 import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
+import { useAppSettings } from '../../hooks/useAppSettings';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'phonics' | 'dictionary' | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
+  const { todayMission } = useAppSettings();
   const studentId = localStorage.getItem('studentId');
 
   useEffect(() => {
@@ -69,6 +71,44 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {!activeTab && todayMission && todayMission.label && (
+        <div
+          className="animate-pop"
+          style={{
+            width: '100%', maxWidth: '900px',
+            padding: '1.2rem 1.5rem', borderRadius: '20px',
+            background: 'linear-gradient(135deg, #ff9f43, #ee5253)',
+            color: 'white', boxShadow: 'var(--shadow-md)',
+            display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+            border: '3px solid #fff'
+          }}
+        >
+          <span style={{ fontSize: '2.5rem' }}>🎯</span>
+          <div style={{ flex: 1, minWidth: '180px' }}>
+            <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>きょうのミッション</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{todayMission.label}</div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            {todayMission.videoUrl && (
+              <button
+                className="hover-scale"
+                onClick={() => window.open(todayMission.videoUrl, '_blank')}
+                style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                📺 動画を見る
+              </button>
+            )}
+            <button
+              className="hover-scale"
+              onClick={() => navigate(todayMission.route)}
+              style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.25)', color: 'white', border: '2px solid white', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              {todayMission.videoUrl ? '✏️ 問題に挑戦' : 'やってみる →'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {!activeTab && (
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '900px', marginBottom: '2rem' }}>

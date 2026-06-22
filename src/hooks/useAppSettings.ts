@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+export interface TodayMission {
+  label: string;
+  route: string;
+  videoUrl?: string; // 教科書モードのとき、動画へのリンク
+}
+
 export const useAppSettings = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [azureSpeechKey, setAzureSpeechKey] = useState<string | null>(null);
   const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
+  const [todayMission, setTodayMission] = useState<TodayMission | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -16,6 +23,7 @@ export const useAppSettings = () => {
       if (progress.azureSpeechKey !== undefined) setAzureSpeechKey(progress.azureSpeechKey);
       if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
+      if (progress.todayMission !== undefined) setTodayMission(progress.todayMission || null);
     };
 
     const fetchSettings = async () => {
@@ -49,5 +57,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission };
 };
