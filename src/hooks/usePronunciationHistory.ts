@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { pushToSupabase } from '../lib/sync';
 
-export type ScoreMode = 'battle' | 'story' | 'textbook';
+export type ScoreMode = 'battle' | 'story' | 'textbook' | 'dialogue';
 
 export interface ScoreRecord {
   ts: number;       // 記録時刻（ミリ秒）

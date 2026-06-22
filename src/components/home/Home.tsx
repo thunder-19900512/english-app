@@ -119,6 +119,16 @@ export const Home: React.FC = () => {
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>AI英会話</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>AIキャラクターと<br/>声でえいかいわ！</p>
           </div>
+
+          <div
+            className="glass-card flex-col flex-center animate-pop hover-scale"
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(9, 132, 227, 0.15)', border: '2px solid #0984e3' }}
+            onClick={() => navigate('/dialogue')}
+          >
+            <span style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🗣️</span>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ダイアログ</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話れんしゅう！</p>
+          </div>
         </div>
       )}
 

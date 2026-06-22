@@ -12,6 +12,7 @@ const MODE_STYLE: Record<ScoreMode, { color: string; label: string }> = {
   battle: { color: '#ff6b6b', label: 'モンスターバトル' },
   story: { color: '#d946ef', label: 'おはなし音読' },
   textbook: { color: '#00b894', label: '教科書ボーナス' },
+  dialogue: { color: '#0984e3', label: 'ダイアログ' },
 };
 
 // 1カテゴリで挑戦できる4つのスキル。現在地マップの軸になる。
