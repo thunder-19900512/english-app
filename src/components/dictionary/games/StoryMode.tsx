@@ -8,6 +8,7 @@ import { usePoints } from '../../../hooks/usePoints';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
+import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { MicButton } from '../../ui/MicButton';
 import { vocabulary } from '../../../data/vocabulary';
@@ -46,6 +47,7 @@ export const StoryMode: React.FC = () => {
     isAvailable: azureAvailable,
     lastRecordingUrl,
   } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { addScore } = usePronunciationHistory();
   // 音読のAzureスコア（表示用）
   const [readScore, setReadScore] = useState<number | null>(null);
 
@@ -104,6 +106,7 @@ export const StoryMode: React.FC = () => {
 
     setReadScore(result.pronunciationScore);
     setTranscript(result.recognizedText);
+    addScore('story', result.pronunciationScore, targetSentence);
 
     if (result.pronunciationScore >= READ_PASS_SCORE) {
       setReadAloudFeedback('success');

@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { usePoints } from '../../hooks/usePoints';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
+import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 
@@ -49,6 +50,7 @@ export const TextbookMode: React.FC = () => {
     isAvailable: azureAvailable,
     lastRecordingUrl,
   } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { addScore } = usePronunciationHistory();
   // ボーナス課題のAzureスコア（表示用）と、ボーナス獲得済みフラグ（ポイント二重取り防止）
   const [bonusScore, setBonusScore] = useState<number | null>(null);
   const [bonusEarned, setBonusEarned] = useState(false);
@@ -197,6 +199,7 @@ export const TextbookMode: React.FC = () => {
 
     setBonusScore(result.pronunciationScore);
     setTypingInput(result.recognizedText);
+    addScore('textbook', result.pronunciationScore, selectedQuiz.keyPhrase);
 
     if (result.pronunciationScore >= BONUS_PASS_SCORE) {
       setFeedback('correct');

@@ -5,6 +5,7 @@ import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useAppSettings } from '../../../hooks/useAppSettings';
 import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
+import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
 import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
@@ -26,6 +27,7 @@ export const VoiceBattle: React.FC = () => {
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { saveProgress } = useDictionaryProgress();
+  const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();
 
   // Azureの発音採点で出た最新スコア（フィードバック表示用）
@@ -124,6 +126,7 @@ export const VoiceBattle: React.FC = () => {
 
     setLastScore(result.accuracyScore);
     setTranscript(result.recognizedText);
+    addScore('battle', result.accuracyScore, targetWord.english);
 
     if (result.accuracyScore >= PASS_SCORE) {
       setMonsterState('hit');
@@ -138,7 +141,7 @@ export const VoiceBattle: React.FC = () => {
         setTimeout(() => proceedToNextTurn(false), 1000);
       }
     }
-  }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes]);
+  }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes, addScore]);
 
   useEffect(() => {
     // Web Speech APIでの判定はAzure未設定のときだけ動かす

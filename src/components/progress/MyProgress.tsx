@@ -6,6 +6,13 @@ import { vocabulary } from '../../data/vocabulary';
 import { stages } from '../../data/stages';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { useDictionaryProgress, type DictCategoryProgress } from '../../hooks/useDictionaryProgress';
+import { usePronunciationHistory, type ScoreMode } from '../../hooks/usePronunciationHistory';
+
+const MODE_STYLE: Record<ScoreMode, { color: string; label: string }> = {
+  battle: { color: '#ff6b6b', label: 'モンスターバトル' },
+  story: { color: '#d946ef', label: 'おはなし音読' },
+  textbook: { color: '#00b894', label: '教科書ボーナス' },
+};
 
 // 1カテゴリで挑戦できる4つのスキル。現在地マップの軸になる。
 const SKILLS: { key: keyof DictCategoryProgress; label: string; emoji: string; path: string }[] = [
@@ -44,6 +51,7 @@ const Ring: React.FC<{ pct: number; color: string; label: string; sub: string; e
 export const MyProgress: React.FC = () => {
   const navigate = useNavigate();
   const { progress } = useDictionaryProgress();
+  const { history } = usePronunciationHistory();
 
   const categories = useMemo(() => Array.from(new Set(vocabulary.map(v => v.category))), []);
 
@@ -80,6 +88,20 @@ export const MyProgress: React.FC = () => {
   // 教科書モード：クリアしたUnit数 / 全Unit
   const textbookDone = DEFAULT_QUIZZES.filter(q => (clearCounts[`textbook_quiz_${q.id}`] || 0) > 0).length;
   const textbookPct = DEFAULT_QUIZZES.length > 0 ? Math.round((textbookDone / DEFAULT_QUIZZES.length) * 100) : 0;
+
+  // ===== 発音スコアの推移 =====
+  const recent = history.slice(-30);
+  const bestScore = history.length ? Math.max(...history.map(h => h.score)) : 0;
+  const last10 = history.slice(-10);
+  const avgRecent = last10.length ? Math.round(last10.reduce((s, h) => s + h.score, 0) / last10.length) : 0;
+
+  // チャート座標
+  const CW = 600, CH = 220, padL = 40, padR = 10, padT = 15, padB = 35;
+  const plotW = CW - padL - padR;
+  const plotH = CH - padT - padB;
+  const xFor = (i: number) => padL + (recent.length <= 1 ? plotW / 2 : (i / (recent.length - 1)) * plotW);
+  const yFor = (score: number) => padT + plotH - (score / 100) * plotH;
+  const linePoints = recent.map((r, i) => `${xFor(i)},${yFor(r.score)}`).join(' ');
 
   // 「次にやるといいよ」：まだ達成が少ない順に、最初の未挑戦スキルをおすすめ
   const recommendations = useMemo(() => {
@@ -125,6 +147,79 @@ export const MyProgress: React.FC = () => {
           <Trophy size={24} color="var(--color-accent)" />
           <span>バッジ <strong>{badges.length}</strong> 個</span>
         </div>
+      </div>
+
+      {/* 発音スコアの推移グラフ */}
+      <div className="glass-card" style={{ padding: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🎤 発音スコアの記録</h3>
+          {history.length > 0 && (
+            <div style={{ display: 'flex', gap: '1.2rem', fontSize: '0.95rem', color: '#555' }}>
+              <span>直近平均 <strong style={{ color: 'var(--color-primary)' }}>{avgRecent}</strong>点</span>
+              <span>最高 <strong style={{ color: 'var(--color-accent)' }}>{bestScore}</strong>点</span>
+              <span>記録 <strong>{history.length}</strong>回</span>
+            </div>
+          )}
+        </div>
+
+        {history.length === 0 ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
+            まだ発音の記録がないよ。<br/>
+            モンスターバトル・おはなし音読・教科書のボーナスでマイクを使うと、ここに点数の記録がたまっていくよ！
+          </div>
+        ) : (
+          <>
+            <svg width="100%" viewBox={`0 0 ${CW} ${CH}`} style={{ display: 'block' }}>
+              {/* 目盛り線 0/50/100 */}
+              {[0, 50, 100].map(v => (
+                <g key={v}>
+                  <line x1={padL} y1={yFor(v)} x2={CW - padR} y2={yFor(v)} stroke="#e2e8f0" strokeWidth="1" />
+                  <text x={padL - 6} y={yFor(v) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">{v}</text>
+                </g>
+              ))}
+              {/* 合格ライン60点 */}
+              <line x1={padL} y1={yFor(60)} x2={CW - padR} y2={yFor(60)} stroke="#00b894" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />
+              {/* 推移の線 */}
+              {recent.length > 1 && (
+                <polyline points={linePoints} fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+              )}
+              {/* 各回の点（活動ごとに色分け） */}
+              {recent.map((r, i) => (
+                <circle key={r.ts} cx={xFor(i)} cy={yFor(r.score)} r="4.5" fill={MODE_STYLE[r.mode]?.color || '#888'} stroke="white" strokeWidth="1.5">
+                  <title>{`${MODE_STYLE[r.mode]?.label || r.mode}: ${r.score}点 (${r.label})`}</title>
+                </circle>
+              ))}
+            </svg>
+
+            {/* 凡例 */}
+            <div style={{ display: 'flex', gap: '1.2rem', justifyContent: 'center', marginTop: '0.8rem', flexWrap: 'wrap', fontSize: '0.85rem', color: '#555' }}>
+              {(Object.keys(MODE_STYLE) as ScoreMode[]).map(m => (
+                <span key={m} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: MODE_STYLE[m].color, display: 'inline-block' }} />
+                  {MODE_STYLE[m].label}
+                </span>
+              ))}
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center', margin: '0.5rem 0 0 0' }}>
+              ※ 直近{recent.length}回ぶんのスコアを表示
+            </p>
+
+            {/* 最近の記録リスト（タップでも見える） */}
+            <div style={{ marginTop: '1rem' }}>
+              <div style={{ fontWeight: 'bold', color: '#555', marginBottom: '0.5rem', fontSize: '0.95rem' }}>最近の記録</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {[...history].slice(-8).reverse().map(r => (
+                  <div key={r.ts} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0.7rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
+                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: MODE_STYLE[r.mode]?.color || '#888', flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontWeight: 'bold', color: '#2d3436', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', flexShrink: 0 }}>{MODE_STYLE[r.mode]?.label}</span>
+                    <span style={{ fontWeight: 'bold', flexShrink: 0, color: r.score >= 60 ? 'var(--color-success)' : 'var(--color-error)' }}>{r.score}点</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* おすすめ */}

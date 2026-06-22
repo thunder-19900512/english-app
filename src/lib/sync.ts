@@ -21,6 +21,10 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   // Dictionary progress is stored inside the student_<id> object (see useDictionaryProgress)
   const dictionary_progress = parsedStudentData.dictProgress || {};
 
+  // 発音スコアの履歴（メタ認知・推移グラフ用）
+  const pronStr = localStorage.getItem(`pronHistory_${studentId}`);
+  const pronunciation_history = pronStr ? JSON.parse(pronStr) : [];
+
   // Debounce the actual push logic
   return new Promise((resolve) => {
     if (syncTimeout) {
@@ -39,6 +43,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
             clear_counts,
             dictionary_progress,
             reflections,
+            pronunciation_history,
             last_access: new Date().toISOString()
           }, { onConflict: 'id' });
           
@@ -117,7 +122,18 @@ export const pullFromSupabase = async (studentId: string) => {
     [...localReflections, ...dbReflections].forEach(r => mergedReflectionsMap.set(r.id, r));
     const mergedReflections = Array.from(mergedReflectionsMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     localStorage.setItem(`reflections_${studentId}`, JSON.stringify(mergedReflections));
-    
+
+    // Merge pronunciation history (dedupe by ts, sort oldest→newest, cap to last 300)
+    const localPronStr = localStorage.getItem(`pronHistory_${studentId}`);
+    const localPron = localPronStr ? JSON.parse(localPronStr) : [];
+    const dbPron = data.pronunciation_history || [];
+    const pronMap = new Map<number, any>();
+    [...localPron, ...dbPron].forEach((r: any) => { if (r && typeof r.ts === 'number') pronMap.set(r.ts, r); });
+    const mergedPron = Array.from(pronMap.values())
+      .sort((a, b) => a.ts - b.ts)
+      .slice(-300);
+    localStorage.setItem(`pronHistory_${studentId}`, JSON.stringify(mergedPron));
+
     return true;
   }
   return false;
