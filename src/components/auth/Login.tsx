@@ -44,7 +44,19 @@ export const Login: React.FC = () => {
         <p style={{ fontSize: '1.2rem' }}>なまえをタップしてはじめよう！</p>
       </div>
 
-      <div className="student-grid" style={{ marginTop: '2rem' }}>
+      {/* 学年の色わけ凡例 */}
+      <div className="flex-center" style={{ gap: '1.5rem', marginTop: '0.5rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}>
+          <span style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--color-secondary)', display: 'inline-block' }} />
+          5年生
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}>
+          <span style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--color-primary)', display: 'inline-block' }} />
+          6年生
+        </span>
+      </div>
+
+      <div className="student-grid" style={{ marginTop: '1rem' }}>
         {STUDENTS.map((student) => (
           <button
             key={student.id}
