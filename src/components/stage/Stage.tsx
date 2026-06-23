@@ -23,7 +23,7 @@ const phonicsEmojis: Record<string, string> = {
   // Stage 9: 連続子音ブレンド①
   snake: '🐍', sky: '🌌', swim: '🏊', plane: '✈️', glass: '🥛', flower: '🌸', sleep: '😴',
   // Stage 10: 連続子音ブレンド②
-  brush: '🪥', frog: '🐸', crab: '🦀', grape: '🍇', drum: '🥁', three: '3️⃣', spring: '🌱', strawberry: '🍓', dragon: '🐉', crown: '👑'
+  brush: '🪥', frog: '🐸', crab: '🦀', grape: '🍇', drum: '🥁', truck: '🚚', three: '3️⃣', spring: '🌱', strawberry: '🍓', dragon: '🐉', crown: '👑'
 };
 
 const LOCAL_PHONEMES = new Set([

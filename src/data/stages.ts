@@ -55,7 +55,7 @@ export const stages: StageData[] = [
     badgeName: 'ゴールデン・リーフ',
     colorClass: 'stage-color-3',
     practiceItems: ['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng'],
-    items: ['ship', 'shop', 'fish', 'dish', 'star', 'stop', 'chop', 'chin', 'thin', 'math', 'phone', 'whale', 'duck', 'ring', 'queen'],
+    items: ['ship', 'shop', 'fish', 'dish', 'chop', 'chin', 'thin', 'math', 'phone', 'whale', 'duck', 'ring'],
     blendItems: [
       { word: 'ship', phonemes: ['sh', 'i', 'p'] },
       { word: 'fish', phonemes: ['f', 'i', 'sh'] },
@@ -199,7 +199,7 @@ export const stages: StageData[] = [
     explanation: 'br・fr・cr・gr・dr・tr のなかまや、thr・spr・str のように3つならぶ音もあるよ。ぜんぶの音をはやくつなげて読もう！',
     practiceItems: ['br', 'fr', 'cr', 'gr', 'dr', 'tr', 'thr', 'spr', 'str'],
     hideListenPractice: true,
-    items: ['brush', 'frog', 'crab', 'grape', 'drum', 'tree', 'train', 'three', 'spring', 'strawberry', 'dragon', 'crown'],
+    items: ['brush', 'frog', 'crab', 'grape', 'drum', 'truck', 'three', 'spring', 'strawberry', 'dragon', 'crown'],
     stories: [
       'The frog is on the tree.',
       'I see three grapes.',
