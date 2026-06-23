@@ -122,7 +122,14 @@ export const usePronunciationAssessment = (
       }
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // 教室の雑音対策：ノイズ抑制・エコー除去・自動ゲインをON。
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true,
+      },
+    });
     mediaStreamRef.current = stream;
 
     const ctx = new AudioContext();

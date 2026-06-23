@@ -99,8 +99,13 @@ export const LearnMode: React.FC = () => {
       setRecordingWordId(wordId);
       const result = await assess(targetWord.english);
       setRecordingWordId(null);
-      if (result && result.pronunciationScore >= LEARN_PASS_SCORE) {
-        markSpoken(targetWord.id);
+      if (result) {
+        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // スコアが基準以上、または単語がちゃんと聞き取れていればOK（雑音でスコアが落ちても救済）
+        const heardWord = !!result.recognizedText && norm(result.recognizedText).includes(norm(targetWord.english));
+        if (result.pronunciationScore >= LEARN_PASS_SCORE || heardWord) {
+          markSpoken(targetWord.id);
+        }
       }
       return;
     }
