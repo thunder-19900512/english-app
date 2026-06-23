@@ -143,6 +143,13 @@ export const DialogueTrainer: React.FC = () => {
         相手のセリフは🔈で聞けるよ。自分（{myRole}）のセリフは🎤で読んで発音チェック！
       </p>
 
+      {dialogue.note && (
+        <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(253, 203, 110, 0.18)', border: '2px solid #fdcb6e', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '1.3rem' }}>💡</span>
+          <span style={{ fontSize: '0.95rem', color: '#7a5a00' }}>{dialogue.note}</span>
+        </div>
+      )}
+
       {/* セリフ一覧 */}
       <div className="flex-col gap-md">
         {dialogue.lines.map((line, idx) => {

@@ -7,7 +7,8 @@ import { Button } from "../../ui/Button";
 import { ArrowLeft, Volume2, Star, Trophy, RefreshCw, Mic, Keyboard } from 'lucide-react';
 import { usePoints } from '../../../hooks/usePoints';
 
-const getQuestionForPhrase = (keyPhrase: string) => {
+const getQuestionForPhrase = (keyPhrase: string, category?: string) => {
+  if (category === '教科') return "What subject do you like?";
   if (keyPhrase.includes("I'd like")) return "What would you like?";
   if (keyPhrase.includes("One ◯◯")) return "May I take your order?";
   if (keyPhrase.includes("Let's eat")) return "What shall we eat?";
@@ -89,7 +90,7 @@ export const QAMode: React.FC = () => {
     setTranscript('');
     
     setTimeout(() => {
-      speak(getQuestionForPhrase(target.keyPhrase));
+      speak(getQuestionForPhrase(target.keyPhrase, target.category));
     }, 500);
   }, [speak, setTranscript]);
 
@@ -281,7 +282,7 @@ export const QAMode: React.FC = () => {
 
   if (!targetWord) return null;
 
-  const questionText = getQuestionForPhrase(targetWord.keyPhrase);
+  const questionText = getQuestionForPhrase(targetWord.keyPhrase, targetWord.category);
   const expectedAnswer = targetWord.keyPhrase.replace(/◯◯/g, targetWord.english);
 
   return (

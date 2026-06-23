@@ -14,6 +14,7 @@ export interface Dialogue {
   unitName: string;
   targetPhrase: string;
   lines: DialogueLine[];
+  note?: string; // 文法のワンポイント（任意）
 }
 
 export const DIALOGUES: Dialogue[] = [
@@ -23,8 +24,9 @@ export const DIALOGUES: Dialogue[] = [
     lines: [
       { speaker: 'A', en: 'What subject do you like?', ja: '何の教科が好き？' },
       { speaker: 'B', en: 'I like {P.E.}.', ja: '【体育】が好き。' },
-      { speaker: 'A', en: 'Nice! I like {music}, too.', ja: 'いいね！ぼくは【音楽】が好き。' },
+      { speaker: 'A', en: 'Oh, nice! I like {science}.', ja: 'いいね！ぼくは【理科】が好き。' },
     ],
+    note: '相手と同じ教科が好きなときは "I like science, too."（〜も）と "too" をつけよう！ちがう教科のときは "too" はつけないよ。',
   },
   {
     id: 'g5-u2', grade: 5, unitName: 'Unit 2: Happy birthday!', targetPhrase: 'When is your birthday?',

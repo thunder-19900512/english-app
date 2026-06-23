@@ -196,7 +196,7 @@ dialogues = [
     ('5年', 'Unit 1', 'What subject do you like?', [
         ('A', 'What subject do you like?', '何の教科が好き？'),
         ('B', 'I like {P.E.}.', '【体育】が好き。'),
-        ('A', 'Nice! I like {music}, too.', 'いいね！ぼくは【音楽】が好き。')]),
+        ('A', 'Oh, nice! I like {science}.', 'いいね！ぼくは【理科】が好き。')]),
     ('5年', 'Unit 2', 'When is your birthday?', [
         ('A', 'When is your birthday?', '誕生日はいつ？'),
         ('B', 'My birthday is {May 5th}.', '【5月5日】だよ。'),
