@@ -258,5 +258,17 @@ export const vocabulary: Vocabulary[] = [
   { id: 'v247', english: 'cold', japanese: '寒い', category: '天気', page: 19, emoji: '🧊', keyPhrase: "It's a ◯◯ day." },
   { id: 'v248', english: 'warm', japanese: '暖かい', category: '天気', page: 19, emoji: '☺️', keyPhrase: "It's a ◯◯ day." },
   { id: 'v249', english: 'hot', japanese: '熱い', category: '天気', page: 19, emoji: '🔥', keyPhrase: "It's a ◯◯ day." },
-  { id: 'v250', english: 'humid', japanese: 'じめじめした', category: '天気', page: 19, emoji: '💦', keyPhrase: "It's a ◯◯ day." }
+  { id: 'v250', english: 'humid', japanese: 'じめじめした', category: '天気', page: 19, emoji: '💦', keyPhrase: "It's a ◯◯ day." },
+  { id: 'v251', english: 'English', japanese: '英語', category: '教科', page: 28, emoji: '🔤', keyPhrase: "I like ◯◯." },
+  { id: 'v252', english: 'Japanese', japanese: '国語', category: '教科', page: 28, emoji: '📖', keyPhrase: "I like ◯◯." },
+  { id: 'v253', english: 'calligraphy', japanese: '書道', category: '教科', page: 28, emoji: '🖌️', keyPhrase: "I like ◯◯." },
+  { id: 'v254', english: 'social studies', japanese: '社会', category: '教科', page: 28, emoji: '🌏', keyPhrase: "I like ◯◯." },
+  { id: 'v255', english: 'math', japanese: '数学', category: '教科', page: 28, emoji: '➗', keyPhrase: "I like ◯◯." },
+  { id: 'v256', english: 'science', japanese: '理科', category: '教科', page: 28, emoji: '🔬', keyPhrase: "I like ◯◯." },
+  { id: 'v257', english: 'music', japanese: '音楽', category: '教科', page: 28, emoji: '🎵', keyPhrase: "I like ◯◯." },
+  { id: 'v258', english: 'arts and crafts', japanese: '図工', category: '教科', page: 28, emoji: '🎨', keyPhrase: "I like ◯◯." },
+  { id: 'v259', english: 'home economics', japanese: '家庭科', category: '教科', page: 28, emoji: '🍳', keyPhrase: "I like ◯◯." },
+  { id: 'v260', english: 'P.E.', japanese: '体育', category: '教科', page: 28, emoji: '⚽', keyPhrase: "I like ◯◯." },
+  { id: 'v261', english: 'moral education', japanese: '道徳', category: '教科', page: 28, emoji: '💗', keyPhrase: "I like ◯◯." },
+  { id: 'v262', english: 'period for integrated studies', japanese: '総合の時間', category: '教科', page: 28, emoji: '🧩', keyPhrase: "I like ◯◯." }
 ];
