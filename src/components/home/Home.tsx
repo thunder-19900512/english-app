@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { stages } from '../../data/stages';
 import { Trophy, Lock, BookOpen, Target, Keyboard, Mic, Search, Star, MessageCircleQuestion, Sparkles, Book } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -12,7 +12,12 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
   const [earnedBadges, setEarnedBadges] = useState<number[]>([]);
   const [studentName, setStudentName] = useState<string>('ゲスト');
-  const [activeTab, setActiveTab] = useState<'phonics' | 'dictionary' | null>(null);
+  // タブ状態はURL(?tab=)で持つ。こうするとステージ等から「もどる」で戻ったとき、
+  // フォニックス/辞書の一覧画面にちゃんと戻れる（stateだとTOPに戻ってしまうため）。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as 'phonics' | 'dictionary' | null) || null;
+  const setActiveTab = (tab: 'phonics' | 'dictionary' | null) =>
+    setSearchParams(tab ? { tab } : {});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
   const { todayMission } = useAppSettings();
