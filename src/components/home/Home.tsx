@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { stages } from '../../data/stages';
-import { Trophy, Lock, BookOpen, Target, Keyboard, Mic, Search, CheckCircle, Star, MessageCircleQuestion, Sparkles, Book } from 'lucide-react';
+import { Trophy, Lock, BookOpen, Target, Keyboard, Mic, Search, Star, MessageCircleQuestion, Sparkles, Book } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { vocabulary } from '../../data/vocabulary';
 import { pushToSupabase } from '../../lib/sync';
@@ -44,6 +44,15 @@ export const Home: React.FC = () => {
   }, [navigate]);
 
   const allCleared = earnedBadges.length === stages.length;
+
+  // 各モードとクリア印の絵文字（単元一覧に表示）
+  const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice'; emoji: string }[] = [
+    { key: 'learn', emoji: '📖' },
+    { key: 'wordsearch', emoji: '🔍' },
+    { key: 'practice', emoji: '🎯' },
+    { key: 'spelling', emoji: '⌨️' },
+    { key: 'voice', emoji: '🎤' },
+  ];
 
   return (
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
@@ -112,21 +121,21 @@ export const Home: React.FC = () => {
 
       {!activeTab && (
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '900px', marginBottom: '2rem' }}>
-          <div 
+          <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
-            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(255, 107, 107, 0.2)', border: '2px solid transparent' }}
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(255, 107, 107, 0.2)', border: '2px solid #ff6b6b' }}
             onClick={() => setActiveTab('phonics')}
           >
-            <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)' }}>Phonics</h2>
+            <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)', textAlign: 'center' }}>Phonics</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>音と文字のルールを学ぼう！<br/>(全6ステージ)</p>
           </div>
 
-          <div 
+          <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
-            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)', border: '2px solid transparent' }}
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)', border: '2px solid #48dbfb' }}
             onClick={() => setActiveTab('dictionary')}
           >
-            <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)' }}>Picture Dictionary</h2>
+            <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)', textAlign: 'center' }}>Picture Dictionary</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>英単語のれんしゅうと<br/>ミニゲームであそぼう！</p>
           </div>
 
@@ -230,24 +239,34 @@ export const Home: React.FC = () => {
             <h2 style={{ flex: 1, textAlign: 'center', color: '#444', margin: 0, marginRight: '80px' }}>Picture Dictionary 単元一覧</h2>
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-            {categories.map((category, idx) => (
-              <div 
-                key={idx}
-                className="glass-card flex-col flex-center hover-scale"
-                style={{ 
-                  cursor: 'pointer', 
-                  transition: 'all 0.2s',
-                  background: 'var(--glass-bg)',
-                  border: '1px solid var(--glass-border)'
-                }}
-                onClick={() => setExpandedCategory(category)}
-              >
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--color-primary)' }}>{category}</h3>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                  {vocabulary.filter(v => v.category === category).length} words
-                </p>
-              </div>
-            ))}
+            {categories.map((category, idx) => {
+              const p = progress[category] || {};
+              const cleared = MODE_BADGES.filter(m => (p as any)[m.key]);
+              return (
+                <div
+                  key={idx}
+                  className="glass-card flex-col flex-center hover-scale"
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: 'var(--glass-bg)',
+                    border: '1px solid var(--glass-border)'
+                  }}
+                  onClick={() => setExpandedCategory(category)}
+                >
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--color-primary)' }}>{category}</h3>
+                  <p style={{ margin: '0.5rem 0 0 0', color: '#666', fontSize: '0.9rem' }}>
+                    {vocabulary.filter(v => v.category === category).length} words
+                  </p>
+                  {/* クリアしたモードの印 */}
+                  <div style={{ display: 'flex', gap: '0.2rem', marginTop: '0.5rem', minHeight: '1.4rem', fontSize: '1.1rem' }}>
+                    {cleared.length === 0
+                      ? <span style={{ fontSize: '0.8rem', color: '#bbb' }}>まだ</span>
+                      : cleared.map(m => <span key={m.key} title={m.key}>{m.emoji}</span>)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Modal for Dictionary Category Modes */}
@@ -263,11 +282,6 @@ export const Home: React.FC = () => {
                     style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/learn`)}
                   >
-                    {(progress[expandedCategory]?.learn) && (
-                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', color: 'var(--color-success)' }}>
-                        <CheckCircle size={28} fill="#fff" />
-                      </div>
-                    )}
                     <BookOpen size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>学習モード</h3>
                   </div>
@@ -277,11 +291,6 @@ export const Home: React.FC = () => {
                     style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(162, 155, 254, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/game/wordsearch`)}
                   >
-                    {(progress[expandedCategory]?.wordsearch) && (
-                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', color: 'var(--color-success)' }}>
-                        <CheckCircle size={28} fill="#fff" />
-                      </div>
-                    )}
                     <Search size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>言葉さがし</h3>
                   </div>
@@ -291,11 +300,6 @@ export const Home: React.FC = () => {
                     style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(29, 209, 161, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/practice`)}
                   >
-                    {(progress[expandedCategory]?.practice) && (
-                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', color: 'var(--color-success)' }}>
-                        <CheckCircle size={28} fill="#fff" />
-                      </div>
-                    )}
                     <Target size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>選択モード</h3>
                   </div>
@@ -305,18 +309,13 @@ export const Home: React.FC = () => {
                     style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(255, 159, 67, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/game/spelling`)}
                   >
-                    {(progress[expandedCategory]?.spelling) && (
-                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', color: 'var(--color-success)' }}>
-                        <CheckCircle size={28} fill="#fff" />
-                      </div>
-                    )}
                     <Keyboard size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>タイピング</h3>
                   </div>
 
-                  <div 
-                    className="glass-card flex-col flex-center hover-scale" 
-                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(255, 107, 107, 0.2)' }}
+                  <div
+                    className="glass-card flex-col flex-center hover-scale"
+                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(255, 107, 107, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/game/voice`)}
                   >
                     <Mic size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
