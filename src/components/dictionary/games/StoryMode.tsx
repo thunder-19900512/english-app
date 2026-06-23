@@ -157,10 +157,16 @@ export const StoryMode: React.FC = () => {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
       const data = await response.json();
       
-      const availableModels = data.models
+      const flashModels = data.models
         .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('flash'))
         .map((m: any) => m.name.replace('models/', ''))
         .sort((a: string, b: string) => b.localeCompare(a)); // Sort descending to try newer models first
+      // コスト固定のため flash-lite を優先。使えない/混雑時は従来どおり新しいflashへフォールバック。
+      const PREFERRED = ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.0-flash-lite'];
+      const availableModels = [
+        ...PREFERRED.filter(m => flashModels.includes(m)),
+        ...flashModels.filter((m: string) => !PREFERRED.includes(m)),
+      ];
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
 
