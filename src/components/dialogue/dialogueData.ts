@@ -15,6 +15,7 @@ export interface Dialogue {
   targetPhrase: string;
   lines: DialogueLine[];
   note?: string; // 文法のワンポイント（任意）
+  relatedCategories?: string[]; // 関連するPicture Dictionaryの単元（任意）
 }
 
 export const DIALOGUES: Dialogue[] = [
@@ -27,6 +28,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Oh, nice! I like {science}.', ja: 'いいね！ぼくは【理科】が好き。' },
     ],
     note: '相手と同じ教科が好きなときは "I like science, too."（〜も）と "too" をつけよう！ちがう教科のときは "too" はつけないよ。',
+    relatedCategories: ['教科'],
   },
   {
     id: 'g5-u2', grade: 5, unitName: 'Unit 2: Happy birthday!', targetPhrase: 'When is your birthday?',
@@ -36,6 +38,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Happy birthday! What do you want?', ja: 'おめでとう！何がほしい？' },
       { speaker: 'B', en: 'I want {a new ball}.', ja: '【新しいボール】がほしい。' },
     ],
+    relatedCategories: ['月'],
   },
   {
     id: 'g5-u3', grade: 5, unitName: 'Unit 3: What do you have on Monday?', targetPhrase: 'Can you play the piano?',
@@ -45,6 +48,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Can you {swim}?', ja: '【泳ぐ】のはできる？' },
       { speaker: 'B', en: 'Yes, I can!', ja: 'うん、できる！' },
     ],
+    relatedCategories: ['動作など（5年）'],
   },
   {
     id: 'g5-u4', grade: 5, unitName: 'Unit 4: He can bake bread well.', targetPhrase: 'She can play tennis very well.',
@@ -54,6 +58,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: '{He} can play tennis very well.', ja: '【彼】はテニスがすごく上手。' },
       { speaker: 'B', en: 'Wow, great!', ja: 'わー、すごい！' },
     ],
+    relatedCategories: ['動作など（5年）'],
   },
   {
     id: 'g5-u5', grade: 5, unitName: 'Unit 5: Where is the post office?', targetPhrase: 'Where is the post office?',
@@ -71,6 +76,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Anything to drink?', ja: '飲み物は？' },
       { speaker: 'B', en: '{Orange juice}, please.', ja: '【オレンジジュース】を。' },
     ],
+    relatedCategories: ['食べ物', '飲み物'],
   },
   {
     id: 'g5-u7', grade: 5, unitName: 'Unit 7: Welcome to Japan.', targetPhrase: 'Why do you want to go there?',
@@ -99,6 +105,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: 'Nice to meet you, too. What can you do?', ja: 'よろしく。何ができる？' },
       { speaker: 'A', en: 'I can speak {Japanese} and {English}.', ja: '【日本語】と【英語】が話せる。' },
     ],
+    relatedCategories: ['動作など（6年）'],
   },
   {
     id: 'g6-u2', grade: 6, unitName: 'Unit 2: How is your school life?', targetPhrase: 'What time do you get up?',
@@ -116,6 +123,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: 'It was {fun}. I {played soccer}.', ja: '【楽しかった】。【サッカーした】。' },
       { speaker: 'A', en: 'Sounds nice!', ja: 'いいね！' },
     ],
+    relatedCategories: ['したこと', '気分'],
   },
   {
     id: 'g6-u4', grade: 6, unitName: 'Unit 4: Let\'s see the world.', targetPhrase: 'You can see many unique animals.',
@@ -150,6 +158,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'What did you do?', ja: '何をした？' },
       { speaker: 'B', en: 'I {saw a big castle}.', ja: '【大きなお城を見た】。' },
     ],
+    relatedCategories: ['したこと'],
   },
   {
     id: 'g6-u8', grade: 6, unitName: 'Unit 8: Future Dreams', targetPhrase: 'I want to be a programmer.',

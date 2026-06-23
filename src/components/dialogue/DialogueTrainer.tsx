@@ -150,6 +150,26 @@ export const DialogueTrainer: React.FC = () => {
         </div>
       )}
 
+      {dialogue.relatedCategories && dialogue.relatedCategories.length > 0 && (
+        <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(72, 219, 251, 0.12)', border: '2px solid var(--color-primary)' }}>
+          <div style={{ fontSize: '0.9rem', color: '#555', marginBottom: '0.5rem' }}>
+            📚 この会話で使う単語は、Picture Dictionaryでも練習できるよ！
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {dialogue.relatedCategories.map(cat => (
+              <button
+                key={cat}
+                className="hover-scale"
+                onClick={() => navigate(`/dictionary/${encodeURIComponent(cat)}`)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '999px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
+              >
+                「{cat}」を練習する →
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* セリフ一覧 */}
       <div className="flex-col gap-md">
         {dialogue.lines.map((line, idx) => {
