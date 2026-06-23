@@ -123,18 +123,19 @@ export const stages: StageData[] = [
     badgeName: 'ブレンド・マスター',
     colorClass: 'stage-color-6',
     practiceItems: ['ar', 'or', 'ir', 'air', 'ear', 'wor'],
-    items: ['smile', 'snack', 'black', 'clock', 'spoon', 'stop', 'park', 'short', 'girl', 'chair', 'work'],
+    // 上のグラフェム(ar/or/ir/air/ear/wor)と1対1で対応する例単語にそろえる
+    items: ['park', 'short', 'girl', 'chair', 'ear', 'work'],
     blendItems: [
       { word: 'park', phonemes: ['p', 'ar', 'k'] },
-      { word: 'girl', phonemes: ['g', 'er', 'l'] },
+      { word: 'girl', phonemes: ['g', 'ir', 'l'] },
       { word: 'short', phonemes: ['sh', 'or', 't'] },
       { word: 'chair', phonemes: ['ch', 'air'] }
     ],
     alienWords: ['darf', 'lorn', 'mirt', 'slear', 'worf'],
     stories: [
       'The girl is in the park.',
-      'I see a short clock on the chair.',
-      'A black dog has a snack.'
+      'I see a short bird on the chair.',
+      'My work is by the car.'
     ]
   },
   {

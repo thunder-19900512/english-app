@@ -15,7 +15,7 @@ const phonicsEmojis: Record<string, string> = {
   ship: '🚢', shop: '🏪', fish: '🐟', dish: '🍽️', star: '⭐', stop: '🛑', chop: '🔪', chin: '🧔', thin: '📏', math: '🔢', phone: '📱', whale: '🐳', duck: '🦆', ring: '💍', queen: '👑',
   cake: '🍰', make: '🛠️', take: '🤲', bike: '🚲', like: '👍', kite: '🪁', nose: '👃', rose: '🌹', cute: '🥰', mute: '🔇',
   rain: '🌧️', train: '🚂', tree: '🌳', see: '👀', boat: '⛵', coat: '🧥', meat: '🥩', seat: '💺',
-  smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼',
+  smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼', ear: '👂', bird: '🐦', car: '🚗',
   // Stage 7: 母音チーム その2
   play: '🎮', key: '🔑', pie: '🥧', tie: '👔', snow: '⛄', yellow: '🟡', blue: '🔵', suit: '🤵', juice: '🧃', fruit: '🍓',
   // Stage 8: 2文字の母音
