@@ -12,6 +12,7 @@ import { CategoryDashboard } from './components/dictionary/CategoryDashboard';
 import { LearnMode } from './components/dictionary/LearnMode';
 import { PracticeMode } from './components/dictionary/PracticeMode';
 import { SpellingGame } from './components/dictionary/games/SpellingGame';
+import { TypingPractice } from './components/dictionary/games/TypingPractice';
 import { VoiceBattle } from './components/dictionary/games/VoiceBattle';
 import { WordSearch } from './components/dictionary/games/WordSearch';
 import { QAMode } from './components/dictionary/games/QAMode';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
             <Route path="/dictionary/:category/learn" element={<LearnMode />} />
             <Route path="/dictionary/:category/practice" element={<PracticeMode />} />
             <Route path="/dictionary/:category/game/spelling" element={<SpellingGame />} />
+            <Route path="/dictionary/:category/game/typing" element={<TypingPractice />} />
             <Route path="/dictionary/:category/game/voice" element={<VoiceBattle />} />
             <Route path="/dictionary/:category/game/wordsearch" element={<WordSearch />} />
             <Route path="/dictionary/:category/game/qa" element={<QAMode />} />

@@ -151,6 +151,32 @@ export const Home: React.FC = () => {
 
           <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(9, 132, 227, 0.15)', border: '2px solid #0984e3' }}
+            onClick={() => navigate('/dialogue')}
+          >
+            <span style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🗣️</span>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ダイアログ</h2>
+            <p style={{ margin: '0.5rem 0 0.8rem 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話練習！</p>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/dialogue?grade=5'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#0984e3', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                5年生
+              </button>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/dialogue?grade=6'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#0984e3', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                6年生
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="glass-card flex-col flex-center animate-pop hover-scale"
             style={{ padding: '2rem', cursor: 'pointer', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(217, 70, 239, 0.2) 100%)', border: '2px solid #d946ef' }}
             onClick={() => navigate('/story')}
           >
@@ -167,16 +193,6 @@ export const Home: React.FC = () => {
             <Sparkles size={40} color="#a29bfe" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>AI英会話</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>AIキャラクターと<br/>声で英会話！</p>
-          </div>
-
-          <div
-            className="glass-card flex-col flex-center animate-pop hover-scale"
-            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(9, 132, 227, 0.15)', border: '2px solid #0984e3' }}
-            onClick={() => navigate('/dialogue')}
-          >
-            <span style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🗣️</span>
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ダイアログ</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話練習！</p>
           </div>
         </div>
       )}
@@ -311,6 +327,15 @@ export const Home: React.FC = () => {
                   >
                     <Keyboard size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>タイピング</h3>
+                  </div>
+
+                  <div
+                    className="glass-card flex-col flex-center hover-scale"
+                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(0, 184, 148, 0.2)', position: 'relative' }}
+                    onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/game/typing`)}
+                  >
+                    <Keyboard size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
+                    <h3 style={{ margin: 0, fontSize: '1.2rem' }}>⌨️ タイピング練習</h3>
                   </div>
 
                   <div

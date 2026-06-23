@@ -9,6 +9,55 @@ import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
 import { ArrowLeft, Send, Sparkles, AlertTriangle, Coins, HelpCircle, Languages, Trophy } from 'lucide-react';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
+import { DIALOGUES } from '../../dialogue/dialogueData';
+
+// 教科書の各Unitに紐づくフリートークの場面とゴール（ゴールは英語、場面は日本語）
+interface FreetalkUnit { id: string; label: string; situation: string; goal: string; greeting: { en: string; ja: string }; }
+const FREETALK_UNITS: FreetalkUnit[] = [
+  { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'Ask and answer about your favorite school subjects.', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
+  { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: "Ask and answer about birthdays and what you want.", greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
+  { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'Ask and answer about what you can do.', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
+  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'Introduce what your friend can do well.', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
+  { id: 'g5-u5', label: '5年 U5 道案内', situation: '町で道をたずねて案内する', goal: 'Ask for and give simple directions.', greeting: { en: 'Excuse me. Where is the station?', ja: 'すみません、駅はどこ？' } },
+  { id: 'g5-u6', label: '5年 U6 レストラン注文', situation: 'レストランで食べ物や飲み物を注文する', goal: 'Order food and drinks at a restaurant.', greeting: { en: 'What would you like?', ja: '何にする？' } },
+  { id: 'g5-u7', label: '5年 U7 行きたい場所', situation: '行きたい場所とその理由を話す', goal: 'Say where you want to go and why.', greeting: { en: 'Where do you want to go?', ja: 'どこに行きたい？' } },
+  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'Talk about your hero and why.', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
+  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'Introduce yourself and what you can do.', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
+  { id: 'g6-u2', label: '6年 U2 一日の生活', situation: '毎日の生活（起きる時間など）を聞き合う', goal: 'Ask and answer about your daily schedule.', greeting: { en: 'What time do you get up?', ja: '何時に起きる？' } },
+  { id: 'g6-u3', label: '6年 U3 週末のこと', situation: '週末にしたことを話す', goal: 'Talk about what you did on the weekend.', greeting: { en: 'How was your weekend?', ja: '週末はどうだった？' } },
+  { id: 'g6-u4', label: '6年 U4 行きたい国', situation: '行きたい国と見られるものを話す', goal: 'Talk about a country you want to visit and what you can see.', greeting: { en: 'Where do you want to go?', ja: 'どこの国に行きたい？' } },
+  { id: 'g6-u5', label: '6年 U5 ○○産', situation: '持ち物がどこの国から来たか話す', goal: 'Talk about where things are from.', greeting: { en: 'Nice bag! Where is it from?', ja: 'いいかばん！どこ産？' } },
+  { id: 'g6-u6', label: '6年 U6 環境', situation: '危機にある動物や環境のためにできることを話す', goal: 'Talk about an animal in danger and what we can do.', greeting: { en: 'Sea turtles are in danger. What can we do?', ja: 'ウミガメが危ないよ。何ができるかな？' } },
+  { id: 'g6-u7', label: '6年 U7 一番の思い出', situation: '小学校の一番の思い出を話す', goal: 'Share your best memory and what you did.', greeting: { en: 'What is your best memory?', ja: '一番の思い出は？' } },
+  { id: 'g6-u8', label: '6年 U8 将来の夢', situation: '将来なりたいものとその理由を話す', goal: 'Talk about what you want to be and why.', greeting: { en: 'What do you want to be?', ja: '将来何になりたい？' } },
+];
+
+const stripSlots = (s: string) => s.replace(/[{}]/g, '');
+
+interface InitOpts {
+  situation?: string;
+  goal?: string;
+  goalLabel?: string;
+  greeting?: { en: string; ja: string };
+  suggestions?: Suggestion[];
+  title?: string;
+  histSuffix?: string;
+}
+
+// Unit別フリートークを開始するための opts を組み立てる（例文サジェストはダイアログから流用）
+const buildUnitOpts = (u: FreetalkUnit): InitOpts => {
+  const d = DIALOGUES.find(x => x.id === u.id);
+  const suggestions = d ? d.lines.map(l => ({ en: stripSlots(l.en), ja: l.ja })) : undefined;
+  return {
+    situation: u.situation,
+    goal: u.goal,
+    goalLabel: `🎯 ミッション：${u.label.replace(/^[0-9]年 U[0-9]+ /, '')}`,
+    greeting: u.greeting,
+    suggestions,
+    title: u.label,
+    histSuffix: u.id,
+  };
+};
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -113,23 +162,36 @@ export const AIAssistant: React.FC = () => {
   const [cleared, setCleared] = useState(false);
   const [situationInput, setSituationInput] = useState('');
   const [pendingFreetalk, setPendingFreetalk] = useState(false);
+  const [activeScenario, setActiveScenario] = useState<Scenario | null>(null);
   const awardedRef = useRef(false);
+  const activeOptsRef = useRef<InitOpts | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const initChat = async (selectedMode: keyof typeof SCENARIOS, situation?: string) => {
+  const initChat = async (selectedMode: keyof typeof SCENARIOS, opts?: InitOpts) => {
     if (!geminiApiKey) return;
-    const scenario = SCENARIOS[selectedMode];
+    // 基本シナリオに、Unit別フリートーク等の上書きを適用した「実シナリオ」を作る
+    const base = SCENARIOS[selectedMode];
+    const scenario: Scenario = {
+      ...base,
+      goal: opts?.goal || base.goal,
+      goalLabel: opts?.goalLabel || base.goalLabel,
+      greeting: opts?.greeting || base.greeting,
+      suggestions: opts?.suggestions || base.suggestions,
+      title: opts?.title || base.title,
+    };
+    setActiveScenario(scenario);
+    activeOptsRef.current = opts;
     setMode(selectedMode);
     setPendingFreetalk(false);
     setCleared(false);
     awardedRef.current = false;
     setShowHelp(false);
 
-    const histKey = `ai_hist_${studentId}_${selectedMode}`;
+    const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}`;
     const savedHist = localStorage.getItem(histKey);
     let pastMessages: ChatMessage[] = [];
     if (savedHist) {
@@ -158,8 +220,8 @@ export const AIAssistant: React.FC = () => {
       }
       if (!targetModel) throw lastError || new Error('利用可能なモデルが見つかりませんでした');
 
-      const situationLine = situation && situation.trim()
-        ? `The user set this situation (in Japanese): 「${situation.trim()}」. Play along with this situation.`
+      const situationLine = opts?.situation && opts.situation.trim()
+        ? `The user set this situation (in Japanese): 「${opts.situation.trim()}」. Play along with this situation.`
         : '';
 
       const systemText = [
@@ -215,6 +277,14 @@ export const AIAssistant: React.FC = () => {
       return;
     }
 
+    // トーク中は日本語NG。日本語が含まれていたら送らず（ポイントも消費せず）英語をうながす。
+    if (/[぀-ヿ㐀-鿿]/.test(text)) {
+      setMessages(prev => [...prev, { role: 'model', text: 'English, please! 英語で話してみよう。こまったら 💡ヘルプ を見てね。' }]);
+      setShowHelp(true);
+      speak('In English, please!');
+      return;
+    }
+
     const ok = await consumePoints(MESSAGE_COST);
     if (!ok) { alert(`ポイントが足りないよ！（${MESSAGE_COST}P ひつよう）`); return; }
 
@@ -222,7 +292,7 @@ export const AIAssistant: React.FC = () => {
     setMessages(newMessages);
     setTranscript(''); setInputText(''); setShowHelp(false); setIsAiThinking(true);
 
-    const histKey = `ai_hist_${studentId}_${mode}`;
+    const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
     try {
       const result = await chatSession.sendMessage(text);
       const raw = result.response.text();
@@ -276,21 +346,34 @@ export const AIAssistant: React.FC = () => {
           <Button variant="outline" onClick={() => setPendingFreetalk(false)} icon={ArrowLeft}>もどる</Button>
           <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>👋 フリートーク</h2>
         </div>
-        <div className="glass-card flex-col gap-md" style={{ padding: '2rem' }}>
-          <h3 style={{ margin: 0 }}>どんな場面で話す？（にほんごでOK・なくてもOK）</h3>
-          <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>
-            例：「はじめて会ったクラスメイトと自己しょうかい」「すきなアニメの話」など。AIがその場面で話してくれるよ。
-          </p>
+        {/* 教科書のUnitから場面をえらぶ */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
+          <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面をえらぶ</h3>
+          <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>そのUnitの表現を使って、AIと会話の練習ができるよ。</p>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
+            {FREETALK_UNITS.map(u => (
+              <button key={u.id} className="hover-scale"
+                onClick={() => initChat('freetalk', buildUnitOpts(u))}
+                style={{ padding: '0.7rem', borderRadius: '10px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'center' }}>
+                {u.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 自由に場面を決める */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
+          <h3 style={{ margin: 0 }}>✏️ 自由に場面を決める（日本語OK・なくてもOK）</h3>
           <textarea
             value={situationInput}
             onChange={e => setSituationInput(e.target.value)}
             placeholder="（れい）休み時間に、すきなスポーツの話をする"
-            style={{ width: '100%', minHeight: '90px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
+            style={{ width: '100%', minHeight: '70px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
           />
-          <Button size="lg" onClick={() => initChat('freetalk', situationInput)} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
+          <Button size="lg" onClick={() => initChat('freetalk', { situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
             この場面ではじめる！
           </Button>
-          <Button variant="outline" onClick={() => initChat('freetalk', '')}>場面なしではじめる</Button>
+          <Button variant="outline" onClick={() => initChat('freetalk', {})}>場面なしではじめる</Button>
         </div>
       </div>
     );
@@ -320,7 +403,7 @@ export const AIAssistant: React.FC = () => {
     );
   }
 
-  const scenario = SCENARIOS[mode];
+  const scenario = activeScenario || SCENARIOS[mode];
 
   return (
     <div className="flex-col" style={{ height: '100%', maxHeight: 'calc(100vh - 120px)' }}>
@@ -330,7 +413,7 @@ export const AIAssistant: React.FC = () => {
         <Button variant="outline" onClick={() => setShowTranslation(t => !t)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.7rem' }} icon={Languages}>
           {showTranslation ? '訳オフ' : '訳オン'}
         </Button>
-        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}`); mode === 'freetalk' ? setPendingFreetalk(true) : initChat(mode); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
+        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--color-primary)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
           <Coins size={18} color="#FFD700" />{totalPoints} P
         </div>

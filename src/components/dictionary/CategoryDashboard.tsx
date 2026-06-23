@@ -60,8 +60,17 @@ export const CategoryDashboard: React.FC = () => {
           <h2 style={{ margin: 0 }}>タイピングモード</h2>
         </div>
 
-        <div 
-          className="glass-card flex-col flex-center animate-pop" 
+        <div
+          className="glass-card flex-col flex-center animate-pop"
+          style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(0, 184, 148, 0.2)' }}
+          onClick={() => navigate(`/dictionary/${category}/game/typing`)}
+        >
+          <Keyboard size={48} color="var(--color-primary)" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ margin: 0 }}>⌨️ タイピング練習</h2>
+        </div>
+
+        <div
+          className="glass-card flex-col flex-center animate-pop"
           style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(255, 107, 107, 0.2)' }}
           onClick={() => navigate(`/dictionary/${category}/game/voice`)}
         >

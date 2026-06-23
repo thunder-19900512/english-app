@@ -6,6 +6,7 @@ import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
+import { TypingTrainer } from '../common/TypingTrainer';
 
 const phonicsEmojis: Record<string, string> = {
   A: '🍎', B: '🐻', C: '🐱', D: '🐶', E: '🐘', F: '🐸', G: '🦍', H: '🎩', I: '🧊', J: '🧃', K: '🐨', L: '🦁', M: '🐒', N: '🥜', O: '🐙', P: '🐷', Q: '👑', R: '🐰', S: '☀️', T: '🐯', U: '☂️', V: '🎻', W: '🍉', X: '❌', Y: '🛥️', Z: '🦓',
@@ -74,7 +75,7 @@ export const Stage: React.FC = () => {
   const { isRecording, transcript, error, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { addPoints } = usePoints();
 
-  const [mode, setMode] = useState<'input' | 'choice' | 'typing' | 'quiz' | 'lab' | 'blend' | 'alien' | 'story'>('input');
+  const [mode, setMode] = useState<'input' | 'choice' | 'typing' | 'typegame' | 'quiz' | 'lab' | 'blend' | 'alien' | 'story'>('input');
   
   const getCurrentItems = useCallback(() => {
     if (!stage) return [];
@@ -500,13 +501,12 @@ export const Stage: React.FC = () => {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Button variant={mode === 'input' ? 'primary' : 'outline'} onClick={() => { setMode('input'); resetSession(); }}>きく</Button>
             <Button variant={mode === 'choice' ? 'primary' : 'outline'} onClick={() => { setMode('choice'); resetSession(); }}>えらぶ</Button>
-            <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>タイピング</Button>
+            <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>🎧 きいてタイプ</Button>
+            <Button variant={mode === 'typegame' ? 'primary' : 'outline'} onClick={() => { setMode('typegame'); resetSession(); }}>⌨️ タイピング練習</Button>
             {stage.id !== 1 && <Button variant={mode === 'quiz' ? 'secondary' : 'outline'} onClick={() => { setMode('quiz'); resetSession(); }}>マイク</Button>}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px dashed #ccc', paddingTop: '0.5rem' }}>
             {stage.labItems && <Button variant={mode === 'lab' ? 'primary' : 'outline'} onClick={() => { setMode('lab'); resetSession(); }}>🔬 ラボ</Button>}
-            {stage.blendItems && <Button variant={mode === 'blend' ? 'primary' : 'outline'} onClick={() => { setMode('blend'); resetSession(); }}>🧩 ブレンド</Button>}
-            {stage.alienWords && <Button variant={mode === 'alien' ? 'primary' : 'outline'} onClick={() => { setMode('alien'); resetSession(); }}>👽 宇宙人</Button>}
             {stage.stories && <Button variant={mode === 'story' ? 'primary' : 'outline'} onClick={() => { setMode('story'); resetSession(); }}>📖 絵本</Button>}
           </div>
         </div>
@@ -557,6 +557,13 @@ export const Stage: React.FC = () => {
           </>
         )}
         
+        {mode === 'typegame' && (
+          <TypingTrainer
+            words={stage.items.map((w) => ({ text: w, emoji: phonicsEmojis[w] }))}
+            speakWord={speak}
+          />
+        )}
+
         {mode === 'choice' && (
           <>
             <p style={{ fontSize: '1.2rem' }}>音をきいて、正しいものをえらぼう！</p>
