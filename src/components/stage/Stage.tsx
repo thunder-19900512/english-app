@@ -65,7 +65,7 @@ const getLevenshteinDistance = (a: string, b: string): number => {
 export const Stage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const goBack = useSafeBack();
+  const goBack = useSafeBack('/home?tab=phonics'); // 1つ上＝フォニックスのステージ一覧へ
   const stage = stages.find(s => s.id === parseInt(id || '1'));
   
   const speak = useCallback((text: string) => {

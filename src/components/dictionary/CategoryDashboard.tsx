@@ -8,7 +8,7 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 export const CategoryDashboard: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
-  const goBack = useSafeBack();
+  const goBack = useSafeBack('/dictionary'); // 1つ上＝カテゴリ一覧へ（クロスリンク時は履歴で元へ）
   const decodedCategory = decodeURIComponent(category || '');
   const { progress } = useDictionaryProgress();
   const catProgress = progress[decodedCategory] || { practice: false, speedKaruta: null, memoryGame: null, spelling: false };

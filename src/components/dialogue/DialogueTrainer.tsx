@@ -198,7 +198,7 @@ export const DialogueTrainer: React.FC = () => {
               <button
                 key={cat}
                 className="hover-scale"
-                onClick={() => navigate(`/dictionary/${encodeURIComponent(cat)}`)}
+                onClick={() => navigate(`/dictionary/${encodeURIComponent(cat)}`, { state: { fromCrossLink: true } })}
                 style={{ padding: '0.5rem 1rem', borderRadius: '999px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
               >
                 「{cat}」を練習する →

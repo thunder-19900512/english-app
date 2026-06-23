@@ -95,7 +95,7 @@ const generateGrid = (words: string[]) => {
 export const WordSearch: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
-  const goBack = useSafeBack();
+  const goBack = useSafeBack(`/dictionary/${category}`); // 1つ上＝このカテゴリのモード一覧へ
   const { speak } = useSpeechSynthesis();
   const { addPoints } = usePoints();
   const { progress, saveProgress } = useDictionaryProgress();
