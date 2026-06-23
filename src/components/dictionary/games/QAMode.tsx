@@ -9,13 +9,21 @@ import { usePoints } from '../../../hooks/usePoints';
 
 const getQuestionForPhrase = (keyPhrase: string, category?: string) => {
   if (category === '教科') return "What subject do you like?";
+  if (category === 'スポーツ') return "What sport do you like?";
+  if (category === '動物') return "What animal do you like?";
   if (keyPhrase.includes("I'd like")) return "What would you like?";
   if (keyPhrase.includes("One ◯◯")) return "May I take your order?";
   if (keyPhrase.includes("Let's eat")) return "What shall we eat?";
   if (keyPhrase.includes("◯◯, please")) return "What would you like?";
-  if (keyPhrase.includes("It's ◯◯.")) return "How is it?";
-  if (keyPhrase.includes("I can")) return "What can you do?";
+  if (keyPhrase.includes("I want to be")) return "What do you want to be?";
+  if (keyPhrase.includes("I want to join")) return "What club do you want to join?";
+  if (keyPhrase.includes("I want a new")) return "What do you want?";
   if (keyPhrase.includes("I want to")) return "What do you want to do?";
+  if (keyPhrase.includes("I can play the")) return "What can you play?";
+  if (keyPhrase.includes("I can")) return "What can you do?";
+  if (keyPhrase.includes("This is my")) return "What is this?";
+  if (keyPhrase.includes("He is")) return "What is he like?";
+  if (keyPhrase.includes("It's ◯◯.")) return "How is it?";
   if (keyPhrase.includes("I ◯◯")) return "What did you do?";
   if (keyPhrase.includes("I'm ◯◯ years old.")) return "How old are you?";
   if (keyPhrase.includes("I'm ◯◯.")) return "How are you?";

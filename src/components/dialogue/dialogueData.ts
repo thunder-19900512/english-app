@@ -95,6 +95,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Why?', ja: 'どうして？' },
       { speaker: 'B', en: '{She} is {kind}.', ja: '【やさしい】から。' },
     ],
+    relatedCategories: ['人', '性格'],
   },
 
   // ===== 6年生 =====
@@ -115,6 +116,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'What time do you go to bed?', ja: '何時に寝る？' },
       { speaker: 'B', en: 'I go to bed at {9:30}.', ja: '【9時半】に寝る。' },
     ],
+    relatedCategories: ['一日の生活'],
   },
   {
     id: 'g6-u3', grade: 6, unitName: 'Unit 3: My Summer Vacation', targetPhrase: 'How was your weekend?',
@@ -133,6 +135,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Why?', ja: 'なんで？' },
       { speaker: 'B', en: 'You can see many {unique animals}.', ja: '【めずらしい動物】がたくさん見られる。' },
     ],
+    relatedCategories: ['動物'],
   },
   {
     id: 'g6-u5', grade: 6, unitName: 'Unit 5: We live in a global village.', targetPhrase: 'This sweater is from New Zealand.',
@@ -141,6 +144,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: 'This {sweater} is from {New Zealand}.', ja: '【ニュージーランド】産だよ。' },
       { speaker: 'A', en: "Wow, that's far!", ja: '遠いね！' },
     ],
+    relatedCategories: ['衣類'],
   },
   {
     id: 'g6-u6', grade: 6, unitName: 'Unit 6: Let\'s think about our food.', targetPhrase: 'What do sea turtles eat?',
@@ -149,6 +153,7 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: 'They live in {the sea}.', ja: '【海】に住んでいる。' },
       { speaker: 'A', en: 'We must reduce {plastic bags}.', ja: '【レジ袋】を減らさなきゃ。' },
     ],
+    relatedCategories: ['海の生き物'],
   },
   {
     id: 'g6-u7', grade: 6, unitName: 'Unit 7: My Best Memory', targetPhrase: 'My best memory is the school trip.',
@@ -168,5 +173,6 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'A', en: 'Why?', ja: 'どうして？' },
       { speaker: 'B', en: 'I like {animals}.', ja: '【動物】が好きだから。' },
     ],
+    relatedCategories: ['職業'],
   },
 ];

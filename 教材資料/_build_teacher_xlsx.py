@@ -8,8 +8,10 @@ OUT = os.path.join(BASE, '教材資料', 'EnglishApp_教員用_単語文章一�
 
 # ---- 語彙を vocabulary.ts から抽出 ----
 voc_src = open(os.path.join(BASE, 'src/data/vocabulary.ts'), encoding='utf-8').read()
-pat = re.compile(r"english:\s*'([^']*)',\s*japanese:\s*'([^']*)',\s*category:\s*'([^']*)',\s*page:\s*(\d+),\s*emoji:\s*'[^']*',\s*keyPhrase:\s*\"([^\"]*)\"")
-vocab = [{'english': m[0], 'japanese': m[1], 'category': m[2], 'page': int(m[3]), 'keyPhrase': m[4]} for m in pat.findall(voc_src)]
+S = r"((?:\\'|[^'])*)"  # シングルクォート文字列（\' のエスケープ対応）
+pat = re.compile(rf"english:\s*'{S}',\s*japanese:\s*'{S}',\s*category:\s*'{S}',\s*page:\s*(\d+),\s*emoji:\s*'[^']*',\s*keyPhrase:\s*\"([^\"]*)\"")
+unesc = lambda s: s.replace("\\'", "'")
+vocab = [{'english': unesc(m[0]), 'japanese': unesc(m[1]), 'category': unesc(m[2]), 'page': int(m[3]), 'keyPhrase': m[4]} for m in pat.findall(voc_src)]
 
 # ---- スタイル ----
 HEAD_FILL = PatternFill('solid', start_color='4F81BD')
