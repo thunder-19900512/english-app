@@ -20,7 +20,7 @@ export const CategoryDashboard: React.FC = () => {
       </div>
 
       <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>{decodedCategory}</h1>
-      <p style={{ fontSize: '1.2rem', color: '#666' }}>どのモードでれんしゅうする？</p>
+      <p style={{ fontSize: '1.2rem', color: '#666' }}>どのモードで練習する？</p>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '800px', marginBottom: '2rem' }}>
         <div 

@@ -21,7 +21,7 @@ export const DictionaryHome: React.FC = () => {
       <div className="flex-col flex-center gap-sm">
         <BookOpen size={64} color="var(--color-primary)" />
         <h1 className="text-primary" style={{ fontSize: '3rem', margin: 0 }}>Picture Dictionary</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>単元をえらんで単語をれんしゅうしよう！</p>
+        <p style={{ fontSize: '1.2rem', color: '#666' }}>単元を選んで単語を練習しよう！</p>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '800px' }}>

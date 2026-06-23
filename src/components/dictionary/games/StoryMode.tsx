@@ -491,7 +491,7 @@ ${SAFETY_INSTRUCTION}`;
                   <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🎤 声に出して読んでみよう！</h3>
                   <p style={{ color: '#666', margin: 0, textAlign: 'center' }}>
                     {hasReadAloud
-                      ? '好きな文をえらんで、何度でも発音れんしゅうできるよ！🔈で見本も聞けるよ。'
+                      ? '好きな文を選んで、何度でも発音練習できるよ！🔈で見本も聞けるよ。'
                       : '読みたい文を選んでから、マイクを押して読んでみてね。上手に読めたらボーナスポイント！'}
                   </p>
 

@@ -102,7 +102,7 @@ export const DialogueTrainer: React.FC = () => {
         </div>
         <h1 className="text-primary" style={{ fontSize: '2.2rem' }}>🗣️ ダイアログ・トレーナー</h1>
         <p style={{ fontSize: '1.1rem', color: '#666', textAlign: 'center' }}>
-          ペアで話す前のれんしゅう！<br/>A・Bの両方の役を、一人でれんしゅうできるよ。
+          ペアで話す前の練習！<br/>A・Bの両方の役を、一人で練習できるよ。
         </p>
         <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
           <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #ffeaa7, #fdcb6e)' }} onClick={() => setGrade(5)}>

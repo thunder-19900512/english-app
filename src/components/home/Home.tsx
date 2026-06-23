@@ -59,7 +59,7 @@ export const Home: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '900px', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="flex-col gap-sm">
           <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}さん！</h1>
-          <p style={{ fontSize: '1.2rem', color: '#666', margin: 0 }}>きょうもえいごをたのしもう！</p>
+          <p style={{ fontSize: '1.2rem', color: '#666', margin: 0 }}>今日も英語を楽しもう！</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <div
@@ -136,7 +136,7 @@ export const Home: React.FC = () => {
             onClick={() => setActiveTab('dictionary')}
           >
             <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)', textAlign: 'center' }}>Picture Dictionary</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>英単語のれんしゅうと<br/>ミニゲームであそぼう！</p>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>英単語の練習と<br/>ミニゲームで遊ぼう！</p>
           </div>
 
           <div
@@ -166,7 +166,7 @@ export const Home: React.FC = () => {
           >
             <Sparkles size={40} color="#a29bfe" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>AI英会話</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>AIキャラクターと<br/>声でえいかいわ！</p>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>AIキャラクターと<br/>声で英会話！</p>
           </div>
 
           <div
@@ -176,7 +176,7 @@ export const Home: React.FC = () => {
           >
             <span style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🗣️</span>
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ダイアログ</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話れんしゅう！</p>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話練習！</p>
           </div>
         </div>
       )}

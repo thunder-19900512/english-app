@@ -44,10 +44,10 @@ const SCENARIOS: Record<string, Scenario> = {
     ],
   },
   directions: {
-    emoji: '🗺️', title: '道あんない', desc: '迷子の友だちに道を教えてあげよう！',
+    emoji: '🗺️', title: '道案内', desc: '迷子の友だちに道を教えてあげよう！',
     role: 'You are Taylor, a tourist who is lost in a town in Japan and is looking for the station.',
     goal: 'The user gives you directions (go straight, turn right, turn left). When you arrive at the station thanks to their directions, that is the goal.',
-    goalLabel: '🎯 ミッション：駅まで道あんないしてあげよう！',
+    goalLabel: '🎯 ミッション：駅まで道案内してあげよう！',
     greeting: { en: 'Excuse me! Where is the station?', ja: 'すみません！駅はどこですか？' },
     suggestions: [
       { en: 'Go straight.', ja: 'まっすぐ行ってください。' },
@@ -301,7 +301,7 @@ export const AIAssistant: React.FC = () => {
       <div className="flex-col gap-lg" style={{ flex: 1, paddingBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
-          <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>AIとえいごではなそう！</h1>
+          <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>AIと英語で話そう！</h1>
         </div>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
           {(Object.keys(SCENARIOS) as (keyof typeof SCENARIOS)[]).map(key => {
@@ -372,7 +372,7 @@ export const AIAssistant: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ fontSize: '2rem' }}>🤖</div>
             <div className="glass-card" style={{ padding: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>かんがえ中...</span>
+              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>考え中...</span>
             </div>
           </div>
         )}
