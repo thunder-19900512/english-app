@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Key, Save, Mic, Target } from 'lucide-react';
+import { ArrowLeft, Key, Save, Mic, Target, Gauge } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { setCap, getUsage, DEFAULT_CAP } from '../../lib/apiUsage';
 import { DIALOGUES } from '../dialogue/dialogueData';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 
@@ -41,6 +42,10 @@ export const TeacherDashboard: React.FC = () => {
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
   const [currentMission, setCurrentMission] = useState<MissionOption | null>(null);
+  // 1日あたりのAPI利用上限（0以下＝無制限）。この端末の今日の利用数も参考表示する。
+  const [geminiCap, setGeminiCap] = useState<number>(DEFAULT_CAP.gemini);
+  const [azureCap, setAzureCap] = useState<number>(DEFAULT_CAP.azure);
+  const [capStatus, setCapStatus] = useState('');
 
   // Handle PIN
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -79,6 +84,14 @@ export const TeacherDashboard: React.FC = () => {
         setCurrentMission(data.dictionary_progress.todayMission);
         setMissionRoute(data.dictionary_progress.todayMission.route || '');
       }
+      if (data.dictionary_progress.geminiDailyCap !== undefined) {
+        setGeminiCap(data.dictionary_progress.geminiDailyCap);
+        setCap('gemini', data.dictionary_progress.geminiDailyCap);
+      }
+      if (data.dictionary_progress.azureDailyCap !== undefined) {
+        setAzureCap(data.dictionary_progress.azureDailyCap);
+        setCap('azure', data.dictionary_progress.azureDailyCap);
+      }
     }
 
     // Fetch students data
@@ -107,6 +120,8 @@ export const TeacherDashboard: React.FC = () => {
           azureSpeechRegion: azureRegion.trim(),
           isScreenLocked: isScreenLocked,
           todayMission: currentMission,
+          geminiDailyCap: geminiCap,
+          azureDailyCap: azureCap,
           ...overrides
         }
       }, { onConflict: 'id' });
@@ -128,6 +143,14 @@ export const TeacherDashboard: React.FC = () => {
     const { error } = await persistSettings({ todayMission: null });
     setMissionStatus(error ? '通信エラー' : 'ミッションを解除しました');
     setTimeout(() => setMissionStatus(''), 4000);
+  };
+
+  const handleSaveCaps = async () => {
+    setCap('gemini', geminiCap);
+    setCap('azure', azureCap);
+    const { error } = await persistSettings({ geminiDailyCap: geminiCap, azureDailyCap: azureCap });
+    setCapStatus(error ? '通信エラー' : '上限を保存しました');
+    setTimeout(() => setCapStatus(''), 4000);
   };
 
   const handleSave = async () => {
@@ -364,6 +387,34 @@ export const TeacherDashboard: React.FC = () => {
                 🔓 ロックを解除する
               </Button>
             </div>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Gauge size={22} /> APIの1日あたり上限（コスト対策）</h2>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            1台の端末が1日に使えるAIの回数の上限です。上限に達すると、その日はやさしいメッセージが出て止まります（翌日リセット）。
+            <br />Gemini＝AI英会話・お話づくり、Azure＝発音チェックの回数。<b>0にすると無制限</b>になります。
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>🤖 Gemini（AI英会話・お話づくり）</label>
+              <input type="number" min={0} value={geminiCap}
+                onChange={e => setGeminiCap(Number(e.target.value))}
+                style={{ width: '100%', padding: '0.6rem', fontSize: '1.1rem', borderRadius: '8px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }} />
+              <span style={{ fontSize: '0.8rem', color: '#888' }}>この端末の今日の利用：{getUsage('gemini')} 回</span>
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>🎤 Azure（発音チェック）</label>
+              <input type="number" min={0} value={azureCap}
+                onChange={e => setAzureCap(Number(e.target.value))}
+                style={{ width: '100%', padding: '0.6rem', fontSize: '1.1rem', borderRadius: '8px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }} />
+              <span style={{ fontSize: '0.8rem', color: '#888' }}>この端末の今日の利用：{getUsage('azure')} 回</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <Button onClick={handleSaveCaps} icon={Save}>上限を保存</Button>
+            {capStatus && <span style={{ color: capStatus === '通信エラー' ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{capStatus}</span>}
           </div>
         </div>
       </div>

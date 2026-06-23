@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star, Send } from 'lucide-react';
 import { useReflections } from '../../hooks/useReflections';
@@ -7,6 +8,7 @@ import { usePoints } from '../../hooks/usePoints';
 
 export const ReflectionForm: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { reflections, saveReflection } = useReflections();
   const { addPoints } = usePoints();
   
@@ -55,7 +57,7 @@ export const ReflectionForm: React.FC = () => {
   return (
     <div className="flex-col flex-center gap-lg" style={{ minHeight: '100%', width: '100%' }}>
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
           もどる
         </Button>
         <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>今日のふりかえり</h1>

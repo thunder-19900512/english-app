@@ -1,16 +1,16 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { Button } from '../ui/Button';
 import { Award, ArrowLeft } from 'lucide-react';
 
 export const Certificate: React.FC = () => {
-  const navigate = useNavigate();
+  const goBack = useSafeBack();
   const studentName = localStorage.getItem('studentName') || 'Student';
 
   return (
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
       <div style={{ display: 'flex' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
           もどる
         </Button>
       </div>

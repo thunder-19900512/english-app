@@ -14,6 +14,8 @@ import { MicButton } from '../../ui/MicButton';
 import { vocabulary } from '../../../data/vocabulary';
 import type { Vocabulary } from '../../../data/vocabulary';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
+import { isOverCap, incUsage } from '../../../lib/apiUsage';
+import { useSafeBack } from '../../../hooks/useSafeBack';
 
 type GameState = 'config' | 'generating' | 'playing' | 'completed';
 
@@ -38,6 +40,7 @@ const READ_PASS_SCORE = 60;
 
 export const StoryMode: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { geminiApiKey, azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { addPoints } = usePoints();
   const { speak } = useSpeechSynthesis();
@@ -137,6 +140,11 @@ export const StoryMode: React.FC = () => {
 
   const generateStory = async () => {
     if (!geminiApiKey) return;
+    // 1日のお話づくり（AI生成）の上限に達していたら止める（課金の安全装置）。
+    if (isOverCap('gemini')) {
+      alert('今日のお話づくりは1日のじょうげんに達したよ。また明日つくろうね！');
+      return;
+    }
     setGameState('generating');
     setHasReadAloud(false);
     setTranscript('');
@@ -178,6 +186,7 @@ ${SAFETY_INSTRUCTION}`;
       for (const modelName of availableModels) {
         try {
           const model = genAI.getGenerativeModel({ model: modelName });
+          incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
           const result = await model.generateContent(prompt);
           text = result.response.text();
           success = true;
@@ -340,7 +349,7 @@ ${SAFETY_INSTRUCTION}`;
   return (
     <div className="flex-col" style={{ flex: 1, paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIおはなしづくり</h1>
         <div style={{ width: '80px' }}></div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import { isOverCap, incUsage } from '../lib/apiUsage';
 
 export interface WordScore {
   word: string;
@@ -173,6 +174,12 @@ export const usePronunciationAssessment = (
         return null;
       }
 
+      // 1日の発音チェック上限に達していたら、Azureを呼ばずに止める（課金の安全装置）。
+      if (isOverCap('azure')) {
+        setError('今日の発音チェックは上限に達したよ。また明日ためしてね！');
+        return null;
+      }
+
       setError(null);
       setIsAssessing(true);
 
@@ -234,6 +241,7 @@ export const usePronunciationAssessment = (
           resolve(value);
         };
 
+        incUsage('azure'); // ここでAzureを実際に呼ぶので1回ぶん計上する
         recognizer.recognizeOnceAsync(
           (result) => {
             try {

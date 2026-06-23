@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, HelpCircle, Mic, Send } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
@@ -40,7 +41,7 @@ const normalizeText = (text: string) => {
 const BONUS_PASS_SCORE = 60;
 
 export const TextbookMode: React.FC = () => {
-  const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { addPoints } = usePoints();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
@@ -247,7 +248,7 @@ export const TextbookMode: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem' }}>
         <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-          <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
+          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         </div>
         <h1 className="text-primary" style={{ fontSize: '2.5rem' }}>📖 教科書モード</h1>
         <p style={{ fontSize: '1.2rem', color: '#666' }}>どちらの教科書をひらきますか？</p>

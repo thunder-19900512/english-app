@@ -10,26 +10,30 @@ import { MicButton } from '../../ui/MicButton';
 import { ArrowLeft, Send, Sparkles, AlertTriangle, Coins, HelpCircle, Languages, Trophy } from 'lucide-react';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { DIALOGUES } from '../../dialogue/dialogueData';
+import { isOverCap, incUsage } from '../../../lib/apiUsage';
+import { useSafeBack } from '../../../hooks/useSafeBack';
 
-// 教科書の各Unitに紐づくフリートークの場面とゴール（ゴールは英語、場面は日本語）
-interface FreetalkUnit { id: string; label: string; situation: string; goal: string; greeting: { en: string; ja: string }; }
+// 教科書の各Unitに紐づくフリートークの場面とゴール。
+// goal は英語（AIがこの条件を満たしたら最後に [CLEAR] を付ける＝クリア判定の基準）。
+// missionJa は子ども向けの「クリア条件」表示。situation は場面（日本語）。
+interface FreetalkUnit { id: string; label: string; situation: string; goal: string; missionJa: string; greeting: { en: string; ja: string }; }
 const FREETALK_UNITS: FreetalkUnit[] = [
-  { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'Ask and answer about your favorite school subjects.', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
-  { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: "Ask and answer about birthdays and what you want.", greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
-  { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'Ask and answer about what you can do.', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
-  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'Introduce what your friend can do well.', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
-  { id: 'g5-u5', label: '5年 U5 道案内', situation: '町で道をたずねて案内する', goal: 'Ask for and give simple directions.', greeting: { en: 'Excuse me. Where is the station?', ja: 'すみません、駅はどこ？' } },
-  { id: 'g5-u6', label: '5年 U6 レストラン注文', situation: 'レストランで食べ物や飲み物を注文する', goal: 'Order food and drinks at a restaurant.', greeting: { en: 'What would you like?', ja: '何にする？' } },
-  { id: 'g5-u7', label: '5年 U7 行きたい場所', situation: '行きたい場所とその理由を話す', goal: 'Say where you want to go and why.', greeting: { en: 'Where do you want to go?', ja: 'どこに行きたい？' } },
-  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'Talk about your hero and why.', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
-  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'Introduce yourself and what you can do.', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
-  { id: 'g6-u2', label: '6年 U2 一日の生活', situation: '毎日の生活（起きる時間など）を聞き合う', goal: 'Ask and answer about your daily schedule.', greeting: { en: 'What time do you get up?', ja: '何時に起きる？' } },
-  { id: 'g6-u3', label: '6年 U3 週末のこと', situation: '週末にしたことを話す', goal: 'Talk about what you did on the weekend.', greeting: { en: 'How was your weekend?', ja: '週末はどうだった？' } },
-  { id: 'g6-u4', label: '6年 U4 行きたい国', situation: '行きたい国と見られるものを話す', goal: 'Talk about a country you want to visit and what you can see.', greeting: { en: 'Where do you want to go?', ja: 'どこの国に行きたい？' } },
-  { id: 'g6-u5', label: '6年 U5 ○○産', situation: '持ち物がどこの国から来たか話す', goal: 'Talk about where things are from.', greeting: { en: 'Nice bag! Where is it from?', ja: 'いいかばん！どこ産？' } },
-  { id: 'g6-u6', label: '6年 U6 環境', situation: '危機にある動物や環境のためにできることを話す', goal: 'Talk about an animal in danger and what we can do.', greeting: { en: 'Sea turtles are in danger. What can we do?', ja: 'ウミガメが危ないよ。何ができるかな？' } },
-  { id: 'g6-u7', label: '6年 U7 一番の思い出', situation: '小学校の一番の思い出を話す', goal: 'Share your best memory and what you did.', greeting: { en: 'What is your best memory?', ja: '一番の思い出は？' } },
-  { id: 'g6-u8', label: '6年 U8 将来の夢', situation: '将来なりたいものとその理由を話す', goal: 'Talk about what you want to be and why.', greeting: { en: 'What do you want to be?', ja: '将来何になりたい？' } },
+  { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'The goal is reached only after the user has BOTH asked you what subject you like AND told you their own favorite subject.', missionJa: 'すきな教科をたずねて、自分のすきな教科も伝えよう！', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
+  { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: 'The goal is reached only after the user has asked when your birthday is AND told you their own birthday AND said one thing they want.', missionJa: '誕生日をたずね合って、ほしいものも伝えよう！', greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
+  { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'The goal is reached only after the user has asked what you can do AND told you one thing they can do.', missionJa: 'おたがいの「できること」をたずね合おう！', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
+  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'The goal is reached only after the user has introduced what their friend can do well using "He can ..." or "She can ...".', missionJa: '友だちが上手にできることをしょうかいしよう！', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
+  { id: 'g5-u5', label: '5年 U5 道案内', situation: '町で道をたずねて案内する', goal: 'You are lost and looking for the station. The goal is reached only after the user gives directions (go straight / turn right / turn left) and you arrive at the station.', missionJa: '駅まで道案内しよう！（まっすぐ・右・左）', greeting: { en: 'Excuse me. Where is the station?', ja: 'すみません、駅はどこ？' } },
+  { id: 'g5-u6', label: '5年 U6 レストラン注文', situation: 'レストランで食べ物や飲み物を注文する', goal: 'You are a cashier. The goal is reached only after the user orders food and/or drink, hears the price, and pays or says thank you/goodbye.', missionJa: 'ごはんを注文して、お会計までしよう！', greeting: { en: 'What would you like?', ja: '何にする？' } },
+  { id: 'g5-u7', label: '5年 U7 行きたい場所', situation: '行きたい場所とその理由を話す', goal: 'The goal is reached only after the user has said where they want to go AND given a reason (because ...).', missionJa: '行きたい場所と、その理由をつたえよう！', greeting: { en: 'Where do you want to go?', ja: 'どこに行きたい？' } },
+  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'The goal is reached only after the user has told you who their hero is AND why (what the hero can do or is good at).', missionJa: '自分のヒーローと、その理由をしょうかいしよう！', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
+  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'The goal is reached only after the user has told you their name AND one thing they can do.', missionJa: '名前と、できることをしょうかいしよう！', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
+  { id: 'g6-u2', label: '6年 U2 一日の生活', situation: '毎日の生活（起きる時間など）を聞き合う', goal: 'The goal is reached only after the user has asked about your daily routine AND told you what time they do something (get up / go to bed, etc.).', missionJa: '毎日の生活（起きる時間など）をたずね合おう！', greeting: { en: 'What time do you get up?', ja: '何時に起きる？' } },
+  { id: 'g6-u3', label: '6年 U3 週末のこと', situation: '週末にしたことを話す', goal: 'The goal is reached only after the user has told you TWO things they did on the weekend in the past tense (I went / I played ...).', missionJa: '週末にしたことを2つ伝えよう！（過去形）', greeting: { en: 'How was your weekend?', ja: '週末はどうだった？' } },
+  { id: 'g6-u4', label: '6年 U4 行きたい国', situation: '行きたい国と見られるものを話す', goal: 'The goal is reached only after the user has said which country they want to visit AND what they can see or do there.', missionJa: '行きたい国と、そこで見られるものを伝えよう！', greeting: { en: 'Where do you want to go?', ja: 'どこの国に行きたい？' } },
+  { id: 'g6-u5', label: '6年 U5 ○○産', situation: '持ち物がどこの国から来たか話す', goal: 'The goal is reached only after the user has said where an item is from using "It\'s from ...".', missionJa: '持ち物がどこの国から来たか伝えよう！', greeting: { en: 'Nice bag! Where is it from?', ja: 'いいかばん！どこ産？' } },
+  { id: 'g6-u6', label: '6年 U6 環境', situation: '危機にある動物や環境のためにできることを話す', goal: 'The goal is reached only after the user has named an animal or environmental problem AND said one thing we can do about it.', missionJa: '危機にある動物と、自分たちにできることを伝えよう！', greeting: { en: 'Sea turtles are in danger. What can we do?', ja: 'ウミガメが危ないよ。何ができるかな？' } },
+  { id: 'g6-u7', label: '6年 U7 一番の思い出', situation: '小学校の一番の思い出を話す', goal: 'The goal is reached only after the user has told you their best school memory AND what they did, in the past tense.', missionJa: '小学校の一番の思い出を伝えよう！（過去形）', greeting: { en: 'What is your best memory?', ja: '一番の思い出は？' } },
+  { id: 'g6-u8', label: '6年 U8 将来の夢', situation: '将来なりたいものとその理由を話す', goal: 'The goal is reached only after the user has said what they want to be AND why.', missionJa: '将来なりたいものと、その理由を伝えよう！', greeting: { en: 'What do you want to be?', ja: '将来何になりたい？' } },
 ];
 
 const stripSlots = (s: string) => s.replace(/[{}]/g, '');
@@ -51,7 +55,7 @@ const buildUnitOpts = (u: FreetalkUnit): InitOpts => {
   return {
     situation: u.situation,
     goal: u.goal,
-    goalLabel: `🎯 ミッション：${u.label.replace(/^[0-9]年 U[0-9]+ /, '')}`,
+    goalLabel: `🎯 ミッション：${u.missionJa}`,
     greeting: u.greeting,
     suggestions,
     title: u.label,
@@ -146,6 +150,7 @@ const parseReply = (raw: string): { en: string; ja: string; cleared: boolean } =
 
 export const AIAssistant: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { geminiApiKey } = useAppSettings();
   const { speak } = useSpeechSynthesis();
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
@@ -161,7 +166,7 @@ export const AIAssistant: React.FC = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [cleared, setCleared] = useState(false);
   const [situationInput, setSituationInput] = useState('');
-  const [pendingFreetalk, setPendingFreetalk] = useState(false);
+  const [pendingFreetalk, setPendingFreetalk] = useState(true);
   const [activeScenario, setActiveScenario] = useState<Scenario | null>(null);
   const awardedRef = useRef(false);
   const activeOptsRef = useRef<InitOpts | undefined>(undefined);
@@ -285,6 +290,12 @@ export const AIAssistant: React.FC = () => {
       return;
     }
 
+    // 1日のAI会話の上限に達していたら、Gemini を呼ばずに止める（課金の安全装置）。
+    if (isOverCap('gemini')) {
+      setMessages(prev => [...prev, { role: 'model', text: '今日はここまで！🌙 AIとのおしゃべりは1日のじょうげんに達したよ。また明日ね！' }]);
+      return;
+    }
+
     const ok = await consumePoints(MESSAGE_COST);
     if (!ok) { alert(`ポイントが足りないよ！（${MESSAGE_COST}P ひつよう）`); return; }
 
@@ -294,6 +305,7 @@ export const AIAssistant: React.FC = () => {
 
     const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
     try {
+      incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
       const result = await chatSession.sendMessage(text);
       const raw = result.response.text();
       const { en, ja, cleared: didClear } = parseReply(raw);
@@ -343,8 +355,8 @@ export const AIAssistant: React.FC = () => {
     return (
       <div className="flex-col gap-lg" style={{ flex: 1, maxWidth: '600px', margin: '0 auto', width: '100%', paddingBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button variant="outline" onClick={() => setPendingFreetalk(false)} icon={ArrowLeft}>もどる</Button>
-          <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>👋 フリートーク</h2>
+          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
+          <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>🤖 AIと英語で話そう！</h2>
         </div>
         {/* 教科書のUnitから場面をえらぶ */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
@@ -379,28 +391,9 @@ export const AIAssistant: React.FC = () => {
     );
   }
 
+  // mode未選択のときは必ず上の「場面えらび」画面を表示しているので、ここは型ガード兼フォールバック
   if (!mode) {
-    return (
-      <div className="flex-col gap-lg" style={{ flex: 1, paddingBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
-          <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>AIと英語で話そう！</h1>
-        </div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
-          {(Object.keys(SCENARIOS) as (keyof typeof SCENARIOS)[]).map(key => {
-            const s = SCENARIOS[key];
-            return (
-              <div key={key} className="glass-card flex-col flex-center hover-scale" style={{ cursor: 'pointer', padding: '2.5rem 2rem', border: '2px solid var(--color-primary)' }}
-                onClick={() => key === 'freetalk' ? setPendingFreetalk(true) : initChat(key)}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{s.emoji}</div>
-                <h2 style={{ textAlign: 'center', margin: 0 }}>{s.title}</h2>
-                <p style={{ color: '#666', textAlign: 'center', marginTop: '0.5rem' }}>{s.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const scenario = activeScenario || SCENARIOS[mode];
@@ -408,7 +401,7 @@ export const AIAssistant: React.FC = () => {
   return (
     <div className="flex-col" style={{ height: '100%', maxHeight: 'calc(100vh - 120px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <Button variant="outline" onClick={() => { setMode(null); setMessages([]); }} icon={ArrowLeft}>もどる</Button>
+        <Button variant="outline" onClick={() => { setMode(null); setMessages([]); setPendingFreetalk(true); }} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, fontSize: '1.3rem' }}>{scenario.emoji} {scenario.title}</h2>
         <Button variant="outline" onClick={() => setShowTranslation(t => !t)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.7rem' }} icon={Languages}>
           {showTranslation ? '訳オフ' : '訳オン'}

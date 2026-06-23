@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, Star, Trophy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { vocabulary } from '../../data/vocabulary';
@@ -51,6 +52,7 @@ const Ring: React.FC<{ pct: number; color: string; label: string; sub: string; e
 
 export const MyProgress: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { progress } = useDictionaryProgress();
   const { history } = usePronunciationHistory();
 
@@ -125,7 +127,7 @@ export const MyProgress: React.FC = () => {
   return (
     <div className="flex-col gap-lg" style={{ flex: 1, maxWidth: '900px', margin: '0 auto', width: '100%', paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, fontSize: '1.8rem', marginRight: '90px' }}>
           🗺️ じぶんの記録
         </h1>

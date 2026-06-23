@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
@@ -30,6 +31,7 @@ const renderEn = (en: string) => {
 
 export const DialogueTrainer: React.FC = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { speak } = useSpeechSynthesis();
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
@@ -98,7 +100,7 @@ export const DialogueTrainer: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem' }}>
         <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-          <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
+          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         </div>
         <h1 className="text-primary" style={{ fontSize: '2.2rem' }}>🗣️ ダイアログ・トレーナー</h1>
         <p style={{ fontSize: '1.1rem', color: '#666', textAlign: 'center' }}>

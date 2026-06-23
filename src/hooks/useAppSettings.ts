@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { setCap, getCap } from '../lib/apiUsage';
 
 export interface TodayMission {
   label: string;
@@ -13,6 +14,8 @@ export const useAppSettings = () => {
   const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
   const [todayMission, setTodayMission] = useState<TodayMission | null>(null);
+  const [geminiDailyCap, setGeminiDailyCap] = useState<number>(getCap('gemini'));
+  const [azureDailyCap, setAzureDailyCap] = useState<number>(getCap('azure'));
 
   useEffect(() => {
     if (!supabase) return;
@@ -24,6 +27,9 @@ export const useAppSettings = () => {
       if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
       if (progress.todayMission !== undefined) setTodayMission(progress.todayMission || null);
+      // APIの1日上限を localStorage にミラーして、各画面の使用量チェックから参照できるようにする。
+      if (progress.geminiDailyCap !== undefined) { setCap('gemini', progress.geminiDailyCap); setGeminiDailyCap(progress.geminiDailyCap); }
+      if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }
     };
 
     const fetchSettings = async () => {
@@ -57,5 +63,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap };
 };

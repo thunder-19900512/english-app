@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { ArrowLeft, BookOpen, Target, Keyboard, Mic, Search, CheckCircle, MessageCircleQuestion } from 'lucide-react';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
+import { useSafeBack } from '../../hooks/useSafeBack';
 
 export const CategoryDashboard: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const decodedCategory = decodeURIComponent(category || '');
   const { progress } = useDictionaryProgress();
   const catProgress = progress[decodedCategory] || { practice: false, speedKaruta: null, memoryGame: null, spelling: false };
@@ -14,7 +16,7 @@ export const CategoryDashboard: React.FC = () => {
   return (
     <div className="flex-col flex-center gap-lg" style={{ minHeight: '100%', width: '100%' }}>
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
           もどる
         </Button>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { stages } from '../../data/stages';
+import { useSafeBack } from '../../hooks/useSafeBack';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
@@ -64,6 +65,7 @@ const getLevenshteinDistance = (a: string, b: string): number => {
 export const Stage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const stage = stages.find(s => s.id === parseInt(id || '1'));
   
   const speak = useCallback((text: string) => {
@@ -506,7 +508,7 @@ export const Stage: React.FC = () => {
   return (
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
           もどる
         </Button>
         <h1 className="text-primary">{stage.title}</h1>

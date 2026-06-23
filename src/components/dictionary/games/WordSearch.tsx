@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSafeBack } from '../../../hooks/useSafeBack';
 import { vocabulary } from '../../../data/vocabulary';
 import { Button } from '../../ui/Button';
 import { ArrowLeft, Trophy, RefreshCw, Volume2 } from 'lucide-react';
@@ -94,6 +95,7 @@ const generateGrid = (words: string[]) => {
 export const WordSearch: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const { speak } = useSpeechSynthesis();
   const { addPoints } = usePoints();
   const { progress, saveProgress } = useDictionaryProgress();
@@ -296,7 +298,7 @@ export const WordSearch: React.FC = () => {
   return (
     <div className="flex-col gap-md" style={{ flex: 1, paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
           もどる
         </Button>
         <h1 className="text-primary" style={{ margin: 0 }}>言葉さがし</h1>
