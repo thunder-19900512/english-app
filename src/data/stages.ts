@@ -74,6 +74,7 @@ export const stages: StageData[] = [
     badgeName: 'プラチナ・フラワー',
     colorClass: 'stage-color-4',
     explanation: '「マジックE」のルール: 単語の最後に e があると、その e は発音せず、前の母音が「アルファベットの名前」と同じ読み方（エイ、イー、アイ、オウ、ユー）に変身します！',
+    practiceItems: ['a_e', 'e_e', 'i_e', 'o_e', 'u_e'],
     items: ['cake', 'make', 'take', 'bike', 'like', 'kite', 'nose', 'rose', 'cute', 'mute'],
     labItems: [
       { base: 'cap', added: 'e', result: 'cape', description: '「キャップ」が「ケイプ」に変身！' },
@@ -134,6 +135,66 @@ export const stages: StageData[] = [
       'The girl is in the park.',
       'I see a short clock on the chair.',
       'A black dog has a snack.'
+    ]
+  },
+  {
+    id: 7,
+    title: '母音のチーム その2',
+    description: '母音チームのなかまをもっとおぼえよう！',
+    badgeName: 'ボーカル・スター',
+    colorClass: 'stage-color-7',
+    explanation: '母音が2つ組むと、1番目の母音を「名前読み」して、2番目は読まないことが多いよ。ai・ay は「エイ」、ee・ey は「イー」、ie は「アイ」、ow は「オウ」、ue・ui は「ウー」！',
+    practiceItems: ['ay', 'ey', 'ie', 'ow', 'ue', 'ui'],
+    items: ['play', 'key', 'pie', 'tie', 'snow', 'yellow', 'blue', 'suit', 'juice', 'fruit'],
+    stories: [
+      'I see a blue tie.',
+      'The fruit is in the snow.',
+      'Play with the yellow key.'
+    ]
+  },
+  {
+    id: 8,
+    title: '2文字の母音',
+    description: '2つの文字で新しい母音をつくろう！',
+    badgeName: 'バウエル・ジェム',
+    colorClass: 'stage-color-8',
+    explanation: 'oo は「ウー」、ou・ow は「アウ」、oi・oy は「オイ」、au・aw は「オー」。同じ音でも、つづりがちがうことがあるよ！',
+    practiceItems: ['oo', 'ou', 'oi', 'oy', 'au', 'aw'],
+    items: ['zoo', 'moon', 'book', 'mouth', 'house', 'cloud', 'coin', 'toy', 'boy', 'draw', 'saw'],
+    stories: [
+      'The boy has a toy.',
+      'I see the moon and a cloud.',
+      'Draw a house at the zoo.'
+    ]
+  },
+  {
+    id: 9,
+    title: '連続子音 ブレンド①',
+    description: '子音がならんでも、それぞれの音をのこしてはやく読もう！',
+    badgeName: 'ブレンド・ナイト',
+    colorClass: 'stage-color-9',
+    explanation: '連続子音は、2つの子音の音をどちらも残したまま、はやくつなげて読むよ。「s+m=スム」「b+l=ブル」のように！',
+    practiceItems: ['sm', 'sn', 'sk', 'sp', 'st', 'sw', 'bl', 'pl', 'cl', 'gl', 'fl', 'sl'],
+    items: ['smile', 'snake', 'sky', 'spoon', 'star', 'swim', 'black', 'plane', 'clock', 'glass', 'flower', 'sleep'],
+    stories: [
+      'I see a snake in the sky.',
+      'The star is black.',
+      'Swim and smile!'
+    ]
+  },
+  {
+    id: 10,
+    title: '連続子音 ブレンド②',
+    description: '3つの子音がならぶブレンドにもちょうせん！',
+    badgeName: 'ブレンド・マスター・プロ',
+    colorClass: 'stage-color-10',
+    explanation: 'br・fr・cr・gr・dr・tr のなかまや、thr・spr・str のように3つならぶ音もあるよ。ぜんぶの音をはやくつなげて読もう！',
+    practiceItems: ['br', 'fr', 'cr', 'gr', 'dr', 'tr', 'thr', 'spr', 'str'],
+    items: ['brush', 'frog', 'crab', 'grape', 'drum', 'tree', 'train', 'three', 'spring', 'strawberry', 'dragon', 'crown'],
+    stories: [
+      'The frog is on the tree.',
+      'I see three grapes.',
+      'A dragon has a crown.'
     ]
   },
 ];

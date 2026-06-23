@@ -127,7 +127,7 @@ export const Home: React.FC = () => {
             onClick={() => setActiveTab('phonics')}
           >
             <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--color-primary)', textAlign: 'center' }}>Phonics</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>音と文字のルールを学ぼう！<br/>(全6ステージ)</p>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>音と文字のルールを学ぼう！<br/>(全10ステージ)</p>
           </div>
 
           <div

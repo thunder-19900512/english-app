@@ -14,14 +14,27 @@ const phonicsEmojis: Record<string, string> = {
   ship: '🚢', shop: '🏪', fish: '🐟', dish: '🍽️', star: '⭐', stop: '🛑', chop: '🔪', chin: '🧔', thin: '📏', math: '🔢', phone: '📱', whale: '🐳', duck: '🦆', ring: '💍', queen: '👑',
   cake: '🍰', make: '🛠️', take: '🤲', bike: '🚲', like: '👍', kite: '🪁', nose: '👃', rose: '🌹', cute: '🥰', mute: '🔇',
   rain: '🌧️', train: '🚂', tree: '🌳', see: '👀', boat: '⛵', coat: '🧥', meat: '🥩', seat: '💺',
-  smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼'
+  smile: '😊', snack: '🍪', black: '⬛', clock: '🕒', spoon: '🥄', park: '🏞️', short: '👖', girl: '👧', chair: '🪑', work: '💼',
+  // Stage 7: 母音チーム その2
+  play: '🎮', key: '🔑', pie: '🥧', tie: '👔', snow: '⛄', yellow: '🟡', blue: '🔵', suit: '🤵', juice: '🧃', fruit: '🍓',
+  // Stage 8: 2文字の母音
+  zoo: '🦁', moon: '🌙', book: '📖', mouth: '👄', house: '🏠', cloud: '☁️', coin: '🪙', toy: '🧸', boy: '👦', draw: '🎨', saw: '🪚',
+  // Stage 9: 連続子音ブレンド①
+  snake: '🐍', sky: '🌌', swim: '🏊', plane: '✈️', glass: '🥛', flower: '🌸', sleep: '😴',
+  // Stage 10: 連続子音ブレンド②
+  brush: '🪥', frog: '🐸', crab: '🦀', grape: '🍇', drum: '🥁', three: '3️⃣', spring: '🌱', strawberry: '🍓', dragon: '🐉', crown: '👑'
 };
 
 const LOCAL_PHONEMES = new Set([
   'a', 'b', 'c', 'k', 'ck', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'o', 'p', 'qu', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
   'sh', 'ch', 'th', 'ph', 'wh', 'ng',
   'ee', 'ea', 'oo', 'a_e', 'ai', 'ay', 'o_e', 'oa', 'ow',
-  'ar', 'or', 'ir', 'ur', 'er', 'ear', 'air', 'wor'
+  'ar', 'or', 'ir', 'ur', 'er', 'ear', 'air', 'wor',
+  // 新グループ：母音チーム・2文字母音・マジックE
+  'e_e', 'i_e', 'u_e', 'ey', 'ie', 'ue', 'ui', 'ou', 'oi', 'oy', 'au', 'aw',
+  // 新グループ：連続子音ブレンド
+  'sm', 'sn', 'sk', 'sp', 'st', 'sw', 'bl', 'pl', 'cl', 'gl', 'fl', 'sl',
+  'br', 'fr', 'cr', 'gr', 'dr', 'tr', 'thr', 'spr', 'str'
 ]);
 
 const getLevenshteinDistance = (a: string, b: string): number => {
