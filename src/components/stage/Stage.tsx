@@ -62,6 +62,37 @@ const getLevenshteinDistance = (a: string, b: string): number => {
   return matrix[b.length][a.length];
 };
 
+// 単語の中の「このステージで学ぶつづり」を色分けして強調する（例：brush の "br"）。
+// graphemes はそのステージの practiceItems。連続つづりは最長一致、マジックE(a_e)は母音＋末尾eを強調。
+const HL_STYLE: React.CSSProperties = { color: '#e8590c', fontWeight: 800 };
+const highlightWord = (word: string, graphemes: string[] = []): React.ReactNode => {
+  const lw = word.toLowerCase();
+  // マジックE（a_e など）：母音 + 子音 + 末尾e の2か所を強調
+  for (const g of graphemes) {
+    if (!g.includes('_')) continue;
+    const vi = lw.indexOf(g[0].toLowerCase());
+    const ei = lw.lastIndexOf('e');
+    if (vi >= 0 && ei > vi) {
+      return word.split('').map((ch, i) =>
+        (i === vi || i === ei)
+          ? <span key={i} style={HL_STYLE}>{ch}</span>
+          : <React.Fragment key={i}>{ch}</React.Fragment>
+      );
+    }
+  }
+  // 連続つづり（最長一致でひとかたまりを強調）
+  let best: { idx: number; len: number } | null = null;
+  for (const g of graphemes) {
+    if (g.includes('_')) continue;
+    const idx = lw.indexOf(g.toLowerCase());
+    if (idx >= 0 && (!best || g.length > best.len)) best = { idx, len: g.length };
+  }
+  if (best) {
+    return <>{word.slice(0, best.idx)}<span style={HL_STYLE}>{word.slice(best.idx, best.idx + best.len)}</span>{word.slice(best.idx + best.len)}</>;
+  }
+  return word;
+};
+
 export const Stage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -507,20 +538,23 @@ export const Stage: React.FC = () => {
 
   return (
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
-          もどる
-        </Button>
-        <h1 className="text-primary">{stage.title}</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>
+            もどる
+          </Button>
+          <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>{stage.title}</h1>
+          <div style={{ width: '110px', flexShrink: 0 }} aria-hidden="true" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button variant={mode === 'input' ? 'primary' : 'outline'} onClick={() => { setMode('input'); resetSession(); }}>きく</Button>
             <Button variant={mode === 'choice' ? 'primary' : 'outline'} onClick={() => { setMode('choice'); resetSession(); }}>えらぶ</Button>
             <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>🎧 きいてタイプ</Button>
             <Button variant={mode === 'typegame' ? 'primary' : 'outline'} onClick={() => { setMode('typegame'); resetSession(); }}>⌨️ タイピング練習</Button>
             {stage.id !== 1 && <Button variant={mode === 'quiz' ? 'secondary' : 'outline'} onClick={() => { setMode('quiz'); resetSession(); }}>マイク</Button>}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px dashed #ccc', paddingTop: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', borderTop: '1px dashed #ccc', paddingTop: '0.5rem' }}>
             {stage.labItems && <Button variant={mode === 'lab' ? 'primary' : 'outline'} onClick={() => { setMode('lab'); resetSession(); }}>🔬 ラボ</Button>}
             {stage.stories && <Button variant={mode === 'story' ? 'primary' : 'outline'} onClick={() => { setMode('story'); resetSession(); }}>📖 絵本</Button>}
           </div>
@@ -536,36 +570,40 @@ export const Stage: React.FC = () => {
 
         {mode === 'input' && (
           <>
-            {stage.practiceItems && (
+            {stage.practiceItems && !stage.hideListenPractice && (
               <div style={{ width: '100%', maxWidth: '600px', marginBottom: '1rem', background: 'rgba(255,255,255,0.5)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
                 <p style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>🎧 練習コーナー (音だけをきこう)</p>
                 <div className="badge-grid">
                   {stage.practiceItems.map((item, idx) => (
-                    <div 
-                      key={`prac-${idx}`} 
-                      className="stage-tile hover-scale" 
+                    <div
+                      key={`prac-${idx}`}
+                      className="stage-tile hover-scale"
                       onClick={() => speak(item)}
                       style={{ padding: '0.5rem', fontSize: '1.5rem', minHeight: '60px', minWidth: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                     >
-                      {phonicsEmojis[item] && <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{phonicsEmojis[item]}</span>}
                       <span>{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
+
             <p style={{ fontSize: '1.2rem' }}>カードをタップして単語の音をきこう</p>
+            {stage.hideListenPractice && (
+              <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', marginTop: '-0.5rem' }}>
+                色がついたところが、このステージで学ぶ音だよ
+              </p>
+            )}
             <div className="badge-grid" style={{ width: '100%', maxWidth: '600px' }}>
               {stage.items.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className="stage-tile hover-scale" 
+                <div
+                  key={idx}
+                  className="stage-tile hover-scale"
                   onClick={() => speak(item)}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                 >
                   {phonicsEmojis[item] && <span style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{phonicsEmojis[item]}</span>}
-                  <span>{item}</span>
+                  <span>{highlightWord(item, stage.practiceItems)}</span>
                 </div>
               ))}
             </div>

@@ -7,6 +7,9 @@ export interface StageData {
   items: string[];
   explanation?: string;
   practiceItems?: string[];
+  // 連続子音や、音を単体で再生できない（例単語の肉声を使う）ステージでは
+  // 「音だけをきこう」練習コーナーを出さない。代わりに単語カードで対象を色分け強調する。
+  hideListenPractice?: boolean;
   labItems?: { base: string, added: string, result: string, description: string }[];
   blendItems?: { word: string, phonemes: string[] }[];
   alienWords?: string[];
@@ -75,6 +78,7 @@ export const stages: StageData[] = [
     colorClass: 'stage-color-4',
     explanation: '「マジックE」のルール: 単語の最後に e があると、その e は発音せず、前の母音が「アルファベットの名前」と同じ読み方（エイ、イー、アイ、オウ、ユー）に変身します！',
     practiceItems: ['a_e', 'e_e', 'i_e', 'o_e', 'u_e'],
+    hideListenPractice: true,
     items: ['cake', 'make', 'take', 'bike', 'like', 'kite', 'nose', 'rose', 'cute', 'mute'],
     labItems: [
       { base: 'cap', added: 'e', result: 'cape', description: '「キャップ」が「ケイプ」に変身！' },
@@ -146,6 +150,7 @@ export const stages: StageData[] = [
     colorClass: 'stage-color-7',
     explanation: '母音が2つ組むと、1番目の母音を「名前読み」して、2番目は読まないことが多いよ。ai・ay は「エイ」、ee・ey は「イー」、ie は「アイ」、ow は「オウ」、ue・ui は「ウー」！',
     practiceItems: ['ay', 'ey', 'ie', 'ow', 'ue', 'ui'],
+    hideListenPractice: true,
     items: ['play', 'key', 'pie', 'tie', 'snow', 'yellow', 'blue', 'suit', 'juice', 'fruit'],
     stories: [
       'I see a blue tie.',
@@ -161,6 +166,7 @@ export const stages: StageData[] = [
     colorClass: 'stage-color-8',
     explanation: 'oo は「ウー」、ou・ow は「アウ」、oi・oy は「オイ」、au・aw は「オー」。同じ音でも、つづりがちがうことがあるよ！',
     practiceItems: ['oo', 'ou', 'oi', 'oy', 'au', 'aw'],
+    hideListenPractice: true,
     items: ['zoo', 'moon', 'book', 'mouth', 'house', 'cloud', 'coin', 'toy', 'boy', 'draw', 'saw'],
     stories: [
       'The boy has a toy.',
@@ -176,6 +182,7 @@ export const stages: StageData[] = [
     colorClass: 'stage-color-9',
     explanation: '連続子音は、2つの子音の音をどちらも残したまま、はやくつなげて読むよ。「s+m=スム」「b+l=ブル」のように！',
     practiceItems: ['sm', 'sn', 'sk', 'sp', 'st', 'sw', 'bl', 'pl', 'cl', 'gl', 'fl', 'sl'],
+    hideListenPractice: true,
     items: ['smile', 'snake', 'sky', 'spoon', 'star', 'swim', 'black', 'plane', 'clock', 'glass', 'flower', 'sleep'],
     stories: [
       'I see a snake in the sky.',
@@ -191,6 +198,7 @@ export const stages: StageData[] = [
     colorClass: 'stage-color-10',
     explanation: 'br・fr・cr・gr・dr・tr のなかまや、thr・spr・str のように3つならぶ音もあるよ。ぜんぶの音をはやくつなげて読もう！',
     practiceItems: ['br', 'fr', 'cr', 'gr', 'dr', 'tr', 'thr', 'spr', 'str'],
+    hideListenPractice: true,
     items: ['brush', 'frog', 'crab', 'grape', 'drum', 'tree', 'train', 'three', 'spring', 'strawberry', 'dragon', 'crown'],
     stories: [
       'The frog is on the tree.',
