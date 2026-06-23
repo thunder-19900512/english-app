@@ -55,9 +55,10 @@ export const Stage: React.FC = () => {
   const speak = useCallback((text: string) => {
     const ltext = text.toLowerCase();
     
-    // Play authentic IPA audio if it's a known phoneme block
+    // Play authentic IPA audio if it's a known phoneme block.
+    // BASE_URL を付けないと GitHub Pages（/english-app/）配下で404になり音が鳴らない。
     if (LOCAL_PHONEMES.has(ltext)) {
-      const audio = new Audio(`/audio/${ltext}.mp3`);
+      const audio = new Audio(`${import.meta.env.BASE_URL}audio/${ltext}.mp3`);
       audio.play().catch(e => console.error("Audio play failed:", e));
       return;
     }

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
+import { usePoints } from '../../hooks/usePoints';
 import { DIALOGUES, type Dialogue, type DialogueLine } from './dialogueData';
 
 // 発音採点に通すため {…} のスロット記号を外した素の文を作る
@@ -33,6 +34,9 @@ export const DialogueTrainer: React.FC = () => {
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { addScore } = usePronunciationHistory();
+  const { addPoints } = usePoints();
+  const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+  const awardedRolesRef = useRef<Set<'A' | 'B'>>(new Set());
 
   const [grade, setGrade] = useState<5 | 6 | null>(null);
   const [dialogue, setDialogue] = useState<Dialogue | null>(null);
@@ -46,7 +50,25 @@ export const DialogueTrainer: React.FC = () => {
     setScores({});
     setActiveLine(null);
     setMyRole('A');
+    setEarnedPoints(null);
+    awardedRolesRef.current = new Set();
   };
+
+  // 役を変えたら前のクリア表示は消す
+  useEffect(() => { setEarnedPoints(null); }, [myRole]);
+
+  // 自分の役のセリフを全部読んだら（点数の良し悪しに関わらず）クリア＝ポイント付与（役ごとに1回）。
+  useEffect(() => {
+    if (!dialogue || awardedRolesRef.current.has(myRole)) return;
+    const myIdx = dialogue.lines.map((l, i) => (l.speaker === myRole ? i : -1)).filter(i => i >= 0);
+    if (myIdx.length > 0 && myIdx.every(i => scores[i] !== undefined)) {
+      awardedRolesRef.current.add(myRole);
+      (async () => {
+        const pts = await addPoints(`dialogue_${dialogue.id}`, { multiplier: 0.5 });
+        setEarnedPoints(pts);
+      })();
+    }
+  }, [scores, myRole, dialogue, addPoints]);
 
   // URLパラメータ（?grade=5&id=g5-u1）で、特定のダイアログを直接ひらく（今日のミッション用）
   const [searchParams] = useSearchParams();
@@ -122,6 +144,20 @@ export const DialogueTrainer: React.FC = () => {
         <Button variant="outline" onClick={() => setDialogue(null)} icon={ArrowLeft}>一覧へ</Button>
         <h2 className="text-primary" style={{ margin: 0, flex: 1, textAlign: 'center', fontSize: '1.3rem', marginRight: '80px' }}>{dialogue.unitName}</h2>
       </div>
+
+      {earnedPoints !== null && (
+        <div className="glass-card animate-pop" style={{ padding: '1.2rem', textAlign: 'center', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid var(--color-success)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+            <Trophy color="var(--color-accent)" />
+            <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--color-success)' }}>
+              クリア！「{myRole}」の役を全部読めたね 🎉 +{earnedPoints}ポイント
+            </span>
+          </div>
+          <div style={{ marginTop: '0.6rem', color: '#555' }}>
+            🔄 役を交代して、もう片方の役も練習してみよう！
+          </div>
+        </div>
+      )}
 
       {/* 役えらび＆訳トグル */}
       <div className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>

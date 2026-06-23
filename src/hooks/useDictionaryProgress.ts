@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { pushToSupabase } from '../lib/sync';
 
 export interface DictCategoryProgress {
+  learn?: boolean;
   practice: boolean;
   spelling: boolean;
   voice: boolean;

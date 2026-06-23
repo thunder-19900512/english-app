@@ -37,6 +37,7 @@ export const TeacherDashboard: React.FC = () => {
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [studentView, setStudentView] = useState<'byStudent' | 'byDate'>('byStudent');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
   const [currentMission, setCurrentMission] = useState<MissionOption | null>(null);
@@ -370,14 +371,26 @@ export const TeacherDashboard: React.FC = () => {
       <div className="glass-card" style={{ marginTop: '2rem' }}>
         <h2>生徒の学習状況・ふりかえり</h2>
         <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          クラス全員の学習状況を一覧で確認できます。名前をクリックすると「ふりかえり」が読めます。
+          クラス全員の学習状況を一覧で確認できます。「生徒ごと」「日ごと」で切り替えられます。
         </p>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          {([['byStudent', '👤 生徒ごと'], ['byDate', '📅 日ごと']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setStudentView(v)}
+              style={{ padding: '0.5rem 1.2rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold', background: studentView === v ? 'var(--color-primary)' : 'white', color: studentView === v ? 'white' : 'var(--color-primary)' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {students.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px', color: '#666' }}>
             まだ生徒のデータがありません
           </div>
-        ) : (
+        ) : studentView === 'byStudent' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {students.map(student => {
               const isExpanded = expandedStudentId === student.id;
@@ -438,6 +451,48 @@ export const TeacherDashboard: React.FC = () => {
               );
             })}
           </div>
+        ) : (
+          (() => {
+            // 全生徒のふりかえりを日付ごとにまとめる（新しい日付が上）
+            const byDate: Record<string, { name: string; comment: string; stars: number }[]> = {};
+            students.forEach(s => {
+              (s.reflections || []).forEach((r: any) => {
+                const d = new Date(r.date).toLocaleDateString('ja-JP');
+                (byDate[d] = byDate[d] || []).push({ name: s.name, comment: r.comment, stars: r.stars });
+              });
+            });
+            const dates = Object.keys(byDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            if (dates.length === 0) {
+              return <div style={{ padding: '2rem', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px', color: '#666' }}>まだふりかえりがありません</div>;
+            }
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {dates.map(date => (
+                  <div key={date} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '0.8rem 1.2rem', background: 'var(--color-primary)', color: 'white', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>📅 {date}</span>
+                      <span>{byDate[date].length}件</span>
+                    </div>
+                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                      {byDate[date].map((r, i) => (
+                        <div key={i} style={{ background: '#f8fafc', padding: '0.8rem 1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                            <span style={{ fontWeight: 'bold', color: '#334155' }}>{r.name}</span>
+                            <span style={{ letterSpacing: '2px' }}>
+                              {Array.from({ length: 5 }).map((_, j) => (
+                                <span key={j} style={{ color: j < r.stars ? '#f59e0b' : '#cbd5e1' }}>★</span>
+                              ))}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{r.comment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()
         )}
       </div>
     </div>

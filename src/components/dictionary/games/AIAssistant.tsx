@@ -13,6 +13,13 @@ import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter'
 // 不適切な入力・出力のときに出す、やさしい切り返し
 const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
 
+// 必ず英語で・やさしく、の指示（日本語で返答させない）
+const ENGLISH_ONLY_INSTRUCTION =
+  "LANGUAGE RULE (very important): ALWAYS reply in English only. NEVER reply in Japanese, even if the child writes or speaks in Japanese. " +
+  "Use very simple, short English for elementary school beginners (one short sentence). " +
+  "If the child seems to struggle or uses Japanese, reply with even easier English and a friendly example, " +
+  "e.g. 'In English: I like soccer. Your turn!'. Keep it encouraging.";
+
 interface ChatMessage {
   role: 'user' | 'model';
   text: string;
@@ -93,10 +100,10 @@ export const AIAssistant: React.FC = () => {
 
       const model = genAI.getGenerativeModel({
         model: targetModel,
-        systemInstruction: `${SYSTEM_PROMPTS[selectedMode]}\n${SAFETY_INSTRUCTION}`
+        systemInstruction: `${SYSTEM_PROMPTS[selectedMode]}\n${ENGLISH_ONLY_INSTRUCTION}\n${SAFETY_INSTRUCTION}`
       });
 
-      const sysPrompt = `[SYSTEM INSTRUCTION]:\n${SYSTEM_PROMPTS[selectedMode]}\n${SAFETY_INSTRUCTION}\nSpeak English only. Respond with exactly ONE short sentence.`;
+      const sysPrompt = `[SYSTEM INSTRUCTION]:\n${SYSTEM_PROMPTS[selectedMode]}\n${ENGLISH_ONLY_INSTRUCTION}\n${SAFETY_INSTRUCTION}\nRespond with exactly ONE short sentence.`;
       
       const initialGreeting = selectedMode === 'restaurant' ? 'Welcome! May I help you?' 
                             : selectedMode === 'directions' ? 'Excuse me! I am lost. Where is the station?' 

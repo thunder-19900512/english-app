@@ -3,9 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { vocabulary } from '../../data/vocabulary';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { useAppSettings } from '../../hooks/useAppSettings';
+import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
+import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Volume2, Mic, Trophy, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
+
+// 学習モードの発音合格ライン（Azure総合スコア）。学習段階なのでやさしめ。
+const LEARN_PASS_SCORE = 50;
 
 export const LearnMode: React.FC = () => {
   const { category } = useParams<{ category: string }>();
@@ -13,6 +19,9 @@ export const LearnMode: React.FC = () => {
   const decodedCategory = decodeURIComponent(category || '');
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
+  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
+  const { assess, isAssessing, isAvailable: azureAvailable } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
 
   const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory]);
@@ -27,37 +36,38 @@ export const LearnMode: React.FC = () => {
 
   const [recordingWordId, setRecordingWordId] = useState<string | null>(null);
 
-  // Check pronunciation
+  // 発音できた語を記録し、全部言えたらクリア処理（学習モードのチェックも保存）。
+  const markSpoken = (wordId: string) => {
+    setSpokenWords(prev => {
+      const newSpoken = new Set(prev).add(wordId);
+      if (newSpoken.size === words.length && !speakCleared && words.length > 0) {
+        (async () => {
+          const pts = await addPoints(`dict_learn_speak_${decodedCategory}`, { multiplier: 0.5 });
+          setSpeakCleared(true);
+          saveProgress(decodedCategory, { learn: true });
+          setShowCelebration({ type: 'speak', points: pts });
+        })();
+      }
+      return newSpoken;
+    });
+  };
+
+  // Web Speech APIでの発音判定（Azure未設定のときだけ。完全一致でややシビア）
   useEffect(() => {
+    if (azureAvailable) return;
     if (recordingWordId && transcript) {
       const targetWord = words.find(w => w.id === recordingWordId);
       if (targetWord) {
-        // Tolerant check (remove punctuation, ignore case)
         const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (normalize(transcript) === normalize(targetWord.english)) {
-          // Success
-          const newSpoken = new Set(spokenWords).add(targetWord.id);
-          setSpokenWords(newSpoken);
-          
-          if (newSpoken.size === words.length && !speakCleared && words.length > 0) {
-            // All words spoken! (higher points)
-          const savePoints = async () => {
-            const pts = await addPoints(`dict_learn_speak_${decodedCategory}`, {
-              multiplier: 0.5
-            });
-            setSpeakCleared(true);
-            setShowCelebration({ type: 'speak', points: pts });
-          };
-          savePoints();
-          }
+          markSpoken(targetWord.id);
         }
       }
-      // Stop and reset
       stopListening();
       setRecordingWordId(null);
       setTranscript('');
     }
-  }, [transcript, recordingWordId, words, spokenWords, speakCleared, decodedCategory, addPoints, stopListening, setTranscript]);
+  }, [azureAvailable, transcript, recordingWordId, words, spokenWords, speakCleared, decodedCategory, addPoints, stopListening, setTranscript]);
 
   const handleWordClick = (word: typeof vocabulary[0]) => {
     speak(word.english);
@@ -71,14 +81,31 @@ export const LearnMode: React.FC = () => {
           multiplier: 0.5
         });
         setListenCleared(true);
+        saveProgress(decodedCategory, { learn: true });
         setShowCelebration({ type: 'listen', points: pts });
       };
       savePoints();
     }
   };
 
-  const handleMicClick = (e: React.MouseEvent, wordId: string) => {
+  const handleMicClick = async (e: React.MouseEvent, wordId: string) => {
     e.stopPropagation(); // prevent card click
+
+    // Azure設定があれば、発音を採点してやさしめ（LEARN_PASS_SCORE以上でOK）に判定。
+    if (azureAvailable) {
+      if (isAssessing) return;
+      const targetWord = words.find(w => w.id === wordId);
+      if (!targetWord) return;
+      setRecordingWordId(wordId);
+      const result = await assess(targetWord.english);
+      setRecordingWordId(null);
+      if (result && result.pronunciationScore >= LEARN_PASS_SCORE) {
+        markSpoken(targetWord.id);
+      }
+      return;
+    }
+
+    // Azure未設定：Web Speechで録音（判定はuseEffect側）
     if (isRecording) {
       stopListening();
       setRecordingWordId(null);

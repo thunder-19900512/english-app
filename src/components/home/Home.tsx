@@ -258,11 +258,16 @@ export const Home: React.FC = () => {
                 <h2 className="text-primary" style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.8rem' }}>【{expandedCategory}】のモードをえらぶ</h2>
                 
                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', width: '100%' }}>
-                  <div 
-                    className="glass-card flex-col flex-center hover-scale" 
-                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)' }}
+                  <div
+                    className="glass-card flex-col flex-center hover-scale"
+                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(72, 219, 251, 0.2)', position: 'relative' }}
                     onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/learn`)}
                   >
+                    {(progress[expandedCategory]?.learn) && (
+                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', color: 'var(--color-success)' }}>
+                        <CheckCircle size={28} fill="#fff" />
+                      </div>
+                    )}
                     <BookOpen size={40} color="var(--color-primary)" style={{ marginBottom: '0.5rem' }} />
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>学習モード</h3>
                   </div>
