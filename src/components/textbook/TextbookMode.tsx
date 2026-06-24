@@ -115,7 +115,8 @@ export const TextbookMode: React.FC = () => {
   useEffect(() => {
     const g = searchParams.get('grade');
     const id = searchParams.get('id');
-    if (g === '5' || g === '6') setGrade(Number(g) as 5 | 6);
+    // 学年はTOPのカードでえらぶ前提。学年選択画面は廃止し、未指定なら5年を既定にする。
+    setGrade(g === '6' ? 6 : 5);
     if (id) {
       const quiz = DEFAULT_QUIZZES.find(q => q.id === id);
       if (quiz) handleQuizSelect(quiz);
@@ -244,41 +245,15 @@ export const TextbookMode: React.FC = () => {
     addPoints(`textbook_quiz_${selectedQuiz?.id}`, { multiplier: Math.max(1, earnedPointsMultiplier) });
   };
 
-  if (!grade) {
-    return (
-      <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem' }}>
-        <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
-        </div>
-        <h1 className="text-primary" style={{ fontSize: '2.5rem' }}>📖 教科書モード</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>どちらの教科書をひらきますか？</p>
-        
-        <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem' }}>
-          <div 
-            className="glass-card flex-col flex-center hover-scale animate-pop"
-            style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #ffeaa7, #fdcb6e)' }}
-            onClick={() => setGrade(5)}
-          >
-            <h2 style={{ fontSize: '3rem', margin: 0, color: '#d35400' }}>5年生</h2>
-          </div>
-          <div 
-            className="glass-card flex-col flex-center hover-scale animate-pop"
-            style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #81ecec, #00cec9)' }}
-            onClick={() => setGrade(6)}
-          >
-            <h2 style={{ fontSize: '3rem', margin: 0, color: '#0984e3' }}>6年生</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
+  if (!grade) return null;
 
   const gradeQuizzes = quizzes.filter(q => q.grade === grade);
 
   return (
     <div className="flex-col" style={{ flex: 1, padding: '2rem', gap: '1.5rem', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Button variant="outline" onClick={() => { setGrade(null); setQuizState('idle'); setSelectedQuiz(null); }} icon={ArrowLeft}>学年をえらびなおす</Button>
+        <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ margin: 0, fontSize: '1.8rem', flex: 1, textAlign: 'center' }}>
           📖 {grade}年生の教科書
         </h2>

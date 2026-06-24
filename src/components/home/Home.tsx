@@ -152,7 +152,23 @@ export const Home: React.FC = () => {
           >
             <Book size={40} color="#00b894" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>教科書モード</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズにちょうせん！</p>
+            <p style={{ margin: '0.5rem 0 0.8rem 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズにちょうせん！</p>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/textbook?grade=5'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#00b894', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                5年生
+              </button>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/textbook?grade=6'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#00b894', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                6年生
+              </button>
+            </div>
           </div>
 
           <div
