@@ -72,8 +72,10 @@ export const DialogueTrainer: React.FC = () => {
     }
   }, [scores, myRole, dialogue, addPoints]);
 
-  // URLパラメータ（?grade=5&id=g5-u1）で、特定のダイアログを直接ひらく（今日のミッション用）
-  const [searchParams] = useSearchParams();
+  // 学年・Unitの選択状態はURL（?grade=5&id=g5-u1）を正にする。
+  // こうすると、関連単語練習などへ飛んでから「もどる」で戻ったとき、
+  // 学年選択ではなく“さっき開いていたUnit”にちゃんと戻れる（今日のミッションの直接リンクも兼用）。
+  const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const g = searchParams.get('grade');
     const id = searchParams.get('id');
@@ -81,7 +83,8 @@ export const DialogueTrainer: React.FC = () => {
       const d = DIALOGUES.find(x => x.id === id);
       if (d) { setGrade(d.grade); startDialogue(d); return; }
     }
-    if (g === '5' || g === '6') setGrade(Number(g) as 5 | 6);
+    setDialogue(null);
+    setGrade(g === '5' || g === '6' ? (Number(g) as 5 | 6) : null);
   }, [searchParams]);
 
   const handleSpeak = (line: DialogueLine) => speak(cleanText(line.en));
@@ -107,10 +110,10 @@ export const DialogueTrainer: React.FC = () => {
           ペアで話す前の練習！<br/>A・Bの両方の役を、一人で練習できるよ。
         </p>
         <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
-          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #ffeaa7, #fdcb6e)' }} onClick={() => setGrade(5)}>
+          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #ffeaa7, #fdcb6e)' }} onClick={() => setSearchParams({ grade: '5' })}>
             <h2 style={{ fontSize: '3rem', margin: 0, color: '#d35400' }}>5年生</h2>
           </div>
-          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #81ecec, #00cec9)' }} onClick={() => setGrade(6)}>
+          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #81ecec, #00cec9)' }} onClick={() => setSearchParams({ grade: '6' })}>
             <h2 style={{ fontSize: '3rem', margin: 0, color: '#0984e3' }}>6年生</h2>
           </div>
         </div>
@@ -124,12 +127,12 @@ export const DialogueTrainer: React.FC = () => {
     return (
       <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Button variant="outline" onClick={() => setGrade(null)} icon={ArrowLeft}>学年をえらびなおす</Button>
+          <Button variant="outline" onClick={() => setSearchParams({})} icon={ArrowLeft}>学年をえらびなおす</Button>
           <h2 className="text-primary" style={{ margin: 0, flex: 1, textAlign: 'center', marginRight: '120px' }}>🗣️ {grade}年生のダイアログ</h2>
         </div>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
           {list.map(d => (
-            <div key={d.id} className="glass-card hover-scale" style={{ padding: '1.5rem', cursor: 'pointer', border: '2px solid #e2e8f0', background: 'white' }} onClick={() => startDialogue(d)}>
+            <div key={d.id} className="glass-card hover-scale" style={{ padding: '1.5rem', cursor: 'pointer', border: '2px solid #e2e8f0', background: 'white' }} onClick={() => setSearchParams({ grade: String(d.grade), id: d.id })}>
               <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-primary)' }}>{d.unitName}</h4>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>“{d.targetPhrase}”</p>
             </div>
@@ -143,7 +146,7 @@ export const DialogueTrainer: React.FC = () => {
   return (
     <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem', maxWidth: '700px', margin: '0 auto', width: '100%', paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Button variant="outline" onClick={() => setDialogue(null)} icon={ArrowLeft}>一覧へ</Button>
+        <Button variant="outline" onClick={() => setSearchParams({ grade: String(grade) })} icon={ArrowLeft}>一覧へ</Button>
         <h2 className="text-primary" style={{ margin: 0, flex: 1, textAlign: 'center', fontSize: '1.3rem', marginRight: '80px' }}>{dialogue.unitName}</h2>
       </div>
 
