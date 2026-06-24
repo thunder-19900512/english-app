@@ -6,6 +6,8 @@ export interface Vocabulary {
   page: number;
   emoji: string;
   keyPhrase: string;
+  imageUrl?: string; // マイ単語（地域固有語など）で写真を使う場合のURL。無ければemojiを表示。
+  custom?: boolean;  // 先生・子どもが追加した単語
 }
 
 export const vocabulary: Vocabulary[] = [

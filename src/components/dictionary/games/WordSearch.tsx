@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSafeBack } from '../../../hooks/useSafeBack';
-import { vocabulary } from '../../../data/vocabulary';
+import { useVocabulary } from '../../../hooks/useVocabulary';
 import { Button } from '../../ui/Button';
 import { ArrowLeft, Trophy, RefreshCw, Volume2 } from 'lucide-react';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
@@ -98,6 +98,7 @@ export const WordSearch: React.FC = () => {
   const goBack = useSafeBack(`/dictionary/${category}`); // 1つ上＝このカテゴリのモード一覧へ
   const { speak } = useSpeechSynthesis();
   const { addPoints } = usePoints();
+  const vocabulary = useVocabulary();
   const { progress, saveProgress } = useDictionaryProgress();
   const { classBest } = useLeaderboard(category || '', 'wordsearch');
 
@@ -137,7 +138,7 @@ export const WordSearch: React.FC = () => {
     setElapsedMs(0);
     setFinalTime(null);
     setIsNewRecord(false);
-  }, [category]);
+  }, [category, vocabulary]);
 
   // Timer loop
   useEffect(() => {

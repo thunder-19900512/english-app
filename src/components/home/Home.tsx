@@ -3,13 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { stages } from '../../data/stages';
 import { Trophy, Lock, BookOpen, Target, Keyboard, Mic, Search, Star, MessageCircleQuestion, Sparkles, Book } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { vocabulary } from '../../data/vocabulary';
+import { useVocabulary } from '../../hooks/useVocabulary';
 import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { useAppSettings } from '../../hooks/useAppSettings';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
+  const vocabulary = useVocabulary();
   const [earnedBadges, setEarnedBadges] = useState<number[]>([]);
   const [studentName, setStudentName] = useState<string>('ゲスト');
   // タブ状態はURL(?tab=)で持つ。こうするとステージ等から「もどる」で戻ったとき、

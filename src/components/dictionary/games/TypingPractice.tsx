@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { vocabulary } from '../../../data/vocabulary';
+import { useVocabulary } from '../../../hooks/useVocabulary';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { Button } from '../../ui/Button';
 import { ArrowLeft } from 'lucide-react';
@@ -11,12 +11,13 @@ export const TypingPractice: React.FC = () => {
   const navigate = useNavigate();
   const decodedCategory = decodeURIComponent(category || '');
   const { speak } = useSpeechSynthesis();
+  const vocabulary = useVocabulary();
 
   const words = React.useMemo(
     () => vocabulary
       .filter(v => v.category === decodedCategory)
       .map(v => ({ text: v.english, emoji: v.emoji })),
-    [decodedCategory]
+    [decodedCategory, vocabulary]
   );
 
   return (

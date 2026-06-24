@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { vocabulary, type Vocabulary } from '../../../data/vocabulary';
+import { type Vocabulary } from '../../../data/vocabulary';
+import { useVocabulary } from '../../../hooks/useVocabulary';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { Button } from "../../ui/Button";
@@ -61,8 +62,9 @@ export const QAMode: React.FC = () => {
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { addPoints } = usePoints();
+  const vocabulary = useVocabulary();
 
-  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory && v.keyPhrase), [decodedCategory]);
+  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory && v.keyPhrase), [decodedCategory, vocabulary]);
 
   const [difficulty, setDifficulty] = useState<'select' | 'voice' | 'typing'>('select');
   const [targetWord, setTargetWord] = useState<Vocabulary | null>(null);

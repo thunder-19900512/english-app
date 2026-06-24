@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { vocabulary, type Vocabulary } from '../../../data/vocabulary';
+import { type Vocabulary } from '../../../data/vocabulary';
+import { useVocabulary } from '../../../hooks/useVocabulary';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useAppSettings } from '../../../hooks/useAppSettings';
@@ -32,8 +33,9 @@ export const VoiceBattle: React.FC = () => {
 
   // Azureの発音採点で出た最新スコア（フィードバック表示用）
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const vocabulary = useVocabulary();
 
-  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory]);
+  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory, vocabulary]);
 
   const [targetWord, setTargetWord] = useState<Vocabulary | null>(null);
   const [currentMonster, setCurrentMonster] = useState('👾');

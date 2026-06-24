@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { vocabulary } from '../../data/vocabulary';
+import { useVocabulary } from '../../hooks/useVocabulary';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useAppSettings } from '../../hooks/useAppSettings';
@@ -23,8 +23,9 @@ export const LearnMode: React.FC = () => {
   const { assess, isAssessing, isAvailable: azureAvailable } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
+  const vocabulary = useVocabulary();
 
-  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory]);
+  const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory, vocabulary]);
 
   const [clickedWords, setClickedWords] = useState<Set<string>>(new Set());
   const [spokenWords, setSpokenWords] = useState<Set<string>>(new Set());
@@ -198,7 +199,9 @@ export const LearnMode: React.FC = () => {
               <CheckCircle2 size={32} color="var(--color-success)" style={{ position: 'absolute', top: '10px', right: '10px' }} />
             )}
             
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{word.emoji}</div>
+            {word.imageUrl
+              ? <img src={word.imageUrl} alt={word.english} style={{ width: '140px', height: '140px', objectFit: 'cover', borderRadius: '12px', marginBottom: '1rem' }} />
+              : <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{word.emoji}</div>}
             <h2 style={{ fontSize: '1.8rem', margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--color-primary)' }}>
               {word.english}
             </h2>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, Star, Trophy } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { vocabulary } from '../../data/vocabulary';
+import { useVocabulary } from '../../hooks/useVocabulary';
 import { stages } from '../../data/stages';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { useDictionaryProgress, type DictCategoryProgress } from '../../hooks/useDictionaryProgress';
@@ -55,8 +55,9 @@ export const MyProgress: React.FC = () => {
   const goBack = useSafeBack();
   const { progress } = useDictionaryProgress();
   const { history } = usePronunciationHistory();
+  const vocabulary = useVocabulary();
 
-  const categories = useMemo(() => Array.from(new Set(vocabulary.map(v => v.category))), []);
+  const categories = useMemo(() => Array.from(new Set(vocabulary.map(v => v.category))), [vocabulary]);
 
   const studentId = localStorage.getItem('studentId');
   const points = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);

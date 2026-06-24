@@ -11,7 +11,7 @@ import { usePronunciationAssessment } from '../../../hooks/usePronunciationAsses
 import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { MicButton } from '../../ui/MicButton';
-import { vocabulary } from '../../../data/vocabulary';
+import { useVocabulary } from '../../../hooks/useVocabulary';
 import type { Vocabulary } from '../../../data/vocabulary';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
@@ -41,6 +41,7 @@ const READ_PASS_SCORE = 60;
 export const StoryMode: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
+  const vocabulary = useVocabulary();
   const { geminiApiKey, azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { addPoints } = usePoints();
   const { speak } = useSpeechSynthesis();
