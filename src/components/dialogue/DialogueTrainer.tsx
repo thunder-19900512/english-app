@@ -84,7 +84,8 @@ export const DialogueTrainer: React.FC = () => {
       if (d) { setGrade(d.grade); startDialogue(d); return; }
     }
     setDialogue(null);
-    setGrade(g === '5' || g === '6' ? (Number(g) as 5 | 6) : null);
+    // 学年はTOPのカードでえらぶ前提。学年選択画面は廃止し、未指定なら5年を既定にする。
+    setGrade(g === '6' ? 6 : 5);
   }, [searchParams]);
 
   const handleSpeak = (line: DialogueLine) => speak(cleanText(line.en));
@@ -98,28 +99,8 @@ export const DialogueTrainer: React.FC = () => {
     addScore('dialogue', result.pronunciationScore, cleanText(line.en));
   };
 
-  // 学年えらび
-  if (!grade) {
-    return (
-      <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem' }}>
-        <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
-          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
-        </div>
-        <h1 className="text-primary" style={{ fontSize: '2.2rem' }}>🗣️ ダイアログ・トレーナー</h1>
-        <p style={{ fontSize: '1.1rem', color: '#666', textAlign: 'center' }}>
-          ペアで話す前の練習！<br/>A・Bの両方の役を、一人で練習できるよ。
-        </p>
-        <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
-          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #ffeaa7, #fdcb6e)' }} onClick={() => setSearchParams({ grade: '5' })}>
-            <h2 style={{ fontSize: '3rem', margin: 0, color: '#d35400' }}>5年生</h2>
-          </div>
-          <div className="glass-card flex-col flex-center hover-scale" style={{ padding: '3rem 4rem', cursor: 'pointer', background: 'linear-gradient(135deg, #81ecec, #00cec9)' }} onClick={() => setSearchParams({ grade: '6' })}>
-            <h2 style={{ fontSize: '3rem', margin: 0, color: '#0984e3' }}>6年生</h2>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
+  if (!grade) return null;
 
   // Unitえらび
   if (!dialogue) {
@@ -127,7 +108,7 @@ export const DialogueTrainer: React.FC = () => {
     return (
       <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Button variant="outline" onClick={() => setSearchParams({})} icon={ArrowLeft}>学年をえらびなおす</Button>
+          <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
           <h2 className="text-primary" style={{ margin: 0, flex: 1, textAlign: 'center', marginRight: '120px' }}>🗣️ {grade}年生のダイアログ</h2>
         </div>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>

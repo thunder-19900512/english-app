@@ -161,7 +161,23 @@ export const Home: React.FC = () => {
           >
             <span style={{ fontSize: '40px', marginBottom: '0.5rem' }}>🗣️</span>
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ダイアログ</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話練習！</p>
+            <p style={{ margin: '0.5rem 0 0.8rem 0', color: '#666', textAlign: 'center' }}>ペアで話す前の<br/>会話練習！</p>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/dialogue?grade=5'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#0984e3', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                5年生
+              </button>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/dialogue?grade=6'); }}
+                style={{ fontSize: '1rem', fontWeight: 'bold', background: '#0984e3', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                6年生
+              </button>
+            </div>
           </div>
 
           <div
