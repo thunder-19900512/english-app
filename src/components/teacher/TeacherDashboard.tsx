@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { setCap, getUsage, DEFAULT_CAP } from '../../lib/apiUsage';
 import { DIALOGUES } from '../dialogue/dialogueData';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
+import { stages } from '../../data/stages';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
@@ -38,7 +39,7 @@ export const TeacherDashboard: React.FC = () => {
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
-  const [studentView, setStudentView] = useState<'byStudent' | 'byDate'>('byStudent');
+  const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
   const [currentMission, setCurrentMission] = useState<MissionOption | null>(null);
@@ -422,11 +423,11 @@ export const TeacherDashboard: React.FC = () => {
       <div className="glass-card" style={{ marginTop: '2rem' }}>
         <h2>生徒の学習状況・ふりかえり</h2>
         <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          クラス全員の学習状況を一覧で確認できます。「生徒ごと」「日ごと」で切り替えられます。
+          クラス全員の学習状況を一覧で確認できます。「生徒ごと」「日ごと」「到達マップ（誰が未達か＋ペア提案）」で切り替えられます。
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          {([['byStudent', '👤 生徒ごと'], ['byDate', '📅 日ごと']] as const).map(([v, label]) => (
+          {([['byStudent', '👤 生徒ごと'], ['byDate', '📅 日ごと'], ['map', '📊 到達マップ']] as const).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setStudentView(v)}
@@ -502,7 +503,7 @@ export const TeacherDashboard: React.FC = () => {
               );
             })}
           </div>
-        ) : (
+        ) : studentView === 'byDate' ? (
           (() => {
             // 全生徒のふりかえりを日付ごとにまとめる（新しい日付が上）
             const byDate: Record<string, { name: string; comment: string; stars: number }[]> = {};
@@ -541,6 +542,113 @@ export const TeacherDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            );
+          })()
+        ) : (
+          (() => {
+            // 各生徒の到達状況を集計（students行のclear_counts/badges/dictionary_progress/pronunciation_historyから）
+            const dialogueClear = (cc: any, id: string) => (cc?.[`dialogue_${id}`] || 0) > 0;
+            const rows = students.map(s => {
+              const cc = s.clear_counts || {};
+              const badges: number[] = s.badges || [];
+              const dict = s.dictionary_progress || {};
+              const dialogueCount = DIALOGUES.filter(d => dialogueClear(cc, d.id)).length;
+              const phonicsCount = badges.length;
+              const dictCount = Object.values(dict).filter((p: any) => p && (p.practice || p.spelling || p.speedKaruta || p.memoryGame)).length;
+              const pron = s.pronunciation_history || [];
+              const pronAvg = pron.length ? Math.round(pron.reduce((a: number, r: any) => a + (r.score || 0), 0) / pron.length) : null;
+              const mastery = phonicsCount + dialogueCount + dictCount;
+              return { s, cc, badges, dialogueCount, phonicsCount, dictCount, pronAvg, pronCount: pron.length, mastery };
+            });
+            // ペア提案：到達スコア順にならべ、上位（ヘルパー）×下位（サポート）でペアに
+            const sorted = [...rows].sort((a, b) => b.mastery - a.mastery);
+            const pairs: { helper: typeof rows[0]; support: typeof rows[0] }[] = [];
+            let i = 0, j = sorted.length - 1;
+            while (i < j) { pairs.push({ helper: sorted[i], support: sorted[j] }); i++; j--; }
+            const leftover = i === j ? sorted[i] : null;
+
+            const cell = (clear: boolean) => (
+              <td style={{ textAlign: 'center', padding: '0.3rem 0.1rem', background: clear ? '#dcfce7' : '#fef2f2', color: clear ? '#16a34a' : '#fca5a5', fontWeight: 'bold', borderRight: '1px solid #f1f5f9' }}>
+                {clear ? '✓' : '–'}
+              </td>
+            );
+            const Matrix = ({ title, cols, isClear }: { title: string; cols: { key: any; label: string }[]; isClear: (r: typeof rows[0], key: any) => boolean }) => (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 0.5rem 0' }}>{title}</h3>
+                <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th style={{ textAlign: 'left', padding: '0.4rem 0.6rem', position: 'sticky', left: 0, background: '#f8fafc', minWidth: '110px' }}>生徒</th>
+                        {cols.map(c => <th key={String(c.key)} style={{ padding: '0.4rem 0.2rem', minWidth: '34px', color: '#64748b' }}>{c.label}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(r => (
+                        <tr key={r.s.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '0.3rem 0.6rem', position: 'sticky', left: 0, background: 'white', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{r.s.name}</td>
+                          {cols.map(c => <React.Fragment key={String(c.key)}>{cell(isClear(r, c.key))}</React.Fragment>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+
+            const g5 = DIALOGUES.filter(d => d.grade === 5);
+            const g6 = DIALOGUES.filter(d => d.grade === 6);
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* ペア提案 */}
+                <div className="glass-card" style={{ padding: '1.2rem', background: '#eef2ff', border: '1px solid #c7d2fe' }}>
+                  <h3 style={{ margin: '0 0 0.3rem 0', color: '#4338ca' }}>🤝 ペア提案（教え合い）</h3>
+                  <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem', color: '#6366f1' }}>
+                    到達スコア（フォニックス＋ダイアログ＋辞書のクリア数）が高い子（ヘルパー）と、サポートが要る子を組み合わせた案です。
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {pairs.map((p, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: 'white', padding: '0.5rem 0.8rem', borderRadius: '8px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#16a34a' }}>🦸 {p.helper.s.name}</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>(到達{p.helper.mastery})</span>
+                        <span style={{ color: '#94a3b8' }}>×</span>
+                        <span style={{ fontWeight: 'bold', color: '#2563eb' }}>🌱 {p.support.s.name}</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>(到達{p.support.mastery})</span>
+                      </div>
+                    ))}
+                    {leftover && (
+                      <div style={{ background: 'white', padding: '0.5rem 0.8rem', borderRadius: '8px', color: '#64748b' }}>
+                        あまり：{leftover.s.name}（到達{leftover.mastery}）— 3人組にするか先生とペアに
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 凡例 */}
+                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> クリア済み
+                  <span style={{ color: '#fca5a5', fontWeight: 'bold' }}>–</span> 未達（赤いところが要支援）
+                </div>
+
+                <Matrix title="🗣️ ダイアログ 5年（Unit別クリア）" cols={g5.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
+                <Matrix title="🗣️ ダイアログ 6年（Unit別クリア）" cols={g6.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
+                <Matrix title="🔤 フォニックス（ステージ別バッジ）" cols={stages.map(st => ({ key: st.id, label: `S${st.id}` }))} isClear={(r, key) => r.badges.includes(key)} />
+
+                {/* 発音の平均（参考） */}
+                <div>
+                  <h3 style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 0.5rem 0' }}>🎤 発音スコアの平均（参考・回数）</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {rows.map(r => (
+                      <div key={r.s.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.4rem 0.7rem', fontSize: '0.85rem' }}>
+                        <span style={{ fontWeight: 'bold' }}>{r.s.name}</span>：
+                        {r.pronAvg !== null ? <span style={{ color: r.pronAvg >= 80 ? '#16a34a' : r.pronAvg >= 60 ? '#d97706' : '#dc2626', fontWeight: 'bold' }}>{r.pronAvg}点</span> : <span style={{ color: '#94a3b8' }}>記録なし</span>}
+                        <span style={{ color: '#94a3b8' }}> ({r.pronCount}回)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             );
           })()
