@@ -37,6 +37,7 @@ export const TeacherDashboard: React.FC = () => {
   const [azureIsError, setAzureIsError] = useState(false);
   const [showAzureKey, setShowAzureKey] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState(false);
+  const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
@@ -81,6 +82,9 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.isScreenLocked !== undefined) {
         setIsScreenLocked(data.dictionary_progress.isScreenLocked);
       }
+      if (data.dictionary_progress.customVocabEnabled !== undefined) {
+        setCustomVocabEnabled(data.dictionary_progress.customVocabEnabled);
+      }
       if (data.dictionary_progress.todayMission) {
         setCurrentMission(data.dictionary_progress.todayMission);
         setMissionRoute(data.dictionary_progress.todayMission.route || '');
@@ -123,6 +127,7 @@ export const TeacherDashboard: React.FC = () => {
           todayMission: currentMission,
           geminiDailyCap: geminiCap,
           azureDailyCap: azureCap,
+          customVocabEnabled: customVocabEnabled,
           ...overrides
         }
       }, { onConflict: 'id' });
@@ -388,6 +393,36 @@ export const TeacherDashboard: React.FC = () => {
                 🔓 ロックを解除する
               </Button>
             </div>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <h2>🧪 マイ単語ついか機能（準備中）</h2>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            子どもや先生が「地域の言葉（懐古園など）」をPicture Dictionaryに追加できる機能です。
+            運用を決めてからONにしてください。<b>OFFの間は子どもの画面には出ません。</b>
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px', marginBottom: '1rem' }}>
+            <span style={{ fontWeight: 'bold' }}>いまの状態</span>
+            <span style={{ color: customVocabEnabled ? 'var(--color-success)' : '#94a3b8', fontWeight: 'bold' }}>
+              {customVocabEnabled ? '🟢 ON（子どもも追加できる）' : '⚪️ OFF（子どもには非表示）'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Button
+              style={{ flex: 1, background: customVocabEnabled ? '#ccc' : 'var(--color-success)' }}
+              disabled={customVocabEnabled}
+              onClick={async () => { setCustomVocabEnabled(true); await persistSettings({ customVocabEnabled: true }); }}
+            >
+              🟢 ONにする
+            </Button>
+            <Button
+              style={{ flex: 1, background: !customVocabEnabled ? '#ccc' : 'var(--color-error)' }}
+              disabled={!customVocabEnabled}
+              onClick={async () => { setCustomVocabEnabled(false); await persistSettings({ customVocabEnabled: false }); }}
+            >
+              ⚪️ OFFにする
+            </Button>
           </div>
         </div>
 

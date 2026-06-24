@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVocabulary, addCustomWord } from '../../hooks/useVocabulary';
+import { useAppSettings } from '../../hooks/useAppSettings';
 import { Button } from '../ui/Button';
 import { ArrowLeft, BookOpen, Plus } from 'lucide-react';
 
@@ -9,6 +10,7 @@ const inputStyle: React.CSSProperties = { display: 'block', width: '100%', margi
 export const DictionaryHome: React.FC = () => {
   const navigate = useNavigate();
   const vocabulary = useVocabulary();
+  const { customVocabEnabled } = useAppSettings(); // OFFの間は子どもに見せない
 
   // マイ単語ついようフォーム
   const [showAdd, setShowAdd] = useState(false);
@@ -47,7 +49,8 @@ export const DictionaryHome: React.FC = () => {
         <p style={{ fontSize: '1.2rem', color: '#666' }}>単元を選んで単語を練習しよう！</p>
       </div>
 
-      {/* マイ単語をついか */}
+      {/* マイ単語をついか（先生がダッシュボードでONにしたときだけ表示） */}
+      {customVocabEnabled && (
       <div style={{ width: '100%', maxWidth: '800px' }}>
         <Button variant={showAdd ? 'primary' : 'outline'} icon={Plus} onClick={() => setShowAdd(s => !s)}>
           マイ単語をついか
@@ -74,6 +77,7 @@ export const DictionaryHome: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '800px' }}>
         {categories.map((category, idx) => (

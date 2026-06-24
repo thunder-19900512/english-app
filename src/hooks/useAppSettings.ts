@@ -16,6 +16,8 @@ export const useAppSettings = () => {
   const [todayMission, setTodayMission] = useState<TodayMission | null>(null);
   const [geminiDailyCap, setGeminiDailyCap] = useState<number>(getCap('gemini'));
   const [azureDailyCap, setAzureDailyCap] = useState<number>(getCap('azure'));
+  // マイ単語ついか機能を子どもに見せるか（既定OFF。先生が運用を決めてからONにする）
+  const [customVocabEnabled, setCustomVocabEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -30,6 +32,7 @@ export const useAppSettings = () => {
       // APIの1日上限を localStorage にミラーして、各画面の使用量チェックから参照できるようにする。
       if (progress.geminiDailyCap !== undefined) { setCap('gemini', progress.geminiDailyCap); setGeminiDailyCap(progress.geminiDailyCap); }
       if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }
+      if (progress.customVocabEnabled !== undefined) setCustomVocabEnabled(progress.customVocabEnabled);
     };
 
     const fetchSettings = async () => {
@@ -63,5 +66,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap, customVocabEnabled };
 };
