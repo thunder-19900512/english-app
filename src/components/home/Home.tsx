@@ -169,6 +169,13 @@ export const Home: React.FC = () => {
                 6年生
               </button>
             </div>
+            <button
+              className="hover-scale"
+              onClick={(e) => { e.stopPropagation(); navigate('/textbook?set=worldbento'); }}
+              style={{ marginTop: '0.5rem', fontSize: '0.95rem', fontWeight: 'bold', background: '#fff', color: '#00b894', border: '2px solid #00b894', padding: '0.4rem 1rem', borderRadius: '999px', cursor: 'pointer' }}
+            >
+              🍱 世界の料理クイズ
+            </button>
           </div>
 
           <div

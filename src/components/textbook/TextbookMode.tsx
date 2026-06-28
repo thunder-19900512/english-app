@@ -10,6 +10,7 @@ import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessme
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
+import { WORLD_BENTO_QUIZZES } from './worldBentoQuizData';
 
 export type QuizQuestion = {
   question: string;
@@ -248,14 +249,16 @@ export const TextbookMode: React.FC = () => {
   // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
   if (!grade) return null;
 
-  const gradeQuizzes = quizzes.filter(q => q.grade === grade);
+  // ?set=worldbento のときは World Bento クイズ（国別）を表示。通常は学年の教科書Unit。
+  const isWorldBento = searchParams.get('set') === 'worldbento';
+  const listQuizzes = isWorldBento ? WORLD_BENTO_QUIZZES : quizzes.filter(q => q.grade === grade);
 
   return (
     <div className="flex-col" style={{ flex: 1, padding: '2rem', gap: '1.5rem', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ margin: 0, fontSize: '1.8rem', flex: 1, textAlign: 'center' }}>
-          📖 {grade}年生の教科書
+          {isWorldBento ? '🍱 世界の料理クイズ' : `📖 ${grade}年生の教科書`}
         </h2>
       </div>
 
@@ -273,13 +276,13 @@ export const TextbookMode: React.FC = () => {
             <h3 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '1.3rem' }}>Unitクイズ一覧</h3>
           </div>
 
-          {gradeQuizzes.length === 0 ? (
+          {listQuizzes.length === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
               まだこの学年のクイズはありません。
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-              {gradeQuizzes.map(quiz => (
+              {listQuizzes.map(quiz => (
                 <div
                   key={quiz.id}
                   className="glass-card"
