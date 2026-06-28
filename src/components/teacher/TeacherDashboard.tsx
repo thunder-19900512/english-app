@@ -7,6 +7,8 @@ import { setCap, getUsage, DEFAULT_CAP } from '../../lib/apiUsage';
 import { DIALOGUES } from '../dialogue/dialogueData';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { stages } from '../../data/stages';
+import { FREETALK_UNITS } from '../dictionary/games/AIAssistant';
+import { fetchConversationLogs, type ConversationLog } from '../../lib/conversationLogs';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
@@ -38,6 +40,13 @@ export const TeacherDashboard: React.FC = () => {
   const [showAzureKey, setShowAzureKey] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
+  // AI英会話：Unitゴールの上書き（{id:{goal,missionJa}}）と保存メッセージ
+  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string }>>({});
+  const [goalSaveMsg, setGoalSaveMsg] = useState('');
+  // AI英会話：記録された会話ログ
+  const [convLogs, setConvLogs] = useState<ConversationLog[] | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
@@ -85,6 +94,9 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.customVocabEnabled !== undefined) {
         setCustomVocabEnabled(data.dictionary_progress.customVocabEnabled);
       }
+      if (data.dictionary_progress.freetalkGoals !== undefined) {
+        setFreetalkGoals(data.dictionary_progress.freetalkGoals || {});
+      }
       if (data.dictionary_progress.todayMission) {
         setCurrentMission(data.dictionary_progress.todayMission);
         setMissionRoute(data.dictionary_progress.todayMission.route || '');
@@ -128,6 +140,7 @@ export const TeacherDashboard: React.FC = () => {
           geminiDailyCap: geminiCap,
           azureDailyCap: azureCap,
           customVocabEnabled: customVocabEnabled,
+          freetalkGoals: freetalkGoals,
           ...overrides
         }
       }, { onConflict: 'id' });
@@ -149,6 +162,19 @@ export const TeacherDashboard: React.FC = () => {
     const { error } = await persistSettings({ todayMission: null });
     setMissionStatus(error ? '通信エラー' : 'ミッションを解除しました');
     setTimeout(() => setMissionStatus(''), 4000);
+  };
+
+  const handleSaveGoals = async () => {
+    const { error } = await persistSettings({ freetalkGoals });
+    setGoalSaveMsg(error ? '通信エラー' : 'ゴールを保存しました');
+    setTimeout(() => setGoalSaveMsg(''), 4000);
+  };
+
+  const loadConvLogs = async () => {
+    setLogsLoading(true);
+    const logs = await fetchConversationLogs();
+    setConvLogs(logs);
+    setLogsLoading(false);
   };
 
   const handleSaveCaps = async () => {
@@ -453,6 +479,77 @@ export const TeacherDashboard: React.FC = () => {
             {capStatus && <span style={{ color: capStatus === '通信エラー' ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{capStatus}</span>}
           </div>
         </div>
+      </div>
+
+      <div className="glass-card" style={{ marginTop: '2rem' }}>
+        <h2>🗣️ AI英会話：Unitゴールの編集</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          各Unitの「ミッション（子ども向け表示）」と「ゴール（AIが[CLEAR]を判定する条件・英語）」を編集できます。
+          空欄のままなら既定の文が使われます。U6の注文〜会計など、判定を厳しく/ゆるくしたいときに調整してください。
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+          {FREETALK_UNITS.map(u => (
+            <div key={u.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.8rem' }}>
+              <div style={{ fontWeight: 'bold', color: 'var(--color-primary)', marginBottom: '0.4rem' }}>{u.label}</div>
+              <label style={{ fontSize: '0.8rem', color: '#64748b' }}>ミッション（子ども向け）
+                <input
+                  value={freetalkGoals[u.id]?.missionJa ?? u.missionJa}
+                  onChange={e => setFreetalkGoals(p => ({ ...p, [u.id]: { ...p[u.id], missionJa: e.target.value } }))}
+                  style={{ display: 'block', width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.9rem' }} />
+              </label>
+              <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '0.4rem' }}>ゴール（AI判定・英語）
+                <textarea
+                  value={freetalkGoals[u.id]?.goal ?? u.goal}
+                  onChange={e => setFreetalkGoals(p => ({ ...p, [u.id]: { ...p[u.id], goal: e.target.value } }))}
+                  style={{ display: 'block', width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem', minHeight: '48px' }} />
+              </label>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          <Button onClick={handleSaveGoals} icon={Save}>ゴールを保存</Button>
+          {goalSaveMsg && <span style={{ color: goalSaveMsg === '通信エラー' ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{goalSaveMsg}</span>}
+        </div>
+      </div>
+
+      <div className="glass-card" style={{ marginTop: '2rem' }}>
+        <h2>📒 AI英会話の記録（チーム／個人）</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          子どもが「📝 記録」を押した会話だけが残ります（自動では残りません）。班名つきはチームの記録です。
+          ✅はそのときゴール（[CLEAR]）に到達していたことを示します。
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <Button onClick={loadConvLogs} disabled={logsLoading}>{logsLoading ? '読み込み中…' : '記録を読み込む'}</Button>
+          {convLogs && <span style={{ color: '#64748b', fontSize: '0.9rem' }}>{convLogs.length}件</span>}
+        </div>
+        {convLogs && convLogs.length === 0 && (
+          <div style={{ padding: '1.5rem', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px', color: '#666' }}>まだ記録はありません</div>
+        )}
+        {convLogs && convLogs.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {convLogs.map(log => (
+              <div key={log.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                <div onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                  style={{ padding: '0.7rem 1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', background: expandedLogId === log.id ? '#f8fafc' : 'white' }}>
+                  {log.cleared ? <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅クリア</span> : <span style={{ color: '#94a3b8' }}>―</span>}
+                  {log.team ? <span style={{ background: '#eef2ff', color: '#4338ca', borderRadius: '6px', padding: '0.1rem 0.5rem', fontWeight: 'bold', fontSize: '0.85rem' }}>班：{log.team}</span> : <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{log.studentName}</span>}
+                  <span style={{ fontWeight: 'bold' }}>{log.unitTitle}</span>
+                  <span style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: '0.8rem' }}>{new Date(log.ts).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                {expandedLogId === log.id && (
+                  <div style={{ padding: '0.8rem 1rem', borderTop: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {log.lines.map((l, i) => (
+                      <div key={i} style={{ fontSize: '0.9rem' }}>
+                        <span style={{ fontWeight: 'bold', color: l.role === 'model' ? 'var(--color-primary)' : '#0984e3' }}>{l.role === 'model' ? 'AI' : '子ども'}：</span>
+                        <span>{l.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="glass-card" style={{ marginTop: '2rem' }}>

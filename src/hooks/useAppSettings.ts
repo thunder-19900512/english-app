@@ -18,6 +18,8 @@ export const useAppSettings = () => {
   const [azureDailyCap, setAzureDailyCap] = useState<number>(getCap('azure'));
   // マイ単語ついか機能を子どもに見せるか（既定OFF。先生が運用を決めてからONにする）
   const [customVocabEnabled, setCustomVocabEnabled] = useState<boolean>(false);
+  // AI英会話の各Unitゴールの上書き（先生がダッシュボードで編集）。{ [unitId]: { goal, missionJa } }
+  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string }>>({});
 
   useEffect(() => {
     if (!supabase) return;
@@ -33,6 +35,7 @@ export const useAppSettings = () => {
       if (progress.geminiDailyCap !== undefined) { setCap('gemini', progress.geminiDailyCap); setGeminiDailyCap(progress.geminiDailyCap); }
       if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }
       if (progress.customVocabEnabled !== undefined) setCustomVocabEnabled(progress.customVocabEnabled);
+      if (progress.freetalkGoals !== undefined) setFreetalkGoals(progress.freetalkGoals || {});
     };
 
     const fetchSettings = async () => {
@@ -66,5 +69,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap, customVocabEnabled };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals };
 };

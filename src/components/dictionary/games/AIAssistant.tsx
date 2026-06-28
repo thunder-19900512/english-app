@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
 import { useAppSettings } from '../../../hooks/useAppSettings';
+import { saveConversationLog } from '../../../lib/conversationLogs';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { usePoints } from '../../../hooks/usePoints';
@@ -17,7 +18,7 @@ import { useSafeBack } from '../../../hooks/useSafeBack';
 // goal は英語（AIがこの条件を満たしたら最後に [CLEAR] を付ける＝クリア判定の基準）。
 // missionJa は子ども向けの「クリア条件」表示。situation は場面（日本語）。
 interface FreetalkUnit { id: string; label: string; situation: string; goal: string; missionJa: string; greeting: { en: string; ja: string }; }
-const FREETALK_UNITS: FreetalkUnit[] = [
+export const FREETALK_UNITS: FreetalkUnit[] = [
   { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'The goal is reached only after the user has BOTH asked you what subject you like AND told you their own favorite subject.', missionJa: 'すきな教科をたずねて、自分のすきな教科も伝えよう！', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
   { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: 'The goal is reached only after the user has asked when your birthday is AND told you their own birthday AND said one thing they want.', missionJa: '誕生日をたずね合って、ほしいものも伝えよう！', greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
   { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'The goal is reached only after the user has asked what you can do AND told you one thing they can do.', missionJa: 'おたがいの「できること」をたずね合おう！', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
@@ -151,7 +152,8 @@ const parseReply = (raw: string): { en: string; ja: string; cleared: boolean } =
 export const AIAssistant: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
-  const { geminiApiKey } = useAppSettings();
+  const { geminiApiKey, freetalkGoals } = useAppSettings();
+  const studentName = localStorage.getItem('studentName') || 'ゲスト';
   const { speak } = useSpeechSynthesis();
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { consumePoints, totalPoints, addPoints } = usePoints();
@@ -168,6 +170,40 @@ export const AIAssistant: React.FC = () => {
   const [situationInput, setSituationInput] = useState('');
   const [pendingFreetalk, setPendingFreetalk] = useState(true);
   const [activeScenario, setActiveScenario] = useState<Scenario | null>(null);
+  // 「この会話を記録する」用（記録はオプトイン。班名を入れるとチームの記録になる）
+  const [showRecord, setShowRecord] = useState(false);
+  const [teamName, setTeamName] = useState('');
+  const [recordMsg, setRecordMsg] = useState('');
+
+  // 先生がダッシュボードで編集したUnitゴールがあれば上書きする
+  const withGoalOverride = (opts: InitOpts, unitId: string): InitOpts => {
+    const ov = freetalkGoals?.[unitId];
+    if (!ov) return opts;
+    return {
+      ...opts,
+      goal: ov.goal || opts.goal,
+      goalLabel: ov.missionJa ? `🎯 ミッション：${ov.missionJa}` : opts.goalLabel,
+    };
+  };
+
+  // 今の会話を記録する（班名があればチーム記録＝チーム[CLEAR]の証跡になる）
+  const handleRecord = async () => {
+    const log = {
+      id: `log_${Date.now()}`,
+      ts: Date.now(),
+      studentId,
+      studentName,
+      unitId: activeOptsRef.current?.histSuffix || mode || 'freetalk',
+      unitTitle: (activeScenario || (mode ? SCENARIOS[mode] : null))?.title || 'AI英会話',
+      team: teamName.trim(),
+      cleared,
+      lines: messages.map(m => ({ role: m.role, text: m.text })),
+    };
+    const { error } = await saveConversationLog(log);
+    setRecordMsg(error ? '記録できなかった…通信を確認してね' : (teamName.trim() ? `班「${teamName.trim()}」の会話を記録したよ！` : '会話を記録したよ！'));
+    if (!error) { setShowRecord(false); setTeamName(''); }
+    setTimeout(() => setRecordMsg(''), 4000);
+  };
   const awardedRef = useRef(false);
   const activeOptsRef = useRef<InitOpts | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -371,7 +407,7 @@ export const AIAssistant: React.FC = () => {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
             {FREETALK_UNITS.map(u => (
               <button key={u.id} className="hover-scale"
-                onClick={() => initChat('freetalk', buildUnitOpts(u))}
+                onClick={() => initChat('freetalk', withGoalOverride(buildUnitOpts(u), u.id))}
                 style={{ padding: '0.7rem', borderRadius: '10px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'center' }}>
                 {u.label}
               </button>
@@ -413,10 +449,23 @@ export const AIAssistant: React.FC = () => {
           {showTranslation ? '訳オフ' : '訳オン'}
         </Button>
         <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
+        <Button variant="outline" onClick={() => setShowRecord(s => !s)} style={{ fontSize: '0.8rem', padding: '0.4rem' }} disabled={messages.length === 0}>📝 記録</Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--color-primary)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
           <Coins size={18} color="#FFD700" />{totalPoints} P
         </div>
       </div>
+
+      {/* 会話を記録（オプトイン。班名を入れるとチームの記録＝チーム[CLEAR]の証跡に） */}
+      {showRecord && (
+        <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '0.7rem 1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 'bold' }}>この会話を先生に記録：</span>
+          <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="班名（個人なら空でOK）"
+            style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #c7d2fe', fontSize: '0.9rem' }} />
+          <Button onClick={handleRecord} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>{cleared ? '✅ クリアを記録' : '記録する'}</Button>
+          <Button variant="outline" onClick={() => setShowRecord(false)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>やめる</Button>
+        </div>
+      )}
+      {recordMsg && <div style={{ color: recordMsg.includes('記録した') ? 'var(--color-success)' : 'var(--color-error)', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem' }}>{recordMsg}</div>}
 
       {/* ゴール表示 */}
       <div style={{ background: 'rgba(253, 203, 110, 0.25)', border: '1px solid var(--color-accent)', borderRadius: '12px', padding: '0.5rem 1rem', marginBottom: '0.5rem', fontWeight: 'bold', color: '#7a5a00', textAlign: 'center', fontSize: '0.95rem' }}>
