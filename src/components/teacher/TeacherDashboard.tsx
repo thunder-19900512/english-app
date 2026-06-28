@@ -9,6 +9,7 @@ import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { stages } from '../../data/stages';
 import { FREETALK_UNITS } from '../dictionary/games/AIAssistant';
 import { fetchConversationLogs, type ConversationLog } from '../../lib/conversationLogs';
+import { WORLD_BENTO_QUIZZES } from '../textbook/worldBentoQuizData';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
@@ -767,6 +768,7 @@ export const TeacherDashboard: React.FC = () => {
                 <Matrix title="🗣️ ダイアログ 5年（Unit別クリア）" cols={g5.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
                 <Matrix title="🗣️ ダイアログ 6年（Unit別クリア）" cols={g6.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
                 <Matrix title="🔤 フォニックス（ステージ別バッジ）" cols={stages.map(st => ({ key: st.id, label: `S${st.id}` }))} isClear={(r, key) => r.badges.includes(key)} />
+                <Matrix title="🍱 World Bento クイズ（国別クリア）" cols={WORLD_BENTO_QUIZZES.map(q => ({ key: q.id, label: q.unitName.split(' ')[0] }))} isClear={(r, key) => (r.cc[`textbook_quiz_${key}`] || 0) > 0} />
 
                 {/* 発音の平均（参考） */}
                 <div>
