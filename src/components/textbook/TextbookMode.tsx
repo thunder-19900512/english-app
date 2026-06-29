@@ -28,6 +28,7 @@ export interface TextbookQuiz {
   keyPhrase: string;
   keyPhraseJapanese: string;
   questions: QuizQuestion[];
+  noBonus?: boolean; // trueなら発音ボーナス課題を出さず、問題だけで完了（World Bento用）
 }
 
 const normalizeText = (text: string) => {
@@ -232,6 +233,8 @@ export const TextbookMode: React.FC = () => {
       if (currentQuestionIndex < selectedQuiz!.questions.length - 1) {
         setCurrentQuestionIndex(i => i + 1);
         resetQuestionState();
+      } else if (selectedQuiz!.noBonus) {
+        finishQuiz(); // ボーナスなし：4問で完了
       } else {
         setQuizState('bonus');
         resetQuestionState();
@@ -292,7 +295,7 @@ export const TextbookMode: React.FC = () => {
                     {quiz.unitName}
                   </h4>
                   <p style={{ margin: '0 0 1rem 0', color: '#64748b', fontSize: '0.9rem' }}>
-                    {quiz.questions.length}問のクイズ ＋ ボーナス課題
+                    {quiz.questions.length}問のクイズ{quiz.noBonus ? '' : ' ＋ ボーナス課題'}
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     {quiz.url && (
