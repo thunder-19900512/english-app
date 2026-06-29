@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { stages } from '../../data/stages';
 import { useSafeBack } from '../../hooks/useSafeBack';
+import { getPreferredVoice } from '../../lib/voice';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
@@ -115,6 +116,8 @@ export const Stage: React.FC = () => {
     msg.text = text;
     msg.lang = 'en-US';
     msg.rate = 0.8;
+    const voice = getPreferredVoice(); // クリアな英語ボイスに固定
+    if (voice) msg.voice = voice;
     window.speechSynthesis.speak(msg);
   }, []);
 

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { getPreferredVoice } from '../lib/voice';
 
 const AUDIO_LETTERS = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
@@ -33,11 +34,9 @@ export const useSpeechSynthesis = () => {
     utterance.rate = 0.8;
     utterance.pitch = 1.1; 
     
-    const voices = window.speechSynthesis.getVoices();
-    const googleVoice = voices.find(v => v.name.includes('Google US English'));
-    if (googleVoice) {
-      utterance.voice = googleVoice;
-    }
+    // クリアな英語ボイスに固定（無ければ既定）
+    const voice = getPreferredVoice();
+    if (voice) utterance.voice = voice;
 
     window.speechSynthesis.speak(utterance);
   };
