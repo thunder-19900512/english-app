@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [classFilter, setClassFilter] = useState<'all' | 'A' | 'B'>('all');
+  const visibleStudents = STUDENTS.filter(s => classFilter === 'all' || s.cls === classFilter);
 
   const handleLogin = async (studentId: string, studentName: string) => {
     localStorage.setItem('studentId', studentId);
@@ -56,25 +58,45 @@ export const Login: React.FC = () => {
         </span>
       </div>
 
+      {/* A/B クラスのしぼりこみ（5・6年はAB2クラス） */}
+      <div className="flex-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
+        {([['all', 'すべて'], ['A', 'Aクラス'], ['B', 'Bクラス']] as const).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setClassFilter(v)}
+            style={{ padding: '0.4rem 1.1rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold',
+              background: classFilter === v ? 'var(--color-primary)' : 'white', color: classFilter === v ? 'white' : 'var(--color-primary)' }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="student-grid" style={{ marginTop: '1rem' }}>
-        {STUDENTS.map((student) => (
+        {visibleStudents.map((student) => (
           <button
             key={student.id}
             className="btn"
-            style={{ 
-              padding: '1rem', 
-              fontSize: '1rem', 
+            style={{
+              padding: '0.8rem 1rem',
+              fontSize: '1rem',
               borderRadius: 'var(--radius-sm)',
               background: student.grade === 5 ? 'var(--color-secondary)' : 'var(--color-primary)',
               color: 'white',
               boxShadow: 'var(--shadow-sm)',
-              transition: 'transform 0.2s, box-shadow 0.2s'
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem'
             }}
             onClick={() => handleLogin(student.id, student.name)}
             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
             onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
           >
-            {student.id}. {student.name}
+            <span>{student.id}. {student.name}</span>
+            {student.cls && (
+              <span style={{ background: 'white', color: student.cls === 'A' ? '#d97706' : '#0891b2', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.05rem 0.5rem', borderRadius: '999px' }}>
+                {student.cls}クラス・{student.home}組
+              </span>
+            )}
           </button>
         ))}
       </div>
