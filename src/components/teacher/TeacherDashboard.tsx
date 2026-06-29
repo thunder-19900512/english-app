@@ -9,6 +9,7 @@ import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { stages } from '../../data/stages';
 import { FREETALK_UNITS } from '../dictionary/games/AIAssistant';
 import { fetchConversationLogs, type ConversationLog } from '../../lib/conversationLogs';
+import { saveTeacherFeedback } from '../../lib/teacherFeedback';
 import { WORLD_BENTO_QUIZZES } from '../textbook/worldBentoQuizData';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
@@ -48,6 +49,10 @@ export const TeacherDashboard: React.FC = () => {
   const [convLogs, setConvLogs] = useState<ConversationLog[] | null>(null);
   const [logsLoading, setLogsLoading] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  // ふりかえりへの先生コメント/スタンプの下書き（reflectionIdごと）と保存中フラグ
+  const [fbDrafts, setFbDrafts] = useState<Record<string, { comment: string; stamp: string }>>({});
+  const [fbSavingId, setFbSavingId] = useState<string | null>(null);
+  const STAMPS = ['👍', '🌟', '💯', '😊', '🎉', '🔥'];
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
@@ -169,6 +174,19 @@ export const TeacherDashboard: React.FC = () => {
     const { error } = await persistSettings({ freetalkGoals });
     setGoalSaveMsg(error ? '通信エラー' : 'ゴールを保存しました');
     setTimeout(() => setGoalSaveMsg(''), 4000);
+  };
+
+  // ふりかえり1件に先生コメント/スタンプを保存し、画面にも即反映
+  const handleSaveFeedback = async (studentId: string, ref: any) => {
+    const draft = fbDrafts[ref.id] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
+    setFbSavingId(ref.id);
+    const { error } = await saveTeacherFeedback(studentId, ref.id, draft.comment, draft.stamp);
+    setFbSavingId(null);
+    if (error) return;
+    setStudents(prev => prev.map(s => s.id !== studentId ? s : {
+      ...s,
+      reflections: (s.reflections || []).map((r: any) => r.id === ref.id ? { ...r, teacherComment: draft.comment.trim(), teacherStamp: draft.stamp } : r),
+    }));
   };
 
   const loadConvLogs = async () => {
@@ -626,6 +644,34 @@ export const TeacherDashboard: React.FC = () => {
                                 </span>
                               </div>
                               <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{ref.comment}</p>
+                              {/* 先生からのコメント／スタンプ（双方向） */}
+                              {(() => {
+                                const draft = fbDrafts[ref.id] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
+                                const setDraft = (d: { comment: string; stamp: string }) => setFbDrafts(p => ({ ...p, [ref.id]: d }));
+                                return (
+                                  <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: '1px dashed #cbd5e1' }}>
+                                    <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>先生から（子どもに見えます）</div>
+                                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                                      {STAMPS.map(st => (
+                                        <button key={st} onClick={() => setDraft({ ...draft, stamp: draft.stamp === st ? '' : st })}
+                                          style={{ fontSize: '1.2rem', padding: '0.1rem 0.4rem', borderRadius: '8px', cursor: 'pointer', background: draft.stamp === st ? '#cffafe' : 'white', border: `2px solid ${draft.stamp === st ? '#0891b2' : '#e2e8f0'}` }}>
+                                          {st}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                      <input value={draft.comment} onChange={e => setDraft({ ...draft, comment: e.target.value })} placeholder="一言コメント（任意）"
+                                        style={{ flex: 1, minWidth: '180px', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '0.9rem' }} />
+                                      <Button onClick={() => handleSaveFeedback(student.id, ref)} disabled={fbSavingId === ref.id} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+                                        {fbSavingId === ref.id ? '保存中…' : 'おくる'}
+                                      </Button>
+                                    </div>
+                                    {(ref.teacherComment || ref.teacherStamp) && (
+                                      <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#16a34a' }}>送信済み：{ref.teacherStamp} {ref.teacherComment}</div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           ))}
                         </div>

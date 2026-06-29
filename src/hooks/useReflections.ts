@@ -6,6 +6,8 @@ export interface Reflection {
   date: string; // ISO string
   stars: number; // 1-5
   comment: string;
+  teacherComment?: string; // 先生からの一言（双方向）
+  teacherStamp?: string;   // 先生のスタンプ（絵文字）
 }
 
 export const useReflections = () => {
