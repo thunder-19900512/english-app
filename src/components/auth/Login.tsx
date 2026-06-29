@@ -94,7 +94,7 @@ export const Login: React.FC = () => {
             <span>{student.id}. {student.name}</span>
             {student.cls && (
               <span style={{ background: 'white', color: student.cls === 'A' ? '#d97706' : '#0891b2', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.05rem 0.5rem', borderRadius: '999px' }}>
-                {student.cls}クラス・{student.home}組
+                {student.cls}クラス
               </span>
             )}
           </button>
