@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
 import { useAppSettings } from '../../../hooks/useAppSettings';
 import { saveConversationLog } from '../../../lib/conversationLogs';
+import { STUDENTS } from '../../../data/students';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { usePoints } from '../../../hooks/usePoints';
@@ -68,6 +69,7 @@ interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   ja?: string;
+  speakerName?: string; // チームモードで、その発話を話したメンバー名
 }
 
 interface Suggestion { en: string; ja: string; }
@@ -175,6 +177,14 @@ export const AIAssistant: React.FC = () => {
   const [teamName, setTeamName] = useState('');
   const [recordMsg, setRecordMsg] = useState('');
 
+  // チームモード（4人1組などで、ターンごとに話す人をえらんでリレー）
+  const [isTeam, setIsTeam] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
+  const [currentSpeaker, setCurrentSpeaker] = useState<{ id: string; name: string } | null>(null);
+  const [lastSpeakerId, setLastSpeakerId] = useState<string | null>(null);
+  const toggleMember = (m: { id: string; name: string }) =>
+    setTeamMembers(prev => prev.some(x => x.id === m.id) ? prev.filter(x => x.id !== m.id) : [...prev, m]);
+
   // 先生がダッシュボードで編集したUnitゴールがあれば上書きする
   const withGoalOverride = (opts: InitOpts, unitId: string): InitOpts => {
     const ov = freetalkGoals?.[unitId];
@@ -197,7 +207,7 @@ export const AIAssistant: React.FC = () => {
       unitTitle: (activeScenario || (mode ? SCENARIOS[mode] : null))?.title || 'AI英会話',
       team: teamName.trim(),
       cleared,
-      lines: messages.map(m => ({ role: m.role, text: m.text })),
+      lines: messages.map(m => ({ role: m.role, text: m.text, ...(m.speakerName ? { speaker: m.speakerName } : {}) })),
     };
     const { error } = await saveConversationLog(log);
     setRecordMsg(error ? '記録できなかった…通信を確認してね' : (teamName.trim() ? `班「${teamName.trim()}」の会話を記録したよ！` : '会話を記録したよ！'));
@@ -231,6 +241,8 @@ export const AIAssistant: React.FC = () => {
     setCleared(false);
     awardedRef.current = false;
     setShowHelp(false);
+    setCurrentSpeaker(null);
+    setLastSpeakerId(null);
 
     const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}`;
     const savedHist = localStorage.getItem(histKey);
@@ -316,6 +328,7 @@ export const AIAssistant: React.FC = () => {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !chatSession) return;
+    if (isTeam && !currentSpeaker) { alert('だれが話すか、チームでえらんでね！'); return; }
 
     if (isInappropriate(text)) {
       setMessages(prev => [...prev, { role: 'model', text: REDIRECT_MESSAGE }]);
@@ -341,9 +354,11 @@ export const AIAssistant: React.FC = () => {
     const ok = await consumePoints(MESSAGE_COST);
     if (!ok) { alert(`ポイントが足りないよ！（${MESSAGE_COST}P ひつよう）`); return; }
 
-    const newMessages = [...messages, { role: 'user' as const, text }];
+    const newMessages: ChatMessage[] = [...messages, { role: 'user', text, ...(isTeam && currentSpeaker ? { speakerName: currentSpeaker.name } : {}) }];
     setMessages(newMessages);
     setTranscript(''); setInputText(''); setShowHelp(false); setIsAiThinking(true);
+    // チーム：話したら次は別の人がえらべるよう、直前の話者を記録して選択をリセット
+    if (isTeam && currentSpeaker) { setLastSpeakerId(currentSpeaker.id); setCurrentSpeaker(null); }
 
     const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
     try {
@@ -377,8 +392,15 @@ export const AIAssistant: React.FC = () => {
   }, [transcript, isRecording]);
 
   const onMicClick = () => {
+    if (isTeam && !currentSpeaker) { alert('さきに「話す人」をえらんでね！'); return; }
     if (isRecording) { stopListening(); }
     else { setTranscript(''); setInputText(''); startListening(); }
+  };
+
+  // 会話を開始（チーム時はメンバー2人以上が必要）
+  const startFreetalk = (opts: InitOpts) => {
+    if (isTeam && teamMembers.length < 2) { alert('チームは2人以上えらんでね！'); return; }
+    initChat('freetalk', opts);
   };
 
   if (!geminiApiKey) {
@@ -400,6 +422,37 @@ export const AIAssistant: React.FC = () => {
           <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
           <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>🤖 AIと英語で話そう！</h2>
         </div>
+
+        {/* チームでやる（メンバーをえらんでリレー会話） */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ margin: 0 }}>👥 チームでやる</h3>
+            <Button variant={isTeam ? 'primary' : 'outline'} onClick={() => { setIsTeam(t => !t); }} style={{ fontSize: '0.9rem', padding: '0.4rem 1rem' }}>
+              {isTeam ? 'ON（チーム）' : 'OFF（ひとり）'}
+            </Button>
+          </div>
+          {isTeam && (
+            <>
+              <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>チーム名を入れて、メンバーを2人以上えらんでね。話す番をリレーで回すよ。</p>
+              <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="チーム名（れい：A班）"
+                style={{ padding: '0.5rem', fontSize: '1rem', borderRadius: '8px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }} />
+              <div style={{ fontSize: '0.85rem', color: '#475569' }}>えらんだ人：{teamMembers.length}人 {teamMembers.map(m => m.name).join('・')}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
+                {STUDENTS.map((s: any) => {
+                  const on = teamMembers.some(m => m.id === s.id);
+                  return (
+                    <button key={s.id} onClick={() => toggleMember({ id: s.id, name: s.name })}
+                      style={{ padding: '0.35rem 0.7rem', borderRadius: '999px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold',
+                        border: `2px solid ${on ? 'var(--color-primary)' : '#cbd5e1'}`, background: on ? 'var(--color-primary)' : 'white', color: on ? 'white' : '#475569' }}>
+                      {on ? '✓ ' : ''}{s.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
         {/* 教科書のUnitから場面をえらぶ */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
           <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面をえらぶ</h3>
@@ -407,7 +460,7 @@ export const AIAssistant: React.FC = () => {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
             {FREETALK_UNITS.map(u => (
               <button key={u.id} className="hover-scale"
-                onClick={() => initChat('freetalk', withGoalOverride(buildUnitOpts(u), u.id))}
+                onClick={() => startFreetalk(withGoalOverride(buildUnitOpts(u), u.id))}
                 style={{ padding: '0.7rem', borderRadius: '10px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'center' }}>
                 {u.label}
               </button>
@@ -424,10 +477,10 @@ export const AIAssistant: React.FC = () => {
             placeholder="（れい）休み時間に、すきなスポーツの話をする"
             style={{ width: '100%', minHeight: '70px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
           />
-          <Button size="lg" onClick={() => initChat('freetalk', { situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
+          <Button size="lg" onClick={() => startFreetalk({ situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
             この場面ではじめる！
           </Button>
-          <Button variant="outline" onClick={() => initChat('freetalk', {})}>場面なしではじめる</Button>
+          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしではじめる</Button>
         </div>
       </div>
     );
@@ -472,6 +525,36 @@ export const AIAssistant: React.FC = () => {
         {scenario.goalLabel}
       </div>
 
+      {/* チームの順番ボード */}
+      {isTeam && (
+        <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '0.6rem 0.9rem', marginBottom: '0.5rem' }}>
+          {!currentSpeaker ? (
+            <>
+              <div style={{ fontSize: '0.9rem', color: '#4338ca', fontWeight: 'bold', marginBottom: '0.4rem' }}>📣 作戦タイム：「なんて言う？」を相談しよう（日本語OK）→ 話す人をえらぶ👇</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {teamMembers.map(m => {
+                  const isLast = m.id === lastSpeakerId;
+                  return (
+                    <button key={m.id} disabled={isLast} onClick={() => setCurrentSpeaker(m)}
+                      style={{ padding: '0.4rem 0.8rem', borderRadius: '999px', fontWeight: 'bold', fontSize: '0.9rem',
+                        cursor: isLast ? 'not-allowed' : 'pointer', border: '2px solid var(--color-primary)',
+                        background: isLast ? '#e2e8f0' : 'white', color: isLast ? '#94a3b8' : 'var(--color-primary)' }}>
+                      {m.name}{isLast ? '（直前）' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4338ca' }}>🎤 いま話す人：{currentSpeaker.name} さん</span>
+              <span style={{ fontSize: '0.85rem', color: '#6366f1' }}>マイクで話して、文を確認してから送ってね</span>
+              <Button variant="outline" onClick={() => setCurrentSpeaker(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', marginLeft: 'auto' }}>えらび直す</Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {cleared && (
         <div className="animate-pop" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid var(--color-success)', borderRadius: '12px', padding: '0.8rem', marginBottom: '0.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <Trophy color="var(--color-accent)" />
@@ -487,6 +570,9 @@ export const AIAssistant: React.FC = () => {
               <div style={{ fontSize: '2rem', background: '#fff', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', flexShrink: 0 }}>🤖</div>
             )}
             <div className="animate-pop" style={{ maxWidth: '72%' }}>
+              {msg.speakerName && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 'bold', textAlign: 'right', marginBottom: '0.2rem', paddingRight: '0.3rem' }}>🎤 {msg.speakerName}</div>
+              )}
               <div
                 onClick={() => msg.role === 'model' && speak(msg.text)}
                 style={{ padding: '0.9rem 1.3rem', borderRadius: '20px', borderBottomLeftRadius: msg.role === 'model' ? '0' : '20px', borderBottomRightRadius: msg.role === 'user' ? '0' : '20px', background: msg.role === 'user' ? 'var(--color-primary)' : 'white', color: msg.role === 'user' ? 'white' : 'var(--color-text-main)', fontSize: '1.4rem', fontFamily: 'var(--font-heading)', boxShadow: 'var(--shadow-sm)', cursor: msg.role === 'model' ? 'pointer' : 'default' }}
@@ -534,7 +620,7 @@ export const AIAssistant: React.FC = () => {
           <form onSubmit={(e) => { e.preventDefault(); handleSend(inputText); }} style={{ display: 'flex', flex: 1, gap: '0.5rem', minWidth: '220px' }}>
             <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} placeholder="ここに入力 or マイク/ヘルプ"
               style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '1.1rem', borderRadius: '20px', border: '1px solid #ccc' }} />
-            <Button type="submit" disabled={isAiThinking || !inputText.trim()} style={{ borderRadius: '20px', padding: '0.8rem 1.2rem' }} icon={Send}>送る(5P)</Button>
+            <Button type="submit" disabled={isAiThinking || !inputText.trim() || (isTeam && !currentSpeaker)} style={{ borderRadius: '20px', padding: '0.8rem 1.2rem' }} icon={Send}>送る(5P)</Button>
           </form>
         </div>
         <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#888', marginTop: '0.4rem' }}>メッセージを送るたびに5ポイント消費します。</div>

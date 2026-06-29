@@ -16,7 +16,7 @@ export interface ConversationLog {
   unitTitle: string;
   team: string;          // 班名（空なら個人記録）
   cleared: boolean;      // [CLEAR] に到達したか
-  lines: { role: string; text: string }[]; // 会話本文（AI/自分）
+  lines: { role: string; text: string; speaker?: string }[]; // 会話本文（AI/自分・チーム時は話者名）
 }
 
 // 1件追記（最新が先頭、上限超過は古いものを切り捨て）

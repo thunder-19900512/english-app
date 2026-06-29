@@ -541,7 +541,7 @@ export const TeacherDashboard: React.FC = () => {
                   <div style={{ padding: '0.8rem 1rem', borderTop: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     {log.lines.map((l, i) => (
                       <div key={i} style={{ fontSize: '0.9rem' }}>
-                        <span style={{ fontWeight: 'bold', color: l.role === 'model' ? 'var(--color-primary)' : '#0984e3' }}>{l.role === 'model' ? 'AI' : '子ども'}：</span>
+                        <span style={{ fontWeight: 'bold', color: l.role === 'model' ? 'var(--color-primary)' : '#0984e3' }}>{l.role === 'model' ? 'AI' : (l.speaker || '子ども')}：</span>
                         <span>{l.text}</span>
                       </div>
                     ))}
