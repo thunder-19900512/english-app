@@ -46,14 +46,19 @@ export const usePoints = () => {
   ) => {
     if (!studentId) return 0;
 
-    // Load clear counts
+    // 先に最新データをSupabaseから取り込む。
+    // （あとで clearCounts を更新するより前にやらないと、pullがDBの古い値で
+    //   こちらの増分を上書きして「クリア記録が消える」バグになる）
+    await pullFromSupabase(studentId);
+
+    // Load clear counts（pull後の最新を読む）
     const countsKey = `clearCounts_${studentId}`;
     const countsStr = localStorage.getItem(countsKey);
     const clearCounts = countsStr ? JSON.parse(countsStr) : {};
 
     // Determine current clear count for this stage
     const currentCount = clearCounts[stageKey] || 0;
-    
+
     // Calculate base points（繰り返すほど減り、最終的には1ポイントに）
     let earned = 0;
     if (currentCount === 0) earned = 20;       // 1回目
@@ -76,9 +81,6 @@ export const usePoints = () => {
     // Update clear counts
     clearCounts[stageKey] = currentCount + 1;
     localStorage.setItem(countsKey, JSON.stringify(clearCounts));
-
-    // Pull latest data from Supabase before adding points
-    await pullFromSupabase(studentId);
 
     // Update total points
     const currentPoints = getPoints();
