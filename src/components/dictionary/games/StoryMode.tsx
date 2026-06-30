@@ -16,6 +16,7 @@ import type { Vocabulary } from '../../../data/vocabulary';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
 import { useSafeBack } from '../../../hooks/useSafeBack';
+import { getPreferredVoice } from '../../../lib/voice';
 
 type GameState = 'config' | 'generating' | 'playing' | 'completed';
 
@@ -65,6 +66,7 @@ export const StoryMode: React.FC = () => {
   const [activeBlankIndex, setActiveBlankIndex] = useState<number | null>(null);
   const [japaneseTranslation, setJapaneseTranslation] = useState<string>('');
   const [showTranslation, setShowTranslation] = useState(false);
+  const [wordTip, setWordTip] = useState<{ word: string; ja: string } | null>(null);
   
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const [hasReadAloud, setHasReadAloud] = useState(false);
@@ -342,6 +344,118 @@ ${SAFETY_INSTRUCTION}`;
     setStorySentences(sentences);
   };
 
+  // 単語の訳を辞書（Picture Dictionary）から引く（あれば）
+  const jaForWord = (w: string): string | null => {
+    const key = w.toLowerCase().replace(/[.,!?'"]/g, '').trim();
+    if (!key) return null;
+    const v = vocabulary.find(x => x.english.toLowerCase() === key);
+    return v ? v.japanese : null;
+  };
+
+  // 単語タップ：発音を聞く＋訳をふきだし表示
+  const handleWordTap = (w: string) => {
+    const clean = w.replace(/[.,!?]/g, '');
+    if (clean) speak(clean);
+    const ja = jaForWord(clean);
+    setWordTip(ja ? { word: clean, ja } : null);
+  };
+
+  // 文を読み上げる。穴埋め部分は無音（少し間をあける）。
+  const speakSentenceWithGaps = (parts: { f: StoryFragment; idx: number }[]) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const segments: ({ kind: 'speak'; text: string } | { kind: 'gap' })[] = [];
+    let buf = '';
+    parts.forEach(({ f }) => {
+      if (f.type === 'text') buf += f.content;
+      else if (f.type === 'blank') {
+        if (buf.trim()) { segments.push({ kind: 'speak', text: buf }); buf = ''; }
+        segments.push({ kind: 'gap' }); // 穴埋め＝無音
+      }
+    });
+    if (buf.trim()) segments.push({ kind: 'speak', text: buf });
+    const voice = getPreferredVoice();
+    let i = 0;
+    const next = () => {
+      if (i >= segments.length) return;
+      const seg = segments[i++];
+      if (seg.kind === 'gap') { setTimeout(next, 700); return; }
+      const u = new SpeechSynthesisUtterance(seg.text);
+      u.lang = 'en-US'; u.rate = 0.85; if (voice) u.voice = voice;
+      u.onend = () => setTimeout(next, 120);
+      window.speechSynthesis.speak(u);
+    };
+    next();
+  };
+
+  // 1つのフラグメント（単語/穴埋め）を描画
+  const renderFragment = (fragment: StoryFragment, idx: number) => {
+    if (fragment.type === 'text') {
+      const wordsAndSpaces = fragment.content.split(/(\s+)/);
+      return (
+        <span key={idx}>
+          {wordsAndSpaces.map((ws, i) => {
+            if (!ws.trim()) return <span key={i}>{ws}</span>;
+            const cleanWord = ws.replace(/[.,!?]/g, '');
+            return (
+              <span
+                key={i}
+                onClick={() => handleWordTap(ws)}
+                style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--color-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
+                title={jaForWord(cleanWord) ? `${cleanWord}：${jaForWord(cleanWord)}（クリックで発音＆訳）` : 'クリックして発音を聞く'}
+              >
+                {ws}
+              </span>
+            );
+          })}
+        </span>
+      );
+    }
+    // blank
+    const isFilled = !!fragment.filledWith;
+    const filledWord = isFilled ? targetWords.find(w => w.id === fragment.filledWith) : null;
+    const isCorrect = gameState === 'completed' && fragment.filledWith === fragment.wordId;
+    const isError = gameState === 'playing' && isFilled && fragment.filledWith !== fragment.wordId;
+    return (
+      <span
+        key={idx}
+        onClick={() => {
+          if (isFilled && filledWord) { speak(filledWord.english); setWordTip({ word: filledWord.english, ja: filledWord.japanese }); }
+          handleBlankClick(idx);
+        }}
+        className="animate-pop"
+        style={{
+          display: 'inline-block', minWidth: '100px', height: '40px', margin: '0 0.5rem',
+          borderBottom: isFilled ? 'none' : `3px dashed ${activeBlankIndex === idx ? 'var(--color-primary)' : '#ccc'}`,
+          background: isCorrect ? 'var(--color-success)' : isError ? 'var(--color-error)' : isFilled ? 'var(--color-primary)' : 'transparent',
+          color: isFilled ? 'white' : 'transparent', borderRadius: isFilled ? '20px' : '0', padding: isFilled ? '0 1rem' : '0',
+          textAlign: 'center', cursor: 'pointer', verticalAlign: 'middle', lineHeight: '40px',
+          boxShadow: isFilled ? 'var(--shadow-sm)' : 'none', transition: 'all 0.2s', position: 'relative'
+        }}
+      >
+        {isFilled ? filledWord?.english : ''}
+        {activeBlankIndex === idx && !isFilled && (
+          <div className="animate-pulse" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '1rem', color: 'var(--color-primary)', whiteSpace: 'nowrap' }}>
+            ここをえらぶ
+          </div>
+        )}
+      </span>
+    );
+  };
+
+  // フラグメントを文ごとにグループ化（newlineで区切る）。文の訳も対応づけ。
+  const sentenceGroups: { f: StoryFragment; idx: number }[][] = [];
+  { let cur: { f: StoryFragment; idx: number }[] = [];
+    storyFragments.forEach((f, idx) => {
+      if (f.type === 'newline') { if (cur.length) { sentenceGroups.push(cur); cur = []; } }
+      else cur.push({ f, idx });
+    });
+    if (cur.length) sentenceGroups.push(cur);
+  }
+  const jaLines = japaneseTranslation.split('\n').map(l => l.trim().replace(/[{}]/g, '')).filter(Boolean);
+
   if (!geminiApiKey) {
     return (
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
@@ -415,80 +529,40 @@ ${SAFETY_INSTRUCTION}`;
 
       {(gameState === 'playing' || gameState === 'completed') && (
         <div className="flex-col gap-lg" style={{ flex: 1, maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-          <div className="glass-card" style={{ padding: '2rem', fontSize: '1.5rem', lineHeight: '2.5', fontFamily: 'var(--font-heading)' }}>
-            {storyFragments.map((fragment, idx) => {
-              if (fragment.type === 'newline') {
-                return <span key={idx}> </span>; // Render newline as space for inline story
-              }
-              if (fragment.type === 'text') {
-                // Split text into words and spaces to make each word clickable
-                const wordsAndSpaces = fragment.content.split(/(\s+)/);
-                return (
-                  <span key={idx}>
-                    {wordsAndSpaces.map((ws, i) => {
-                      if (!ws.trim()) return <span key={i}>{ws}</span>;
-                      // Remove punctuation for speaking, but keep it for display
-                      const cleanWord = ws.replace(/[.,!?]/g, '');
-                      return (
-                        <span 
-                          key={i} 
-                          onClick={() => cleanWord && speak(cleanWord)}
-                          style={{ cursor: 'pointer', transition: 'color 0.2s' }}
-                          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-primary)'}
-                          onMouseLeave={e => e.currentTarget.style.color = 'inherit'}
-                          title="クリックして発音を聞く"
-                        >
-                          {ws}
-                        </span>
-                      );
-                    })}
-                  </span>
-                );
-              }
-              
-              const isFilled = !!fragment.filledWith;
-              const filledWord = isFilled ? targetWords.find(w => w.id === fragment.filledWith) : null;
-              const isCorrect = gameState === 'completed' && fragment.filledWith === fragment.wordId;
-              const isError = gameState === 'playing' && isFilled && fragment.filledWith !== fragment.wordId;
-              
-              return (
-                <span 
-                  key={idx} 
-                  onClick={() => {
-                    if (isFilled && filledWord) {
-                      speak(filledWord.english);
-                    }
-                    handleBlankClick(idx);
-                  }}
-                  className="animate-pop"
-                  style={{
-                    display: 'inline-block',
-                    minWidth: '100px',
-                    height: '40px',
-                    margin: '0 0.5rem',
-                    borderBottom: isFilled ? 'none' : `3px dashed ${activeBlankIndex === idx ? 'var(--color-primary)' : '#ccc'}`,
-                    background: isCorrect ? 'var(--color-success)' : isError ? 'var(--color-error)' : isFilled ? 'var(--color-primary)' : 'transparent',
-                    color: isFilled ? 'white' : 'transparent',
-                    borderRadius: isFilled ? '20px' : '0',
-                    padding: isFilled ? '0 1rem' : '0',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    verticalAlign: 'middle',
-                    lineHeight: '40px',
-                    boxShadow: isFilled ? 'var(--shadow-sm)' : 'none',
-                    transition: 'all 0.2s',
-                    position: 'relative'
-                  }}
-                >
-                  {isFilled ? filledWord?.english : ''}
-                  {activeBlankIndex === idx && !isFilled && (
-                    <div className="animate-pulse" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '1rem', color: 'var(--color-primary)', whiteSpace: 'nowrap' }}>
-                      ここをえらぶ
+          <div className="glass-card" style={{ padding: '1.5rem 2rem' }}>
+            {/* ツールバー：単語の訳ふきだし＋文ごとの訳トグル */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.95rem', color: '#475569', minHeight: '1.6rem' }}>
+                {wordTip ? <span>📖 <b>{wordTip.word}</b> ＝ {wordTip.ja}</span> : <span style={{ color: '#94a3b8' }}>🔊文ボタンで読み上げ／単語タップで発音＆訳</span>}
+              </div>
+              <Button variant={showTranslation ? 'primary' : 'outline'} onClick={() => setShowTranslation(t => !t)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+                {showTranslation ? '🇯🇵 訳をかくす' : '🇯🇵 文の訳をみる'}
+              </Button>
+            </div>
+
+            {/* 文ごとに表示：🔊読み上げ（穴埋めは無音）＋本文＋訳 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {sentenceGroups.map((sent, sIdx) => (
+                <div key={sIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', padding: '0.6rem 0.4rem', borderBottom: '1px solid #f1f5f9' }}>
+                  <button
+                    onClick={() => speakSentenceWithGaps(sent)}
+                    className="hover-scale"
+                    title="この文を読み上げる（穴埋めは無音）"
+                    style={{ background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, boxShadow: 'var(--shadow-sm)', marginTop: '0.3rem' }}
+                  >
+                    🔊
+                  </button>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.4rem', lineHeight: '2.2', fontFamily: 'var(--font-heading)' }}>
+                      {sent.map(({ f, idx }) => renderFragment(f, idx))}
                     </div>
-                  )}
-                </span>
-              );
-            })}
+                    {showTranslation && jaLines[sIdx] && (
+                      <div style={{ fontSize: '1rem', color: '#0891b2', marginTop: '0.2rem' }}>🇯🇵 {jaLines[sIdx]}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {gameState === 'completed' ? (
