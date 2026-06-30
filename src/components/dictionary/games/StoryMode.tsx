@@ -125,20 +125,54 @@ export const StoryMode: React.FC = () => {
 
   // Pick mastered words based on progress
   const getMasteredWords = () => {
-    const masteredCategories = Object.keys(progress).filter(cat => 
-      progress[cat].spelling || progress[cat].wordsearch || progress[cat].practice
+    // learn（聞いた）も含めて「ふれたことのあるカテゴリ」を対象にする。
+    // 1カテゴリだけだと答えが似た語ばかり（例：飲み物3つ）になり一意に解けないため、
+    // できるだけ多くのカテゴリを母集団に入れて多様性を確保する。
+    const masteredCategories = Object.keys(progress).filter(cat =>
+      progress[cat].spelling || progress[cat].wordsearch || progress[cat].practice || progress[cat].learn
     );
-    
+
     let pool = vocabulary.filter(v => masteredCategories.includes(v.category));
-    if (pool.length < 5) {
-      // Fallback if not enough mastered words
-      pool = vocabulary; 
+    // カテゴリが少なすぎる／語が少なすぎると答えが偏るので、全語彙にフォールバック
+    const distinctMasteredCats = new Set(pool.map(v => v.category)).size;
+    if (pool.length < 5 || distinctMasteredCats < 3) {
+      pool = vocabulary;
     }
-    
+
     // Pick random words depending on length
-    const wordCount = Math.min(pool.length, Math.max(3, Math.floor(sentenceCount / 2)));
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, wordCount);
+    let wordCount = Math.min(pool.length, Math.max(3, Math.floor(sentenceCount / 2)));
+
+    // 似た語（例：飲み物3つ）が並ぶと文脈で答えが一意に決まらないため、
+    // できるだけ「別カテゴリから1語ずつ」選ぶ（ラウンドロビン）。
+    const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => 0.5 - Math.random());
+    const byCat = new Map<string, typeof pool>();
+    for (const v of pool) {
+      const list = byCat.get(v.category) || [];
+      list.push(v);
+      byCat.set(v.category, list);
+    }
+    const cats = shuffle([...byCat.keys()]);
+    for (const c of cats) byCat.set(c, shuffle(byCat.get(c)!)); // 各カテゴリ内もシャッフル
+
+    // 3カテゴリ以上あれば、同じカテゴリの語を重複させない（＝答えが似ないようにする）
+    if (cats.length >= 3) wordCount = Math.min(wordCount, cats.length);
+
+    const picked: typeof pool = [];
+    let round = 0;
+    while (picked.length < wordCount) {
+      let addedThisRound = false;
+      for (const c of cats) {
+        const word = byCat.get(c)![round];
+        if (word) {
+          picked.push(word);
+          addedThisRound = true;
+          if (picked.length >= wordCount) break;
+        }
+      }
+      if (!addedThisRound) break; // プールを使い切った
+      round++;
+    }
+    return picked.slice(0, wordCount);
   };
 
   const generateStory = async () => {
