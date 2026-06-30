@@ -179,12 +179,13 @@ RULES:
 1. The story MUST be exactly ${sentenceCount} sentences long.
 2. Output EACH sentence on a NEW LINE.
 3. The sentences MUST connect logically to form a clear, cohesive narrative. Do NOT just write disconnected sentences. The story must make sense as a whole.
-4. CRITICAL: Provide STRONG CONTEXT CLUES so that there is ONLY ONE logically correct target word for each blank. Do NOT make the words interchangeable (e.g. avoid "I eat {apple}" and "I eat {banana}").
+4. CRITICAL: Provide STRONG CONTEXT CLUES so that there is ONLY ONE logically correct target word for each blank, decidable purely from the surrounding meaning. Do NOT make the words interchangeable (e.g. avoid "I eat {apple}" and "I eat {banana}"). A student must be able to reason out each blank from context alone.
 5. The difficulty level is: ${DIFFICULTY_LEVELS[difficulty - 1].prompt}
 6. You MUST include these specific words in the story: ${wordListEn.join(', ')}
 7. Whenever you use one of those specific words, you MUST enclose it in curly braces, exactly as provided. Example: {${wordListEn[0]}}
 8. Do NOT use curly braces for any other words.
 9. Output the English story text first. Then write exactly "---" on a new line. Then provide the natural Japanese translation of the story, also with each sentence on a new line.
+10. IMPORTANT: In the Japanese translation, do NOT reveal the answer. For every target word, write "＿＿" (a blank) in its place INSTEAD of translating it. Translate everything else naturally so the sentence meaning gives a hint, but never the answer itself. Example: if the English is "I like {juice} for breakfast.", the Japanese must be "私は朝食に＿＿が好きです。" (NOT "ジュース").
 
 ${SAFETY_INSTRUCTION}`;
 
@@ -454,7 +455,8 @@ ${SAFETY_INSTRUCTION}`;
     });
     if (cur.length) sentenceGroups.push(cur);
   }
-  const jaLines = japaneseTranslation.split('\n').map(l => l.trim().replace(/[{}]/g, '')).filter(Boolean);
+  // 和訳は答えを伏せる：万一 {語} が残っていても空欄(＿＿)に置換してネタバレを防ぐ
+  const jaLines = japaneseTranslation.split('\n').map(l => l.trim().replace(/\{[^}]*\}/g, '＿＿')).filter(Boolean);
 
   if (!geminiApiKey) {
     return (
