@@ -122,6 +122,7 @@ export const TeacherDashboard: React.FC = () => {
       .from('students')
       .select('*')
       .neq('id', 'app_settings_v1')
+      .neq('id', 'conversation_logs_v1') // 会話ログ用の行は生徒一覧から除外
       .order('last_access', { ascending: false });
       
     if (studentsData) {
@@ -728,17 +729,21 @@ export const TeacherDashboard: React.FC = () => {
           (() => {
             // 各生徒の到達状況を集計（students行のclear_counts/badges/dictionary_progress/pronunciation_historyから）
             const dialogueClear = (cc: any, id: string) => (cc?.[`dialogue_${id}`] || 0) > 0;
+            const dialogueTotal = DIALOGUES.length;
+            const phonicsTotal = stages.length;
+            const wbTotal = WORLD_BENTO_QUIZZES.length;
             const rows = students.map(s => {
               const cc = s.clear_counts || {};
               const badges: number[] = s.badges || [];
               const dict = s.dictionary_progress || {};
               const dialogueCount = DIALOGUES.filter(d => dialogueClear(cc, d.id)).length;
               const phonicsCount = badges.length;
+              const wbCount = WORLD_BENTO_QUIZZES.filter(q => (cc[`textbook_quiz_${q.id}`] || 0) > 0).length;
               const dictCount = Object.values(dict).filter((p: any) => p && (p.practice || p.spelling || p.speedKaruta || p.memoryGame)).length;
               const pron = s.pronunciation_history || [];
               const pronAvg = pron.length ? Math.round(pron.reduce((a: number, r: any) => a + (r.score || 0), 0) / pron.length) : null;
-              const mastery = phonicsCount + dialogueCount + dictCount;
-              return { s, cc, badges, dialogueCount, phonicsCount, dictCount, pronAvg, pronCount: pron.length, mastery };
+              const mastery = phonicsCount + dialogueCount + wbCount + dictCount;
+              return { s, cc, badges, dialogueCount, phonicsCount, wbCount, dictCount, pronAvg, pronCount: pron.length, mastery, points: s.points || 0 };
             });
             // ペア提案：到達スコア順にならべ、上位（ヘルパー）×下位（サポート）でペアに
             const sorted = [...rows].sort((a, b) => b.mastery - a.mastery);
@@ -747,37 +752,13 @@ export const TeacherDashboard: React.FC = () => {
             while (i < j) { pairs.push({ helper: sorted[i], support: sorted[j] }); i++; j--; }
             const leftover = i === j ? sorted[i] : null;
 
-            const cell = (clear: boolean) => (
-              <td style={{ textAlign: 'center', padding: '0.3rem 0.1rem', background: clear ? '#dcfce7' : '#fef2f2', color: clear ? '#16a34a' : '#fca5a5', fontWeight: 'bold', borderRight: '1px solid #f1f5f9' }}>
-                {clear ? '✓' : '–'}
-              </td>
-            );
-            const Matrix = ({ title, cols, isClear }: { title: string; cols: { key: any; label: string }[]; isClear: (r: typeof rows[0], key: any) => boolean }) => (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 0.5rem 0' }}>{title}</h3>
-                <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                  <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
-                    <thead>
-                      <tr style={{ background: '#f8fafc' }}>
-                        <th style={{ textAlign: 'left', padding: '0.4rem 0.6rem', position: 'sticky', left: 0, background: '#f8fafc', minWidth: '110px' }}>生徒</th>
-                        {cols.map(c => <th key={String(c.key)} style={{ padding: '0.4rem 0.2rem', minWidth: '34px', color: '#64748b' }}>{c.label}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map(r => (
-                        <tr key={r.s.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '0.3rem 0.6rem', position: 'sticky', left: 0, background: 'white', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{r.s.name}</td>
-                          {cols.map(c => <React.Fragment key={String(c.key)}>{cell(isClear(r, c.key))}</React.Fragment>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-
-            const g5 = DIALOGUES.filter(d => d.grade === 5);
-            const g6 = DIALOGUES.filter(d => d.grade === 6);
+            // 「○/○」を色付きセルで（0=赤、満=緑、途中=オレンジ）
+            const fracCell = (n: number, total: number) => {
+              const color = n === 0 ? '#dc2626' : n >= total ? '#16a34a' : '#d97706';
+              const bg = n === 0 ? '#fef2f2' : n >= total ? '#dcfce7' : '#fffbeb';
+              return <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', background: bg, color, fontWeight: 'bold', whiteSpace: 'nowrap' }}>{n}/{total}</td>;
+            };
+            const th = (label: string) => <th style={{ padding: '0.4rem 0.4rem', color: '#64748b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{label}</th>;
 
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -785,7 +766,7 @@ export const TeacherDashboard: React.FC = () => {
                 <div className="glass-card" style={{ padding: '1.2rem', background: '#eef2ff', border: '1px solid #c7d2fe' }}>
                   <h3 style={{ margin: '0 0 0.3rem 0', color: '#4338ca' }}>🤝 ペア提案（教え合い）</h3>
                   <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem', color: '#6366f1' }}>
-                    到達スコア（フォニックス＋ダイアログ＋辞書のクリア数）が高い子（ヘルパー）と、サポートが要る子を組み合わせた案です。
+                    到達スコア（フォニックス＋ダイアログ＋World Bento＋辞書のクリア数）が高い子（ヘルパー）と、サポートが要る子を組み合わせた案です。
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     {pairs.map((p, idx) => (
@@ -805,28 +786,38 @@ export const TeacherDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 凡例 */}
-                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                  <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓</span> クリア済み
-                  <span style={{ color: '#fca5a5', fontWeight: 'bold' }}>–</span> 未達（赤いところが要支援）
-                </div>
-
-                <Matrix title="🗣️ ダイアログ 5年（Unit別クリア）" cols={g5.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
-                <Matrix title="🗣️ ダイアログ 6年（Unit別クリア）" cols={g6.map((d, k) => ({ key: d.id, label: `U${k + 1}` }))} isClear={(r, key) => dialogueClear(r.cc, key)} />
-                <Matrix title="🔤 フォニックス（ステージ別バッジ）" cols={stages.map(st => ({ key: st.id, label: `S${st.id}` }))} isClear={(r, key) => r.badges.includes(key)} />
-                <Matrix title="🍱 World Bento クイズ（国別クリア）" cols={WORLD_BENTO_QUIZZES.map(q => ({ key: q.id, label: q.unitName.split(' ')[0] }))} isClear={(r, key) => (r.cc[`textbook_quiz_${key}`] || 0) > 0} />
-
-                {/* 発音の平均（参考） */}
+                {/* 人ごと 全モード一覧 */}
                 <div>
-                  <h3 style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 0.5rem 0' }}>🎤 発音スコアの平均（参考・回数）</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {rows.map(r => (
-                      <div key={r.s.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.4rem 0.7rem', fontSize: '0.85rem' }}>
-                        <span style={{ fontWeight: 'bold' }}>{r.s.name}</span>：
-                        {r.pronAvg !== null ? <span style={{ color: r.pronAvg >= 80 ? '#16a34a' : r.pronAvg >= 60 ? '#d97706' : '#dc2626', fontWeight: 'bold' }}>{r.pronAvg}点</span> : <span style={{ color: '#94a3b8' }}>記録なし</span>}
-                        <span style={{ color: '#94a3b8' }}> ({r.pronCount}回)</span>
-                      </div>
-                    ))}
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.4rem 0' }}>
+                    各モードの「クリア数／全体」。<span style={{ color: '#dc2626', fontWeight: 'bold' }}>赤=0（要支援）</span>・<span style={{ color: '#d97706', fontWeight: 'bold' }}>オレンジ=途中</span>・<span style={{ color: '#16a34a', fontWeight: 'bold' }}>緑=ぜんぶ</span>。発音は平均点（回数）。
+                  </p>
+                  <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc' }}>
+                          <th style={{ textAlign: 'left', padding: '0.4rem 0.6rem', position: 'sticky', left: 0, background: '#f8fafc', minWidth: '110px' }}>生徒</th>
+                          {th('🔤 フォニックス')}{th('🗣️ ダイアログ')}{th('🍱 World Bento')}{th('📖 辞書')}{th('🎤 発音')}{th('🏅 到達')}{th('⭐ P')}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(r => (
+                          <tr key={r.s.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '0.3rem 0.6rem', position: 'sticky', left: 0, background: 'white', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{r.s.name}</td>
+                            {fracCell(r.phonicsCount, phonicsTotal)}
+                            {fracCell(r.dialogueCount, dialogueTotal)}
+                            {fracCell(r.wbCount, wbTotal)}
+                            <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', fontWeight: 'bold', color: r.dictCount === 0 ? '#dc2626' : '#334155' }}>{r.dictCount}</td>
+                            <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>
+                              {r.pronAvg !== null
+                                ? <span style={{ fontWeight: 'bold', color: r.pronAvg >= 80 ? '#16a34a' : r.pronAvg >= 60 ? '#d97706' : '#dc2626' }}>{r.pronAvg}<span style={{ color: '#94a3b8', fontWeight: 'normal' }}>点({r.pronCount})</span></span>
+                                : <span style={{ color: '#cbd5e1' }}>―</span>}
+                            </td>
+                            <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', fontWeight: 'bold', color: 'var(--color-primary)' }}>{r.mastery}</td>
+                            <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', color: '#f59e0b', fontWeight: 'bold' }}>{r.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
