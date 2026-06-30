@@ -24,13 +24,8 @@ const MISSION_OPTIONS: MissionOption[] = [
     route: `/textbook?grade=${q.grade}&id=${q.id}`,
     videoUrl: q.url,
   })),
-  // World Bento（世界の弁当）クイズ：ぜんぶ＋国別
-  { label: '🍱 世界の弁当クイズ（ぜんぶ）', route: '/textbook?set=worldbento' },
-  ...WORLD_BENTO_QUIZZES.map(q => ({
-    label: `🍱 世界の弁当 ${q.unitName}`,
-    route: `/textbook?set=worldbento&id=${q.id}`,
-    videoUrl: q.url,
-  })),
+  // World Bento（世界の弁当）クイズ：トップ画面（国の一覧）を開く。今回は国別までは指定しない。
+  { label: '🍱 世界の弁当クイズ（トップ画面）', route: '/textbook?set=worldbento' },
 ];
 
 export const TeacherDashboard: React.FC = () => {
