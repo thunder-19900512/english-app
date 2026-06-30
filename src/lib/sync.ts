@@ -97,10 +97,25 @@ export const pullFromSupabase = async (studentId: string) => {
     const mergedBadges = Array.from(new Set([...localBadges, ...dbBadges]));
 
     // Merge dictionary progress (stored inside the student_<id> object as dictProgress).
-    // Prefer DB values per category, but keep any local categories the DB doesn't have.
+    // ★クリア印（モードごとのバッジ）は「一度ついたら消えない」が正しい意味なので、
+    //   カテゴリ単位の上書きではなく、フラグ単位のOR（どちらかがtrueならtrue）でマージする。
+    //   こうしないと、push(500msデバウンス)が反映される前にaddPointsのpullが走ったとき、
+    //   DBの古いカテゴリ値がローカルの新しいバッジを丸ごと消してしまう（バッジ消失バグ）。
     const localDictProgress = localStudentData.dictProgress || {};
     const dbDictProgress = data.dictionary_progress || {};
-    const mergedDictProgress = { ...localDictProgress, ...dbDictProgress };
+    const FLAG_KEYS = ['learn', 'practice', 'spelling', 'voice', 'wordsearch'] as const;
+    const mergedDictProgress: Record<string, any> = { ...localDictProgress };
+    for (const cat of new Set([...Object.keys(localDictProgress), ...Object.keys(dbDictProgress)])) {
+      const localVal = localDictProgress[cat] || {};
+      const dbVal = dbDictProgress[cat] || {};
+      const merged: Record<string, any> = { ...localVal, ...dbVal };
+      // クリアフラグはOR（trueが勝つ）＝片方が古くてもバッジを落とさない
+      for (const k of FLAG_KEYS) merged[k] = !!(localVal[k] || dbVal[k]);
+      // ワードサーチのベストタイムは速いほう（小さいほう）を残す
+      const times = [localVal.wordsearch_best_time, dbVal.wordsearch_best_time].filter((t: any) => typeof t === 'number');
+      if (times.length) merged.wordsearch_best_time = Math.min(...times);
+      mergedDictProgress[cat] = merged;
+    }
 
     const studentData = {
       id: studentId,
