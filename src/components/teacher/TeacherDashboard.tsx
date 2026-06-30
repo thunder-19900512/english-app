@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Key, Save, Mic, Target, Gauge } from 'lucide-react';
@@ -51,9 +51,11 @@ export const TeacherDashboard: React.FC = () => {
   const [convLogs, setConvLogs] = useState<ConversationLog[] | null>(null);
   const [logsLoading, setLogsLoading] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
-  // ふりかえりへの先生コメント/スタンプの下書き（reflectionIdごと）と保存中フラグ
+  // ふりかえりへの先生コメント/スタンプの下書き（"生徒id__ふりかえりid" ごと）と保存中フラグ
   const [fbDrafts, setFbDrafts] = useState<Record<string, { comment: string; stamp: string }>>({});
   const [fbSavingId, setFbSavingId] = useState<string | null>(null);
+  // 日別ビューでTab移動するためのコメント入力欄の参照（キーは "生徒id__ふりかえりid"）
+  const fbInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const STAMPS = ['👍', '🌟', '💯', '😊', '🎉', '🔥'];
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
@@ -181,8 +183,9 @@ export const TeacherDashboard: React.FC = () => {
 
   // ふりかえり1件に先生コメント/スタンプを保存し、画面にも即反映
   const handleSaveFeedback = async (studentId: string, ref: any) => {
-    const draft = fbDrafts[ref.id] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
-    setFbSavingId(ref.id);
+    const key = `${studentId}__${ref.id}`;
+    const draft = fbDrafts[key] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
+    setFbSavingId(key);
     const { error } = await saveTeacherFeedback(studentId, ref.id, draft.comment, draft.stamp);
     setFbSavingId(null);
     if (error) return;
@@ -190,6 +193,50 @@ export const TeacherDashboard: React.FC = () => {
       ...s,
       reflections: (s.reflections || []).map((r: any) => r.id === ref.id ? { ...r, teacherComment: draft.comment.trim(), teacherStamp: draft.stamp } : r),
     }));
+  };
+
+  // ふりかえり1件への「先生から」コメント＋スタンプ入力UI（生徒ごと／日ごと 共用）。
+  // navKeys を渡すと、Tab／Shift+Tab で前後の子のコメント欄へ直接移動できる。
+  const renderFeedbackBox = (studentId: string, ref: any, navKeys?: string[]) => {
+    const key = `${studentId}__${ref.id}`;
+    const draft = fbDrafts[key] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
+    const setDraft = (d: { comment: string; stamp: string }) => setFbDrafts(p => ({ ...p, [key]: d }));
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Tab' && navKeys) {
+        e.preventDefault();
+        const pos = navKeys.indexOf(key);
+        const nextKey = e.shiftKey ? navKeys[pos - 1] : navKeys[pos + 1];
+        if (nextKey) fbInputRefs.current[nextKey]?.focus();
+      }
+    };
+    return (
+      <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: '1px dashed #cbd5e1' }}>
+        <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>先生から（子どもに見えます）</div>
+        <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+          {STAMPS.map(st => (
+            <button key={st} onClick={() => setDraft({ ...draft, stamp: draft.stamp === st ? '' : st })}
+              style={{ fontSize: '1.2rem', padding: '0.1rem 0.4rem', borderRadius: '8px', cursor: 'pointer', background: draft.stamp === st ? '#cffafe' : 'white', border: `2px solid ${draft.stamp === st ? '#0891b2' : '#e2e8f0'}` }}>
+              {st}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <input
+            ref={el => { fbInputRefs.current[key] = el; }}
+            value={draft.comment}
+            onChange={e => setDraft({ ...draft, comment: e.target.value })}
+            onKeyDown={handleKeyDown}
+            placeholder="一言コメント（任意）"
+            style={{ flex: 1, minWidth: '180px', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '0.9rem' }} />
+          <Button onClick={() => handleSaveFeedback(studentId, ref)} disabled={fbSavingId === key} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+            {fbSavingId === key ? '保存中…' : 'おくる'}
+          </Button>
+        </div>
+        {(ref.teacherComment || ref.teacherStamp) && (
+          <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#16a34a' }}>送信済み：{ref.teacherStamp} {ref.teacherComment}</div>
+        )}
+      </div>
+    );
   };
 
   const loadConvLogs = async () => {
@@ -648,33 +695,7 @@ export const TeacherDashboard: React.FC = () => {
                               </div>
                               <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{ref.comment}</p>
                               {/* 先生からのコメント／スタンプ（双方向） */}
-                              {(() => {
-                                const draft = fbDrafts[ref.id] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
-                                const setDraft = (d: { comment: string; stamp: string }) => setFbDrafts(p => ({ ...p, [ref.id]: d }));
-                                return (
-                                  <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: '1px dashed #cbd5e1' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>先生から（子どもに見えます）</div>
-                                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
-                                      {STAMPS.map(st => (
-                                        <button key={st} onClick={() => setDraft({ ...draft, stamp: draft.stamp === st ? '' : st })}
-                                          style={{ fontSize: '1.2rem', padding: '0.1rem 0.4rem', borderRadius: '8px', cursor: 'pointer', background: draft.stamp === st ? '#cffafe' : 'white', border: `2px solid ${draft.stamp === st ? '#0891b2' : '#e2e8f0'}` }}>
-                                          {st}
-                                        </button>
-                                      ))}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                      <input value={draft.comment} onChange={e => setDraft({ ...draft, comment: e.target.value })} placeholder="一言コメント（任意）"
-                                        style={{ flex: 1, minWidth: '180px', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '0.9rem' }} />
-                                      <Button onClick={() => handleSaveFeedback(student.id, ref)} disabled={fbSavingId === ref.id} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
-                                        {fbSavingId === ref.id ? '保存中…' : 'おくる'}
-                                      </Button>
-                                    </div>
-                                    {(ref.teacherComment || ref.teacherStamp) && (
-                                      <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#16a34a' }}>送信済み：{ref.teacherStamp} {ref.teacherComment}</div>
-                                    )}
-                                  </div>
-                                );
-                              })()}
+                              {renderFeedbackBox(student.id, ref)}
                             </div>
                           ))}
                         </div>
@@ -687,20 +708,27 @@ export const TeacherDashboard: React.FC = () => {
           </div>
         ) : studentView === 'byDate' ? (
           (() => {
-            // 全生徒のふりかえりを日付ごとにまとめる（新しい日付が上）
-            const byDate: Record<string, { name: string; comment: string; stars: number }[]> = {};
+            // 全生徒のふりかえりを日付ごとにまとめる（新しい日付が上）。
+            // 生徒idとふりかえり本体を保持して、その場で先生コメントを書けるようにする。
+            const byDate: Record<string, { studentId: string; name: string; ref: any }[]> = {};
             students.forEach(s => {
               (s.reflections || []).forEach((r: any) => {
                 const d = new Date(r.date).toLocaleDateString('ja-JP');
-                (byDate[d] = byDate[d] || []).push({ name: s.name, comment: r.comment, stars: r.stars });
+                (byDate[d] = byDate[d] || []).push({ studentId: s.id, name: s.name, ref: r });
               });
             });
             const dates = Object.keys(byDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
             if (dates.length === 0) {
               return <div style={{ padding: '2rem', textAlign: 'center', background: '#f8f9fa', borderRadius: '8px', color: '#666' }}>まだふりかえりがありません</div>;
             }
+            // Tab移動の順番（表示順）：上の日付から、各日の中の生徒順
+            const navKeys: string[] = [];
+            dates.forEach(d => byDate[d].forEach(item => navKeys.push(`${item.studentId}__${item.ref.id}`)));
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#0891b2' }}>
+                  💡 コメント欄で <b>Tab</b> を押すと、次の子のコメント欄へジャンプします（Shift+Tabで前へ）。
+                </p>
                 {dates.map(date => (
                   <div key={date} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
                     <div style={{ padding: '0.8rem 1.2rem', background: 'var(--color-primary)', color: 'white', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
@@ -708,17 +736,18 @@ export const TeacherDashboard: React.FC = () => {
                       <span>{byDate[date].length}件</span>
                     </div>
                     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                      {byDate[date].map((r, i) => (
-                        <div key={i} style={{ background: '#f8fafc', padding: '0.8rem 1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+                      {byDate[date].map(item => (
+                        <div key={`${item.studentId}__${item.ref.id}`} style={{ background: '#f8fafc', padding: '0.8rem 1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                            <span style={{ fontWeight: 'bold', color: '#334155' }}>{r.name}</span>
+                            <span style={{ fontWeight: 'bold', color: '#334155' }}>{item.name}</span>
                             <span style={{ letterSpacing: '2px' }}>
                               {Array.from({ length: 5 }).map((_, j) => (
-                                <span key={j} style={{ color: j < r.stars ? '#f59e0b' : '#cbd5e1' }}>★</span>
+                                <span key={j} style={{ color: j < item.ref.stars ? '#f59e0b' : '#cbd5e1' }}>★</span>
                               ))}
                             </span>
                           </div>
-                          <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{r.comment}</p>
+                          <p style={{ margin: 0, color: '#334155', lineHeight: '1.5' }}>{item.ref.comment}</p>
+                          {renderFeedbackBox(item.studentId, item.ref, navKeys)}
                         </div>
                       ))}
                     </div>
