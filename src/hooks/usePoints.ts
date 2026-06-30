@@ -59,13 +59,14 @@ export const usePoints = () => {
     // Determine current clear count for this stage
     const currentCount = clearCounts[stageKey] || 0;
 
-    // Calculate base points（繰り返すほど減り、最終的には1ポイントに）
+    // Calculate base points（繰り返すほど減り、最終的には0ポイントに＝荒稼ぎ防止）
     let earned = 0;
     if (currentCount === 0) earned = 20;       // 1回目
     else if (currentCount === 1) earned = 10;  // 2回目
     else if (currentCount === 2) earned = 5;   // 3回目
     else if (currentCount === 3) earned = 2;   // 4回目
-    else earned = 1;                           // 5回目以降は1ポイント固定
+    else if (currentCount === 4) earned = 1;   // 5回目
+    else earned = 0;                           // 6回目以降は0ポイント
 
     // ボーナスは最初の2回まで（連打で荒稼ぎできないように）
     if (currentCount <= 1) {
@@ -74,7 +75,8 @@ export const usePoints = () => {
     }
 
     // Apply multiplier if provided (for scaled down modes)
-    if (options.multiplier !== undefined && options.multiplier < 1) {
+    // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない。
+    if (options.multiplier !== undefined && options.multiplier < 1 && earned > 0) {
       earned = Math.max(1, Math.round(earned * options.multiplier));
     }
 
