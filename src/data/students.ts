@@ -35,8 +35,8 @@ export const STUDENTS: Student[] = [
   { id: '24', name: 'Matoi', grade: 5, home: 5, cls: 'B' },
   { id: '25', name: 'Yui (T.)', grade: 5, home: 5, cls: 'A' },
   { id: '26', name: 'Haruto', grade: 5, home: 6, cls: 'B' },
-  { id: '27', name: 'Chika', grade: 5, home: 6, cls: 'A' },
-  { id: '28', name: 'Wako', grade: 5, home: 6, cls: 'B' },
+  { id: '27', name: 'Chika', grade: 5, home: 6, cls: 'B' },
+  { id: '28', name: 'Wako', grade: 5, home: 6, cls: 'A' },
   { id: '29', name: 'Midori', grade: 5, home: 6, cls: 'A' },
   { id: '30', name: 'Rene', grade: 5, home: 6, cls: 'B' },
   // ===== 6年生 =====

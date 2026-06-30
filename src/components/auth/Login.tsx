@@ -60,7 +60,7 @@ export const Login: React.FC = () => {
 
       {/* A/B クラスのしぼりこみ（5・6年はAB2クラス） */}
       <div className="flex-center" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
-        {([['all', 'すべて'], ['A', 'Aクラス'], ['B', 'Bクラス']] as const).map(([v, label]) => (
+        {([['all', 'すべて'], ['A', '56A'], ['B', '56B']] as const).map(([v, label]) => (
           <button
             key={v}
             onClick={() => setClassFilter(v)}
@@ -94,7 +94,7 @@ export const Login: React.FC = () => {
             <span>{student.id}. {student.name}</span>
             {student.cls && (
               <span style={{ background: 'white', color: student.cls === 'A' ? '#d97706' : '#0891b2', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.05rem 0.5rem', borderRadius: '999px' }}>
-                {student.cls}クラス
+56{student.cls}
               </span>
             )}
           </button>
