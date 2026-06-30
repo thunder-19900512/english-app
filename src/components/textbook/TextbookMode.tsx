@@ -120,7 +120,7 @@ export const TextbookMode: React.FC = () => {
     // 学年はTOPのカードでえらぶ前提。学年選択画面は廃止し、未指定なら5年を既定にする。
     setGrade(g === '6' ? 6 : 5);
     if (id) {
-      const quiz = DEFAULT_QUIZZES.find(q => q.id === id);
+      const quiz = DEFAULT_QUIZZES.find(q => q.id === id) || WORLD_BENTO_QUIZZES.find(q => q.id === id);
       if (quiz) handleQuizSelect(quiz);
     }
   }, [searchParams]);
