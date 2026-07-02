@@ -268,16 +268,12 @@ export const usePronunciationAssessment = (
                 );
                 finish(null);
               } else {
-                // 無音 / 認識できず: ミス扱い（スコア0）。
-                setError('声が聞き取れなかったよ。もう一度マイクを押して、はっきり言ってみてね');
-                finish({
-                  recognizedText: '',
-                  accuracyScore: 0,
-                  pronunciationScore: 0,
-                  fluencyScore: 0,
-                  completenessScore: 0,
-                  words: [],
-                });
+                // 無音 / 認識できず（NoMatch）：これは「発音が下手で0点」ではなく
+                // 「うまく録れなかった／聞き取れなかった」なので、0点として記録せず
+                // null を返して呼び出し側に“ノーカウントで再挑戦”させる。
+                // （録音はできているのにAzureが認識できず0点になる、を防ぐ）
+                setError('声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね');
+                finish(null);
               }
             } catch (e) {
               setError(String(e));

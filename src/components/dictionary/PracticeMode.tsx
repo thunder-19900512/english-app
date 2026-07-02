@@ -25,6 +25,9 @@ export const PracticeMode: React.FC = () => {
   
   const [questionCount, setQuestionCount] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  // 一発正解（ヒントを見ずに1回で正解）した数。加点はこれでスケールする＝
+  // 間違えて答えが浮き出たのを押しただけでは点が減る（まっとうな学習を促す）。
+  const [firstTryCorrect, setFirstTryCorrect] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   
   const [startTime, setStartTime] = useState<number | null>(Date.now());
@@ -106,9 +109,13 @@ export const PracticeMode: React.FC = () => {
   const proceedToNextTurn = (isCorrect: boolean) => {
     const newQC = questionCount + 1;
     const newCC = isCorrect ? correctCount + 1 : correctCount;
-    
+    // ヒント（誤答で答えが浮き出る）を見ずに一発で正解できた問題だけ「一発正解」に数える
+    const cleanFirstTry = isCorrect && mistakes === 0;
+    const newFTC = cleanFirstTry ? firstTryCorrect + 1 : firstTryCorrect;
+
     setQuestionCount(newQC);
     setCorrectCount(newCC);
+    setFirstTryCorrect(newFTC);
     setMistakes(0);
 
     if (newQC >= TOTAL_QUESTIONS) {
@@ -143,10 +150,13 @@ export const PracticeMode: React.FC = () => {
         }
         
         const savePoints = async () => {
+          // 加点は「一発正解の割合」でスケール（ヒントで正解しても加点は減る＝option2）。
+          // さらに語数が少ないカテゴリ向けの補正（TOTAL/DEFAULT）も掛ける。
+          const cleanRatio = TOTAL_QUESTIONS > 0 ? newFTC / TOTAL_QUESTIONS : 0;
           const pts = await addPoints(`dict_practice_${decodedCategory}`, {
-            isPerfect: newCC === TOTAL_QUESTIONS,
+            isPerfect: newFTC === TOTAL_QUESTIONS, // 全問ヒント無しで正解のときだけパーフェクト
             isNewRecord: isNewBest,
-            multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
+            multiplier: (TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS) * Math.max(0.2, cleanRatio),
           });
           setEarnedPoints(pts);
         };
@@ -198,6 +208,7 @@ export const PracticeMode: React.FC = () => {
   const resetSession = () => {
     setQuestionCount(0);
     setCorrectCount(0);
+    setFirstTryCorrect(0);
     setMistakes(0);
     setShowAnswerState(false);
     setShowCelebration(false);

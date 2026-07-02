@@ -111,11 +111,13 @@ export const StoryMode: React.FC = () => {
     const result = await assess(targetSentence);
     if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
 
-    setReadScore(result.pronunciationScore);
+    // 採点は accuracyScore（発音の正確さ）を使う。総合スコアは「なめらかさ／抑揚」で
+    // 子どものたどたどしい発話が不当に低くなるため、正確さ重視で公平にする。
+    setReadScore(result.accuracyScore);
     setTranscript(result.recognizedText);
-    addScore('story', result.pronunciationScore, targetSentence);
+    addScore('story', result.accuracyScore, targetSentence);
 
-    if (result.pronunciationScore >= READ_PASS_SCORE) {
+    if (result.accuracyScore >= READ_PASS_SCORE) {
       setReadAloudFeedback('success');
       if (!hasReadAloud) giveReadAloudBonus(); // ボーナスは一度だけ
     } else {

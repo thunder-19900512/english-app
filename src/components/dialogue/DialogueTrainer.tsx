@@ -95,8 +95,9 @@ export const DialogueTrainer: React.FC = () => {
     setActiveLine(idx);
     const result = await assess(cleanText(line.en));
     if (!result) return;
-    setScores(prev => ({ ...prev, [idx]: result.pronunciationScore }));
-    addScore('dialogue', result.pronunciationScore, cleanText(line.en));
+    // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
+    setScores(prev => ({ ...prev, [idx]: result.accuracyScore }));
+    addScore('dialogue', result.accuracyScore, cleanText(line.en));
   };
 
   // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）

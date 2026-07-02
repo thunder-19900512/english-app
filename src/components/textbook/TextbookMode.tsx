@@ -64,7 +64,10 @@ export const TextbookMode: React.FC = () => {
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizState, setQuizState] = useState<'idle' | 'playing' | 'bonus' | 'completed'>('idle');
-  const [earnedPointsMultiplier, setEarnedPointsMultiplier] = useState(0);
+  // 正解数（本問だけ・ボーナス除く）。加点を正答率でスケールするために数える。
+  const [correctCount, setCorrectCount] = useState(0);
+  // このクイズで実際にポイントが入ったか（正答率が足りないと0点）。完了画面の表示に使う。
+  const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
   
   // Choice state
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -106,7 +109,8 @@ export const TextbookMode: React.FC = () => {
     setSelectedQuiz(quiz);
     setQuizState('playing');
     setCurrentQuestionIndex(0);
-    setEarnedPointsMultiplier(0);
+    setCorrectCount(0);
+    setEarnedPoints(null);
     setBonusScore(null);
     setBonusEarned(false);
     resetQuestionState();
@@ -144,7 +148,7 @@ export const TextbookMode: React.FC = () => {
     const isCorrect = index === currentQ.correctIndex;
     if (isCorrect) {
       setFeedback('correct');
-      setEarnedPointsMultiplier(prev => prev + 1); // Weight 1 for choice
+      setCorrectCount(prev => prev + 1); // Weight 1 for choice
     } else {
       setFeedback('incorrect');
     }
@@ -166,7 +170,7 @@ export const TextbookMode: React.FC = () => {
 
     if (isCorrect) {
       setFeedback('correct');
-      setEarnedPointsMultiplier(prev => prev + 3); // Weight 3 for typing
+      setCorrectCount(prev => prev + 1); // Weight 3 for typing
     } else {
       setFeedback('incorrect');
     }
@@ -185,8 +189,7 @@ export const TextbookMode: React.FC = () => {
 
     if (isCorrect) {
       setFeedback('correct');
-      if (!bonusEarned) {
-        setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus
+      if (!bonusEarned) { // Weight 5 for bonus
         setBonusEarned(true);
       }
     } else {
@@ -213,14 +216,14 @@ export const TextbookMode: React.FC = () => {
     const result = await assess(selectedQuiz.keyPhrase);
     if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
 
-    setBonusScore(result.pronunciationScore);
+    // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
+    setBonusScore(result.accuracyScore);
     setTypingInput(result.recognizedText);
-    addScore('textbook', result.pronunciationScore, selectedQuiz.keyPhrase);
+    addScore('textbook', result.accuracyScore, selectedQuiz.keyPhrase);
 
-    if (result.pronunciationScore >= BONUS_PASS_SCORE) {
+    if (result.accuracyScore >= BONUS_PASS_SCORE) {
       setFeedback('correct');
-      if (!bonusEarned) {
-        setEarnedPointsMultiplier(prev => prev + 5); // Weight 5 for bonus（一度だけ）
+      if (!bonusEarned) { // Weight 5 for bonus（一度だけ）
         setBonusEarned(true);
       }
     } else {
@@ -242,11 +245,22 @@ export const TextbookMode: React.FC = () => {
     }, 1500);
   };
 
-  const finishQuiz = () => {
+  const finishQuiz = async () => {
     setQuizState('completed');
-    // Calculate final points: use multiplier. We update the total points via addPoints
-    // The accumulated multiplier is passed to addPoints.
-    addPoints(`textbook_quiz_${selectedQuiz?.id}`, { multiplier: Math.max(1, earnedPointsMultiplier) });
+    // ポイントは「正答率」でスケールする。適当に押して完了しても点が入らないように、
+    // 正答率が半分未満なら加点しない（まっとうに解いた分だけ加点＝チート抑止）。
+    // 繰り返すほど加点は逓減する（addPoints内で共通処理。最終的に0）。
+    const total = selectedQuiz!.questions.length;
+    const ratio = total > 0 ? correctCount / total : 0;
+    if (ratio < 0.5) {
+      setEarnedPoints(0); // ほとんど不正解 → 今回は加点なし（もう一回！）
+      return;
+    }
+    const pts = await addPoints(`textbook_quiz_${selectedQuiz!.id}`, {
+      multiplier: ratio,               // 正答率でスケール（全問正解＝満額）
+      isPerfect: correctCount === total,
+    });
+    setEarnedPoints(pts);
   };
 
   // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
@@ -547,17 +561,28 @@ export const TextbookMode: React.FC = () => {
       {quizState === 'completed' && selectedQuiz && (
         <div className="glass-card flex-col flex-center gap-md animate-pop" style={{ padding: '3rem' }}>
           <div>
-            <div style={{ fontSize: '5rem' }}>🏆</div>
+            <div style={{ fontSize: '5rem' }}>{earnedPoints && earnedPoints > 0 ? '🏆' : '💪'}</div>
           </div>
-          
+
           <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>
-            Unit Clear!
+            {earnedPoints && earnedPoints > 0 ? 'Unit Clear!' : 'おしい！もう一回！'}
           </h2>
-          
+
           <p style={{ fontSize: '1.3rem', margin: 0 }}>
-            獲得ポイント倍率: <strong>x{earnedPointsMultiplier}</strong>
+            {selectedQuiz.questions.length}問中 <strong>{correctCount}</strong>問 正解
           </p>
-          
+          {earnedPoints !== null && (
+            earnedPoints > 0 ? (
+              <p style={{ fontSize: '1.3rem', margin: 0, color: 'var(--color-accent)', fontWeight: 'bold' }}>
+                ＋{earnedPoints} ポイント！✨
+              </p>
+            ) : (
+              <p style={{ fontSize: '1.05rem', margin: 0, color: '#94a3b8' }}>
+                半分以上せいかいすると、ポイントがもらえるよ。動画をもう一回見てチャレンジ！
+              </p>
+            )
+          )}
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
             <Button variant="outline" onClick={() => { setQuizState('idle'); setSelectedQuiz(null); }}>
               クイズ一覧にもどる
