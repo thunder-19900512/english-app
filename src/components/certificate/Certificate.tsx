@@ -50,7 +50,7 @@ export const Certificate: React.FC = () => {
           
           <div style={{ marginTop: '3rem', display: 'flex', gap: '2rem', justifyContent: 'center' }}>
             <div style={{ borderTop: '1px solid black', paddingTop: '0.5rem', width: '200px' }}>
-              先生のサイン
+              スタッフのサイン
             </div>
           </div>
         </div>

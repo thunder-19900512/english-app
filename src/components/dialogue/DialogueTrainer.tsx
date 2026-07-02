@@ -252,7 +252,7 @@ export const DialogueTrainer: React.FC = () => {
 
       {!azureAvailable && (
         <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>
-          ※ 発音チェックを使うには、先生がAzureの設定をすると使えるようになるよ。今は🔈で聞いて練習しよう！
+          ※ 発音チェックを使うには、スタッフがAzureの設定をすると使えるようになるよ。今は🔈で聞いて練習しよう！
         </p>
       )}
 

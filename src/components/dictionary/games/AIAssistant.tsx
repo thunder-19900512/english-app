@@ -408,7 +408,7 @@ export const AIAssistant: React.FC = () => {
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
         <AlertTriangle size={60} color="var(--color-error)" />
         <h2 className="text-primary">AIのじゅんびができていません</h2>
-        <p>先生用ダッシュボードから、APIキーを設定してください。</p>
+        <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
         <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
       </div>
     );
@@ -511,7 +511,7 @@ export const AIAssistant: React.FC = () => {
       {/* 会話を記録（オプトイン。班名を入れるとチームの記録＝チーム[CLEAR]の証跡に） */}
       {showRecord && (
         <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '0.7rem 1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 'bold' }}>この会話を先生に記録：</span>
+          <span style={{ fontSize: '0.85rem', color: '#4338ca', fontWeight: 'bold' }}>この会話をスタッフに記録：</span>
           <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="班名（個人なら空でOK）"
             style={{ padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #c7d2fe', fontSize: '0.9rem' }} />
           <Button onClick={handleRecord} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>{cleared ? '✅ クリアを記録' : '記録する'}</Button>

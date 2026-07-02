@@ -211,7 +211,7 @@ export const TeacherDashboard: React.FC = () => {
     };
     return (
       <div style={{ marginTop: '0.7rem', paddingTop: '0.7rem', borderTop: '1px dashed #cbd5e1' }}>
-        <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>先生から（子どもに見えます）</div>
+        <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>スタッフから（子どもに見えます）</div>
         <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
           {STAMPS.map(st => (
             <button key={st} onClick={() => setDraft({ ...draft, stamp: draft.stamp === st ? '' : st })}
@@ -320,7 +320,7 @@ export const TeacherDashboard: React.FC = () => {
     return (
       <div className="flex-col flex-center" style={{ flex: 1 }}>
         <div className="glass-card flex-col flex-center" style={{ padding: '3rem', gap: '1rem' }}>
-          <h2 className="text-primary">先生用ダッシュボード</h2>
+          <h2 className="text-primary">スタッフ用ダッシュボード</h2>
           <p>PINコードを入力してください</p>
           <form onSubmit={handlePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
             <input 
@@ -344,7 +344,7 @@ export const TeacherDashboard: React.FC = () => {
     <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={() => navigate(-1)} icon={ArrowLeft}>もどる</Button>
-        <h1 className="text-primary" style={{ margin: 0 }}>先生用ダッシュボード</h1>
+        <h1 className="text-primary" style={{ margin: 0 }}>スタッフ用ダッシュボード</h1>
       </div>
 
       {/* 今日のミッション設定 */}
@@ -456,7 +456,7 @@ export const TeacherDashboard: React.FC = () => {
         <div className="glass-card">
           <h2>クラス管理機能</h2>
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            全員の画面を強制的に切り替えて、先生の指示に注目させることができます。
+            全員の画面を強制的に切り替えて、スタッフの指示に注目させることができます。
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
@@ -494,7 +494,7 @@ export const TeacherDashboard: React.FC = () => {
         <div className="glass-card">
           <h2>🧪 マイ単語ついか機能（準備中）</h2>
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            子どもや先生が「地域の言葉（懐古園など）」をPicture Dictionaryに追加できる機能です。
+            子どもやスタッフが「地域の言葉（懐古園など）」をPicture Dictionaryに追加できる機能です。
             運用を決めてからONにしてください。<b>OFFの間は子どもの画面には出ません。</b>
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px', marginBottom: '1rem' }}>
@@ -811,7 +811,7 @@ export const TeacherDashboard: React.FC = () => {
                     ))}
                     {leftover && (
                       <div style={{ background: 'white', padding: '0.5rem 0.8rem', borderRadius: '8px', color: '#64748b' }}>
-                        あまり：{leftover.s.name}（到達{leftover.mastery}）— 3人組にするか先生とペアに
+                        あまり：{leftover.s.name}（到達{leftover.mastery}）— 3人組にするかスタッフとペアに
                       </div>
                     )}
                   </div>

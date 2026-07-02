@@ -497,7 +497,7 @@ ${SAFETY_INSTRUCTION}`;
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
         <AlertTriangle size={60} color="var(--color-error)" />
         <h2 className="text-primary">AIのじゅんびができていません</h2>
-        <p>先生用ダッシュボードから、APIキーを設定してください。</p>
+        <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
         <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
       </div>
     );

@@ -107,7 +107,7 @@ export const Login: React.FC = () => {
           onClick={() => navigate('/teacher')}
           style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
         >
-          先生用画面 (Teacher)
+          スタッフ用画面 (Staff)
         </button>
       </div>
     </div>
