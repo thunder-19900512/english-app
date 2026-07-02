@@ -162,7 +162,7 @@ export const MyProgress: React.FC = () => {
         <span style={{ fontSize: '1.8rem' }}>📔</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#b45309' }}>これまでのふりかえりを見る</div>
-          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>今までに書いたふりかえりと、先生からのコメントが読めるよ</div>
+          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>今までに書いたふりかえりと、スタッフからのコメントが読めるよ</div>
         </div>
         <span style={{ fontSize: '1.3rem', color: '#b45309' }}>›</span>
       </button>

@@ -64,7 +64,7 @@ export const ReflectionHistory: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.9rem 1rem', background: 'rgba(72, 219, 251, 0.15)', border: '2px solid var(--color-primary)', borderRadius: 'var(--radius-sm)' }}>
                     <span style={{ fontSize: '1.8rem' }}>{ref.teacherStamp || '💬'}</span>
                     <div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>先生より</div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>スタッフより</div>
                       {ref.teacherComment && <div style={{ fontSize: '1.1rem', whiteSpace: 'pre-wrap' }}>{ref.teacherComment}</div>}
                     </div>
                   </div>
