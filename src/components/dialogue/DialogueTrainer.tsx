@@ -8,6 +8,7 @@ import { useAppSettings } from '../../hooks/useAppSettings';
 import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { usePoints } from '../../hooks/usePoints';
+import { showToast } from '../ui/Toast';
 import { DIALOGUES, type Dialogue, type DialogueLine } from './dialogueData';
 
 // 発音採点に通すため {…} のスロット記号を外した素の文を作る
@@ -94,7 +95,11 @@ export const DialogueTrainer: React.FC = () => {
     if (isAssessing) return;
     setActiveLine(idx);
     const result = await assess(cleanText(line.en));
-    if (!result) return;
+    if (!result) {
+      // 聞き取れなかった/通信エラー：無反応だと押せたか分からないので、その場に通知
+      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      return;
+    }
     // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
     setScores(prev => ({ ...prev, [idx]: result.accuracyScore }));
     addScore('dialogue', result.accuracyScore, cleanText(line.en));

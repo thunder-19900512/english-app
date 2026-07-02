@@ -23,11 +23,14 @@ import { ReflectionHistory } from './components/reflection/ReflectionHistory';
 import { TextbookMode } from './components/textbook/TextbookMode';
 import { MyProgress } from './components/progress/MyProgress';
 import { DialogueTrainer } from './components/dialogue/DialogueTrainer';
+import { ToastHost } from './components/ui/Toast';
 
 
 const App: React.FC = () => {
   return (
     <Router>
+      {/* 画面固定の通知（ポイント獲得・クリア・もう一回）。スクロール位置に関係なく見える */}
+      <ToastHost />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/teacher" element={<TeacherDashboard />} />

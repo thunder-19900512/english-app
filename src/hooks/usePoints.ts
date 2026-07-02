@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase, pullFromSupabase } from '../lib/sync';
+import { showToast } from '../components/ui/Toast';
 
 export const usePoints = () => {
   const studentId = localStorage.getItem('studentId');
@@ -93,6 +94,13 @@ export const usePoints = () => {
 
     // Sync to Supabase in the background
     pushToSupabase(studentId);
+
+    // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
+    if (earned > 0) {
+      showToast(`🎉 クリア！ ＋${earned}ポイント ゲット！`, 'points');
+    } else {
+      showToast('🎉 クリア！（くりかえしのため、今回はポイントなし）', 'success');
+    }
 
     return earned;
   }, [studentId, getPoints]);

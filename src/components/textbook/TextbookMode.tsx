@@ -11,6 +11,7 @@ import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 import { WORLD_BENTO_QUIZZES } from './worldBentoQuizData';
+import { showToast } from '../ui/Toast';
 
 export type QuizQuestion = {
   question: string;
@@ -214,7 +215,11 @@ export const TextbookMode: React.FC = () => {
     if (isAssessing || !selectedQuiz) return;
 
     const result = await assess(selectedQuiz.keyPhrase);
-    if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
+    if (!result) {
+      // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
+      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      return;
+    }
 
     // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
     setBonusScore(result.accuracyScore);
@@ -380,6 +385,11 @@ export const TextbookMode: React.FC = () => {
                   }
                 }
 
+                // 答え合わせ中は ⭕/❌ を明示（色だけだと正解かどうか分かりづらい）
+                const mark = isChecking
+                  ? (isCorrectAnswer ? '⭕ ' : isSelected ? '❌ ' : '')
+                  : '';
+
                 return (
                   <button
                     key={idx}
@@ -398,10 +408,22 @@ export const TextbookMode: React.FC = () => {
                       fontWeight: 'bold'
                     }}
                   >
-                    {option}
+                    {mark}{option}
                   </button>
                 );
               })}
+
+              {/* 選択肢のすぐ下＝今見ている場所に、正解/不正解をはっきり出す */}
+              {isChecking && feedback === 'correct' && (
+                <div className="animate-pop" style={{ color: 'var(--color-success)', fontWeight: 'bold', fontSize: '1.4rem', padding: '1rem', background: '#dcfce7', borderRadius: '12px', textAlign: 'center', border: '2px solid var(--color-success)' }}>
+                  ⭕ せいかい！
+                </div>
+              )}
+              {isChecking && feedback === 'incorrect' && (
+                <div className="animate-pop" style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '1.2rem', padding: '1rem', background: '#fee2e2', borderRadius: '12px', textAlign: 'center', border: '2px solid var(--color-error)' }}>
+                  ❌ ざんねん！ 正解は「{currentQuestion.options[currentQuestion.correctIndex]}」
+                </div>
+              )}
             </div>
           )}
 

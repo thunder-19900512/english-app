@@ -320,6 +320,11 @@ export const PracticeMode: React.FC = () => {
             ◯
           </div>
         )}
+        {choiceError && !showAnswerState && (
+          <div className="animate-pop" style={{ position: 'absolute', fontSize: '8rem', color: 'var(--color-error)', fontWeight: 'bold', zIndex: 10 }}>
+            ✕
+          </div>
+        )}
         {showAnswerState && (
           <div className="animate-pop text-error" style={{ fontSize: '2.5rem', fontWeight: 'bold', textAlign: 'center' }}>
             正解は: {targetWord.english} {targetWord.emoji}

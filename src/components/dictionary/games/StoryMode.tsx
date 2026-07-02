@@ -11,6 +11,7 @@ import { usePronunciationAssessment } from '../../../hooks/usePronunciationAsses
 import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { MicButton } from '../../ui/MicButton';
+import { showToast } from '../../ui/Toast';
 import { useVocabulary } from '../../../hooks/useVocabulary';
 import type { Vocabulary } from '../../../data/vocabulary';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
@@ -109,7 +110,11 @@ export const StoryMode: React.FC = () => {
     if (selectedSentenceIndex === null || isAssessing) return;
     const targetSentence = storySentences[selectedSentenceIndex];
     const result = await assess(targetSentence);
-    if (!result) return; // 通信エラー等。ノーカウントで再挑戦。
+    if (!result) {
+      // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
+      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      return;
+    }
 
     // 採点は accuracyScore（発音の正確さ）を使う。総合スコアは「なめらかさ／抑揚」で
     // 子どものたどたどしい発話が不当に低くなるため、正確さ重視で公平にする。

@@ -10,6 +10,7 @@ import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory'
 import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
+import { showToast } from '../../ui/Toast';
 import { ArrowLeft, Trophy, Star, RefreshCw } from 'lucide-react';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 
@@ -122,7 +123,8 @@ export const VoiceBattle: React.FC = () => {
 
     const result = await assess(targetWord.english);
     if (!result) {
-      // 採点に失敗（設定ミスや通信エラー）。今回はノーカウントで、もう一度促す。
+      // 採点に失敗（聞き取れず/設定ミス/通信エラー）。ノーカウントで、その場に通知して再挑戦を促す。
+      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 
