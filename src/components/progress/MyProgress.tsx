@@ -153,6 +153,20 @@ export const MyProgress: React.FC = () => {
         </div>
       </div>
 
+      {/* これまでのふりかえりへ（じぶんの記録からも飛べるように） */}
+      <button
+        className="glass-card hover-scale"
+        onClick={() => navigate('/reflection/history')}
+        style={{ padding: '1.1rem 1.4rem', display: 'flex', alignItems: 'center', gap: '0.9rem', cursor: 'pointer', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.12)', textAlign: 'left', width: '100%' }}
+      >
+        <span style={{ fontSize: '1.8rem' }}>📔</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#b45309' }}>これまでのふりかえりを見る</div>
+          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>今までに書いたふりかえりと、先生からのコメントが読めるよ</div>
+        </div>
+        <span style={{ fontSize: '1.3rem', color: '#b45309' }}>›</span>
+      </button>
+
       {/* 発音スコアの推移グラフ */}
       <div className="glass-card" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
