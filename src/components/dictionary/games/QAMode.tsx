@@ -261,7 +261,7 @@ export const QAMode: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%' }}>
         <h1 className="text-primary" style={{ fontSize: '2.5rem' }}>QAモード</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>こたえかたをえらんでね！</p>
+        <p style={{ fontSize: '1.2rem', color: '#666' }}>答え方を選んでね！</p>
         
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '800px', width: '100%' }}>
           <div 
@@ -270,7 +270,7 @@ export const QAMode: React.FC = () => {
             onClick={() => setDifficulty('voice')}
           >
             <Mic size={64} color="var(--color-success)" style={{ marginBottom: '1rem' }} />
-            <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>マイクでこたえる</h2>
+            <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>マイクで答える</h2>
           </div>
 
           <div 
@@ -381,13 +381,13 @@ export const QAMode: React.FC = () => {
                 spellCheck="false"
               />
               <Button onClick={handleTypingSubmit} style={{ marginTop: '1rem', padding: '1rem 3rem', fontSize: '1.5rem' }}>
-                こたえる
+                答える
               </Button>
             </>
           ) : (
             <>
               <div style={{ fontSize: '1.5rem', minHeight: '3rem', color: 'var(--color-primary)' }}>
-                {transcript || '（マイクにむかってこたえてね）'}
+                {transcript || '（マイクに向かって答えてね）'}
               </div>
               <Button 
                 onClick={isRecording ? stopListening : startListening}

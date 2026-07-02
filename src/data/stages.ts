@@ -193,10 +193,10 @@ export const stages: StageData[] = [
   {
     id: 10,
     title: '連続子音 ブレンド②',
-    description: '3つの子音がならぶブレンドにもちょうせん！',
+    description: '3つの子音がならぶブレンドにも挑戦！',
     badgeName: 'ブレンド・マスター・プロ',
     colorClass: 'stage-color-10',
-    explanation: 'br・fr・cr・gr・dr・tr のなかまや、thr・spr・str のように3つならぶ音もあるよ。ぜんぶの音をはやくつなげて読もう！',
+    explanation: 'br・fr・cr・gr・dr・tr のなかまや、thr・spr・str のように3つならぶ音もあるよ。全部の音をはやくつなげて読もう！',
     practiceItems: ['br', 'fr', 'cr', 'gr', 'dr', 'tr', 'thr', 'spr', 'str'],
     hideListenPractice: true,
     items: ['brush', 'frog', 'crab', 'grape', 'drum', 'truck', 'three', 'spring', 'strawberry', 'dragon', 'crown'],

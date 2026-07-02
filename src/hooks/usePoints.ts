@@ -99,7 +99,7 @@ export const usePoints = () => {
     if (earned > 0) {
       showToast(`🎉 クリア！ ＋${earned}ポイント ゲット！`, 'points');
     } else {
-      showToast('🎉 クリア！（くりかえしのため、今回はポイントなし）', 'success');
+      showToast('🎉 クリア！（くり返しのため、今回はポイントなし）', 'success');
     }
 
     return earned;

@@ -62,7 +62,8 @@ export const TeacherDashboard: React.FC = () => {
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
-  const [currentMission, setCurrentMission] = useState<MissionOption | null>(null);
+  // 今日のミッション（複数OK）。旧形式（単数todayMission）のデータも読み込み時に配列へ変換
+  const [currentMissions, setCurrentMissions] = useState<MissionOption[]>([]);
   // 1日あたりのAPI利用上限（0以下＝無制限）。この端末の今日の利用数も参考表示する。
   const [geminiCap, setGeminiCap] = useState<number>(DEFAULT_CAP.gemini);
   const [azureCap, setAzureCap] = useState<number>(DEFAULT_CAP.azure);
@@ -107,9 +108,11 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.freetalkGoals !== undefined) {
         setFreetalkGoals(data.dictionary_progress.freetalkGoals || {});
       }
-      if (data.dictionary_progress.todayMission) {
-        setCurrentMission(data.dictionary_progress.todayMission);
-        setMissionRoute(data.dictionary_progress.todayMission.route || '');
+      if (data.dictionary_progress.todayMissions !== undefined) {
+        setCurrentMissions(data.dictionary_progress.todayMissions || []);
+      } else if (data.dictionary_progress.todayMission) {
+        // 旧形式（単数）からの移行
+        setCurrentMissions([data.dictionary_progress.todayMission]);
       }
       if (data.dictionary_progress.geminiDailyCap !== undefined) {
         setGeminiCap(data.dictionary_progress.geminiDailyCap);
@@ -147,7 +150,8 @@ export const TeacherDashboard: React.FC = () => {
           azureSpeechKey: azureKey.trim(),
           azureSpeechRegion: azureRegion.trim(),
           isScreenLocked: isScreenLocked,
-          todayMission: currentMission,
+          todayMissions: currentMissions,
+          todayMission: currentMissions[0] || null, // 旧バージョンのアプリ（キャッシュ）向けの互換
           geminiDailyCap: geminiCap,
           azureDailyCap: azureCap,
           customVocabEnabled: customVocabEnabled,
@@ -157,22 +161,29 @@ export const TeacherDashboard: React.FC = () => {
       }, { onConflict: 'id' });
   };
 
-  const handleSetMission = async () => {
-    // 空（「ミッションなし」）を選んだ場合は解除として扱う
-    const opt = MISSION_OPTIONS.find(o => o.route === missionRoute) || null;
-    setCurrentMission(opt);
-    const { error } = await persistSettings({ todayMission: opt });
-    if (error) setMissionStatus('通信エラー');
-    else setMissionStatus(opt ? `設定しました：${opt.label}` : 'ミッションなしにしました');
+  // ミッション一覧を保存（追加・削除・全解除の共通処理）
+  const persistMissions = async (list: MissionOption[], okMsg: string) => {
+    setCurrentMissions(list);
+    const { error } = await persistSettings({ todayMissions: list, todayMission: list[0] || null });
+    setMissionStatus(error ? '通信エラー' : okMsg);
     setTimeout(() => setMissionStatus(''), 4000);
   };
 
-  const handleClearMission = async () => {
-    setCurrentMission(null);
+  const handleAddMission = async () => {
+    const opt = MISSION_OPTIONS.find(o => o.route === missionRoute);
+    if (!opt) { setMissionStatus('追加するミッションを選んでください'); setTimeout(() => setMissionStatus(''), 4000); return; }
+    if (currentMissions.some(m => m.route === opt.route)) { setMissionStatus('すでに設定済みです'); setTimeout(() => setMissionStatus(''), 4000); return; }
+    await persistMissions([...currentMissions, opt], `追加しました：${opt.label}`);
     setMissionRoute('');
-    const { error } = await persistSettings({ todayMission: null });
-    setMissionStatus(error ? '通信エラー' : 'ミッションを解除しました');
-    setTimeout(() => setMissionStatus(''), 4000);
+  };
+
+  const handleRemoveMission = async (route: string) => {
+    await persistMissions(currentMissions.filter(m => m.route !== route), '削除しました');
+  };
+
+  const handleClearMission = async () => {
+    setMissionRoute('');
+    await persistMissions([], 'ミッションをすべて解除しました');
   };
 
   const handleSaveGoals = async () => {
@@ -229,7 +240,7 @@ export const TeacherDashboard: React.FC = () => {
             placeholder="一言コメント（任意）"
             style={{ flex: 1, minWidth: '180px', padding: '0.4rem 0.6rem', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '0.9rem' }} />
           <Button onClick={() => handleSaveFeedback(studentId, ref)} disabled={fbSavingId === key} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
-            {fbSavingId === key ? '保存中…' : 'おくる'}
+            {fbSavingId === key ? '保存中…' : '送る'}
           </Button>
         </div>
         {(ref.teacherComment || ref.teacherStamp) && (
@@ -354,11 +365,22 @@ export const TeacherDashboard: React.FC = () => {
           <h2 style={{ margin: 0 }}>今日のミッション</h2>
         </div>
         <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          設定すると、児童のホーム画面の一番上に大きく表示され、ワンクリックでそのページに飛べます。
+          設定すると、児童のホーム画面の一番上に大きく表示され、ワンクリックでそのページに飛べます。<b>複数設定OK</b>（上から順に表示されます）。
         </p>
-        {currentMission && (
-          <div style={{ padding: '0.6rem 1rem', background: 'rgba(238,82,83,0.1)', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', color: '#c0392b' }}>
-            🎯 いま設定中：{currentMission.label}
+        {currentMissions.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem' }}>
+            {currentMissions.map((m, i) => (
+              <div key={m.route} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1rem', background: 'rgba(238,82,83,0.1)', borderRadius: '8px', fontWeight: 'bold', color: '#c0392b' }}>
+                <span style={{ flex: 1 }}>🎯 {i + 1}. {m.label}</span>
+                <button
+                  onClick={() => handleRemoveMission(m.route)}
+                  title="このミッションを削除"
+                  style={{ border: 'none', background: 'white', color: '#c0392b', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -367,13 +389,13 @@ export const TeacherDashboard: React.FC = () => {
             onChange={e => setMissionRoute(e.target.value)}
             style={{ flex: 1, minWidth: '240px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem' }}
           >
-            <option value="">（ミッションなし）</option>
+            <option value="">（追加するミッションを選ぶ）</option>
             {MISSION_OPTIONS.map(o => (
               <option key={o.route} value={o.route}>{o.label}</option>
             ))}
           </select>
-          <Button onClick={handleSetMission} icon={Save}>設定する</Button>
-          <Button variant="outline" onClick={handleClearMission}>解除</Button>
+          <Button onClick={handleAddMission} icon={Save}>追加する</Button>
+          <Button variant="outline" onClick={handleClearMission}>すべて解除</Button>
         </div>
         {missionStatus && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{missionStatus}</span>}
       </div>
@@ -820,7 +842,7 @@ export const TeacherDashboard: React.FC = () => {
                 {/* 人ごと 全モード一覧 */}
                 <div>
                   <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.4rem 0' }}>
-                    各モードの「クリア数／全体」。<span style={{ color: '#dc2626', fontWeight: 'bold' }}>赤=0（要支援）</span>・<span style={{ color: '#d97706', fontWeight: 'bold' }}>オレンジ=途中</span>・<span style={{ color: '#16a34a', fontWeight: 'bold' }}>緑=ぜんぶ</span>。発音は平均点（回数）。
+                    各モードの「クリア数／全体」。<span style={{ color: '#dc2626', fontWeight: 'bold' }}>赤=0（要支援）</span>・<span style={{ color: '#d97706', fontWeight: 'bold' }}>オレンジ=途中</span>・<span style={{ color: '#16a34a', fontWeight: 'bold' }}>緑=全部</span>。発音は平均点（回数）。
                   </p>
                   <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                     <table style={{ borderCollapse: 'collapse', fontSize: '0.85rem', width: '100%' }}>

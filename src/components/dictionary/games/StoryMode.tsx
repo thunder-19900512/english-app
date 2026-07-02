@@ -112,7 +112,7 @@ export const StoryMode: React.FC = () => {
     const result = await assess(targetSentence);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -186,7 +186,7 @@ export const StoryMode: React.FC = () => {
     if (!geminiApiKey) return;
     // 1日のお話づくり（AI生成）の上限に達していたら止める（課金の安全装置）。
     if (isOverCap('gemini')) {
-      alert('今日のお話づくりは1日のじょうげんに達したよ。また明日つくろうね！');
+      alert('今日のお話づくりは1日の上限に達したよ。また明日つくろうね！');
       return;
     }
     setGameState('generating');
@@ -480,7 +480,7 @@ ${SAFETY_INSTRUCTION}`;
         {isFilled ? filledWord?.english : ''}
         {activeBlankIndex === idx && !isFilled && (
           <div className="animate-pulse" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '1rem', color: 'var(--color-primary)', whiteSpace: 'nowrap' }}>
-            ここをえらぶ
+            ここを選ぶ
           </div>
         )}
       </span>
@@ -686,7 +686,7 @@ ${SAFETY_INSTRUCTION}`;
                       disabled={selectedSentenceIndex === null || (azureAvailable && isAssessing)}
                       onClick={() => {
                         if (selectedSentenceIndex === null) {
-                          alert('まずは読みたい文をえらんでね！');
+                          alert('まずは読みたい文を選んでね！');
                           return;
                         }
                         if (azureAvailable) {
@@ -717,7 +717,7 @@ ${SAFETY_INSTRUCTION}`;
                     )}
                   </div>
                   {selectedSentenceIndex === null && (
-                    <div style={{ fontSize: '0.9rem', color: '#888' }}>※上の文をタップしてえらんでね</div>
+                    <div style={{ fontSize: '0.9rem', color: '#888' }}>※上の文をタップして選んでね</div>
                   )}
                 </div>
               )}

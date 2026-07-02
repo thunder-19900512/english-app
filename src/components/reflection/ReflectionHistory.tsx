@@ -25,7 +25,7 @@ export const ReflectionHistory: React.FC = () => {
         <Button variant="outline" onClick={() => navigate('/reflection')} icon={ArrowLeft}>
           もどる
         </Button>
-        <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>これまでのきろく</h1>
+        <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>これまでの記録</h1>
         <div style={{ width: '100px' }} /> {/* Spacer */}
       </div>
 

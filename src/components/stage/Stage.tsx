@@ -553,7 +553,7 @@ export const Stage: React.FC = () => {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button variant={mode === 'input' ? 'primary' : 'outline'} onClick={() => { setMode('input'); resetSession(); }}>きく</Button>
             <Button variant={mode === 'choice' ? 'primary' : 'outline'} onClick={() => { setMode('choice'); resetSession(); }}>えらぶ</Button>
-            <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>🎧 きいてタイプ</Button>
+            <Button variant={mode === 'typing' ? 'primary' : 'outline'} onClick={() => { setMode('typing'); resetSession(); }}>🎧 聞いてタイプ</Button>
             <Button variant={mode === 'typegame' ? 'primary' : 'outline'} onClick={() => { setMode('typegame'); resetSession(); }}>⌨️ タイピング練習</Button>
             {stage.id !== 1 && <Button variant={mode === 'quiz' ? 'secondary' : 'outline'} onClick={() => { setMode('quiz'); resetSession(); }}>マイク</Button>}
           </div>
@@ -622,7 +622,7 @@ export const Stage: React.FC = () => {
 
         {mode === 'choice' && (
           <>
-            <p style={{ fontSize: '1.2rem' }}>音をきいて、正しいものをえらぼう！</p>
+            <p style={{ fontSize: '1.2rem' }}>音を聞いて、正しいものを選ぼう！</p>
             {renderStars()}
 
             <Button 
@@ -681,7 +681,7 @@ export const Stage: React.FC = () => {
 
         {mode === 'typing' && (
           <>
-            <p style={{ fontSize: '1.2rem' }}>音をきいて、タイピングしよう！</p>
+            <p style={{ fontSize: '1.2rem' }}>音を聞いて、タイピングしよう！</p>
             {renderStars()}
 
             <Button 
@@ -730,7 +730,7 @@ export const Stage: React.FC = () => {
                   autoFocus
                 />
                 <Button onClick={handleTypingSubmit}>
-                  こたえる
+                  答える
                 </Button>
               </div>
             )}
@@ -835,7 +835,7 @@ export const Stage: React.FC = () => {
                    setTimeout(() => speak(p), i * 1000);
                  });
             }} style={{ marginBottom: '2rem' }}>
-               順番にぜんぶ聞く
+               順番に全部聞く
             </Button>
             
             <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>

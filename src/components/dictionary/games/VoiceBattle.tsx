@@ -124,7 +124,7 @@ export const VoiceBattle: React.FC = () => {
     const result = await assess(targetWord.english);
     if (!result) {
       // 採点に失敗（聞き取れず/設定ミス/通信エラー）。ノーカウントで、その場に通知して再挑戦を促す。
-      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 

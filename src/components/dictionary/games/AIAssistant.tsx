@@ -328,7 +328,7 @@ export const AIAssistant: React.FC = () => {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !chatSession) return;
-    if (isTeam && !currentSpeaker) { alert('だれが話すか、チームでえらんでね！'); return; }
+    if (isTeam && !currentSpeaker) { alert('だれが話すか、チームで選んでね！'); return; }
 
     if (isInappropriate(text)) {
       setMessages(prev => [...prev, { role: 'model', text: REDIRECT_MESSAGE }]);
@@ -347,7 +347,7 @@ export const AIAssistant: React.FC = () => {
 
     // 1日のAI会話の上限に達していたら、Gemini を呼ばずに止める（課金の安全装置）。
     if (isOverCap('gemini')) {
-      setMessages(prev => [...prev, { role: 'model', text: '今日はここまで！🌙 AIとのおしゃべりは1日のじょうげんに達したよ。また明日ね！' }]);
+      setMessages(prev => [...prev, { role: 'model', text: '今日はここまで！🌙 AIとのおしゃべりは1日の上限に達したよ。また明日ね！' }]);
       return;
     }
 
@@ -392,14 +392,14 @@ export const AIAssistant: React.FC = () => {
   }, [transcript, isRecording]);
 
   const onMicClick = () => {
-    if (isTeam && !currentSpeaker) { alert('さきに「話す人」をえらんでね！'); return; }
+    if (isTeam && !currentSpeaker) { alert('先に「話す人」を選んでね！'); return; }
     if (isRecording) { stopListening(); }
     else { setTranscript(''); setInputText(''); startListening(); }
   };
 
   // 会話を開始（チーム時はメンバー2人以上が必要）
   const startFreetalk = (opts: InitOpts) => {
-    if (isTeam && teamMembers.length < 2) { alert('チームは2人以上えらんでね！'); return; }
+    if (isTeam && teamMembers.length < 2) { alert('チームは2人以上選んでね！'); return; }
     initChat('freetalk', opts);
   };
 
@@ -433,7 +433,7 @@ export const AIAssistant: React.FC = () => {
           </div>
           {isTeam && (
             <>
-              <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>チーム名を入れて、メンバーを2人以上えらんでね。話す番をリレーで回すよ。</p>
+              <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>チーム名を入れて、メンバーを2人以上選んでね。話す番をリレーで回すよ。</p>
               <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="チーム名（れい：A班）"
                 style={{ padding: '0.5rem', fontSize: '1rem', borderRadius: '8px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }} />
               <div style={{ fontSize: '0.85rem', color: '#475569' }}>えらんだ人：{teamMembers.length}人 {teamMembers.map(m => m.name).join('・')}</div>

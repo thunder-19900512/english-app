@@ -21,7 +21,7 @@ export const Home: React.FC = () => {
     setSearchParams(tab ? { tab } : {});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
-  const { todayMission } = useAppSettings();
+  const { todayMissions } = useAppSettings();
   const studentId = localStorage.getItem('studentId');
 
   useEffect(() => {
@@ -87,41 +87,47 @@ export const Home: React.FC = () => {
         </div>
       </div>
 
-      {!activeTab && todayMission && todayMission.label && (
-        <div
-          className="animate-pop"
-          style={{
-            width: '100%', maxWidth: '900px',
-            padding: '1.2rem 1.5rem', borderRadius: '20px',
-            background: 'linear-gradient(135deg, #ff9f43, #ee5253)',
-            color: 'white', boxShadow: 'var(--shadow-md)',
-            display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
-            border: '3px solid #fff'
-          }}
-        >
-          <span style={{ fontSize: '2.5rem' }}>🎯</span>
-          <div style={{ flex: 1, minWidth: '180px' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>きょうのミッション</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{todayMission.label}</div>
-          </div>
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-            {todayMission.videoUrl && (
-              <button
-                className="hover-scale"
-                onClick={() => window.open(todayMission.videoUrl, '_blank')}
-                style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >
-                📺 動画を見る
-              </button>
-            )}
-            <button
-              className="hover-scale"
-              onClick={() => navigate(todayMission.route)}
-              style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.25)', color: 'white', border: '2px solid white', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+      {!activeTab && todayMissions.length > 0 && (
+        <div style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          {todayMissions.map((mission, i) => (
+            <div
+              key={mission.route + i}
+              className="animate-pop"
+              style={{
+                padding: '1.2rem 1.5rem', borderRadius: '20px',
+                background: 'linear-gradient(135deg, #ff9f43, #ee5253)',
+                color: 'white', boxShadow: 'var(--shadow-md)',
+                display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+                border: '3px solid #fff'
+              }}
             >
-              {todayMission.videoUrl ? '✏️ 問題に挑戦' : 'やってみる →'}
-            </button>
-          </div>
+              <span style={{ fontSize: '2.5rem' }}>🎯</span>
+              <div style={{ flex: 1, minWidth: '180px' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
+                  今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                {mission.videoUrl && (
+                  <button
+                    className="hover-scale"
+                    onClick={() => window.open(mission.videoUrl, '_blank')}
+                    style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    📺 動画を見る
+                  </button>
+                )}
+                <button
+                  className="hover-scale"
+                  onClick={() => navigate(mission.route)}
+                  style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.25)', color: 'white', border: '2px solid white', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  {mission.videoUrl ? '✏️ 問題に挑戦' : 'やってみる →'}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -152,7 +158,7 @@ export const Home: React.FC = () => {
           >
             <Book size={40} color="#00b894" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>教科書モード</h2>
-            <p style={{ margin: '0.5rem 0 0.8rem 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズにちょうせん！</p>
+            <p style={{ margin: '0.5rem 0 0.8rem 0', color: '#666', textAlign: 'center' }}>教科書を見て<br/>クイズに挑戦！</p>
             <div style={{ display: 'flex', gap: '0.6rem' }}>
               <button
                 className="hover-scale"

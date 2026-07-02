@@ -293,7 +293,7 @@ export const SpellingGame: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%' }}>
         <h1 className="text-primary" style={{ fontSize: '2.5rem' }}>タイピングモード</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>むずかしさをえらんでね！</p>
+        <p style={{ fontSize: '1.2rem', color: '#666' }}>難しさを選んでね！</p>
         
         <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '800px', width: '100%' }}>
           <div 
@@ -312,7 +312,7 @@ export const SpellingGame: React.FC = () => {
             onClick={() => { setDifficulty('hard'); setStartTime(Date.now()); }}
           >
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⌨️</div>
-            <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>むずかしい</h2>
+            <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>難しい</h2>
             <p style={{ marginTop: '0.5rem', color: '#666' }}>キーボードでタイピングしよう</p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export const SpellingGame: React.FC = () => {
                 spellCheck="false"
               />
               <Button onClick={handleTypingSubmit} style={{ marginTop: '1rem', padding: '1rem 3rem', fontSize: '1.5rem' }}>
-                こたえる
+                答える
               </Button>
             </>
           ) : (

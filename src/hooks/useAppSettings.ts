@@ -13,7 +13,8 @@ export const useAppSettings = () => {
   const [azureSpeechKey, setAzureSpeechKey] = useState<string | null>(null);
   const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
-  const [todayMission, setTodayMission] = useState<TodayMission | null>(null);
+  // 今日のミッション（複数対応）。旧データの todayMission（単数）も読めるようにする。
+  const [todayMissions, setTodayMissions] = useState<TodayMission[]>([]);
   const [geminiDailyCap, setGeminiDailyCap] = useState<number>(getCap('gemini'));
   const [azureDailyCap, setAzureDailyCap] = useState<number>(getCap('azure'));
   // マイ単語ついか機能を子どもに見せるか（既定OFF。先生が運用を決めてからONにする）
@@ -30,7 +31,9 @@ export const useAppSettings = () => {
       if (progress.azureSpeechKey !== undefined) setAzureSpeechKey(progress.azureSpeechKey);
       if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
-      if (progress.todayMission !== undefined) setTodayMission(progress.todayMission || null);
+      // 複数ミッション（新形式）を優先。無ければ旧形式（単数）を配列に包んで互換維持
+      if (progress.todayMissions !== undefined) setTodayMissions(progress.todayMissions || []);
+      else if (progress.todayMission !== undefined) setTodayMissions(progress.todayMission ? [progress.todayMission] : []);
       // APIの1日上限を localStorage にミラーして、各画面の使用量チェックから参照できるようにする。
       if (progress.geminiDailyCap !== undefined) { setCap('gemini', progress.geminiDailyCap); setGeminiDailyCap(progress.geminiDailyCap); }
       if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }
@@ -69,5 +72,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMission, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals };
 };

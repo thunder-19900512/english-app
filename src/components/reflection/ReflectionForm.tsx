@@ -45,7 +45,7 @@ export const ReflectionForm: React.FC = () => {
             +{earnedPoints} ポイントゲット！✨
           </div>
         )}
-        <p style={{ fontSize: '1.5rem' }}>えらい！きょうもがんばったね！</p>
+        <p style={{ fontSize: '1.5rem' }}>えらい！今日もがんばったね！</p>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <Button onClick={() => navigate('/reflection/history')} variant="outline">これまでのふりかえり</Button>
           <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
@@ -62,7 +62,7 @@ export const ReflectionForm: React.FC = () => {
         </Button>
         <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>今日のふりかえり</h1>
         <Button variant="outline" onClick={() => navigate('/reflection/history')}>
-          これまでのきろく
+          これまでの記録
         </Button>
       </div>
 
@@ -76,7 +76,7 @@ export const ReflectionForm: React.FC = () => {
         }}
       >
         <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '1rem' }}>
-          きょうの手ごたえはどうだった？
+          今日の手ごたえはどうだった？
         </h2>
         
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
@@ -97,7 +97,7 @@ export const ReflectionForm: React.FC = () => {
           かんそうをかこう！
         </h2>
         <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '1rem', textAlign: 'center' }}>
-          （ここがよかった・むずかしかった・こんな風にまなびたい...など）
+          （ここがよかった・難しかった・こんな風に学びたい...など）
         </p>
 
         <textarea
@@ -127,7 +127,7 @@ export const ReflectionForm: React.FC = () => {
             opacity: stars === 0 ? 0.5 : 1
           }}
         >
-          {canEarnPoints ? 'おくってポイントをもらう！' : 'おくってきろくする'}
+          {canEarnPoints ? '送ってポイントをもらう！' : '送って記録する'}
         </Button>
       </div>
     </div>

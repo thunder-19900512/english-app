@@ -217,7 +217,7 @@ export const TextbookMode: React.FC = () => {
     const result = await assess(selectedQuiz.keyPhrase);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast('🎙️ 声がきこえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -416,12 +416,12 @@ export const TextbookMode: React.FC = () => {
               {/* 選択肢のすぐ下＝今見ている場所に、正解/不正解をはっきり出す */}
               {isChecking && feedback === 'correct' && (
                 <div className="animate-pop" style={{ color: 'var(--color-success)', fontWeight: 'bold', fontSize: '1.4rem', padding: '1rem', background: '#dcfce7', borderRadius: '12px', textAlign: 'center', border: '2px solid var(--color-success)' }}>
-                  ⭕ せいかい！
+                  ⭕ 正解！
                 </div>
               )}
               {isChecking && feedback === 'incorrect' && (
                 <div className="animate-pop" style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '1.2rem', padding: '1rem', background: '#fee2e2', borderRadius: '12px', textAlign: 'center', border: '2px solid var(--color-error)' }}>
-                  ❌ ざんねん！ 正解は「{currentQuestion.options[currentQuestion.correctIndex]}」
+                  ❌ 残念！ 正解は「{currentQuestion.options[currentQuestion.correctIndex]}」
                 </div>
               )}
             </div>
@@ -600,7 +600,7 @@ export const TextbookMode: React.FC = () => {
               </p>
             ) : (
               <p style={{ fontSize: '1.05rem', margin: 0, color: '#94a3b8' }}>
-                半分以上せいかいすると、ポイントがもらえるよ。動画をもう一回見てチャレンジ！
+                半分以上正解すると、ポイントがもらえるよ。動画をもう一回見てチャレンジ！
               </p>
             )
           )}

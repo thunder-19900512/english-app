@@ -72,7 +72,7 @@ export const LearnMode: React.FC = () => {
   if (showCelebration) {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%', textAlign: 'center' }}>
-        <h1 className="text-primary" style={{ fontSize: '3rem' }}>ぜんぶしっかりきけたね！</h1>
+        <h1 className="text-primary" style={{ fontSize: '3rem' }}>全部しっかり聞けたね！</h1>
         <div className="animate-float">
           <Trophy size={100} color="var(--color-accent)" />
         </div>
@@ -85,7 +85,7 @@ export const LearnMode: React.FC = () => {
         )}
         <p style={{ fontSize: '1.4rem' }}>学習モード（リスニング）をクリアしたよ！</p>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <Button onClick={resetSession} variant="outline" icon={RefreshCw}>もう一度きく</Button>
+          <Button onClick={resetSession} variant="outline" icon={RefreshCw}>もう一度聞く</Button>
           <Button onClick={() => navigate(`/dictionary/${category}`)}>もどる</Button>
         </div>
       </div>
@@ -102,9 +102,9 @@ export const LearnMode: React.FC = () => {
 
       <div className="flex-col flex-center gap-sm" style={{ textAlign: 'center' }}>
         <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>学習モード: {decodedCategory}</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>カードをタップして、音を<b>さいごまで</b>よくきいてみよう！🎧</p>
+        <p style={{ fontSize: '1.2rem', color: '#666' }}>カードをタップして、音を<b>最後まで</b>よく聞いてみよう！🎧</p>
         <div style={{ fontWeight: 'bold', color: 'var(--color-accent)', fontSize: '1.2rem' }}>
-          🎧 きけた: {heardWords.size} / {words.length}
+          🎧 聞けた: {heardWords.size} / {words.length}
         </div>
       </div>
 
