@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
 import { useAppSettings } from '../../../hooks/useAppSettings';
 import { saveConversationLog } from '../../../lib/conversationLogs';
@@ -402,6 +402,20 @@ export const AIAssistant: React.FC = () => {
     if (isTeam && teamMembers.length < 2) { alert('チームは2人以上選んでね！'); return; }
     initChat('freetalk', opts);
   };
+
+  // URLパラメータ（?unit=g5-u1）で特定Unitのフリートークを直接ひらく（今日のミッション用）。
+  // APIキーの読み込みを待ってから一度だけ自動開始する（キー未取得だとinitChatが空振りするため）。
+  const [searchParams] = useSearchParams();
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    const unitId = searchParams.get('unit');
+    if (!unitId || autoStartedRef.current || !geminiApiKey) return;
+    const u = FREETALK_UNITS.find(x => x.id === unitId);
+    if (!u) return;
+    autoStartedRef.current = true;
+    initChat('freetalk', withGoalOverride(buildUnitOpts(u), u.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, geminiApiKey]);
 
   if (!geminiApiKey) {
     return (

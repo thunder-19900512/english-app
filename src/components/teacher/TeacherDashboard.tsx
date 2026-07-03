@@ -11,6 +11,7 @@ import { FREETALK_UNITS } from '../dictionary/games/AIAssistant';
 import { fetchConversationLogs, type ConversationLog } from '../../lib/conversationLogs';
 import { saveTeacherFeedback } from '../../lib/teacherFeedback';
 import { WORLD_BENTO_QUIZZES } from '../textbook/worldBentoQuizData';
+import { vocabulary } from '../../data/vocabulary';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
@@ -26,6 +27,17 @@ const MISSION_OPTIONS: MissionOption[] = [
   })),
   // World Bento（世界の弁当）クイズ：トップ画面（国の一覧）を開く。今回は国別までは指定しない。
   { label: '🍱 世界の弁当クイズ（トップ画面）', route: '/textbook?set=worldbento' },
+  // Picture Dictionary の各カテゴリ（例：食べ物）。クイズと一緒に配信して「クイズ→語彙」の流れを作れる。
+  ...Array.from(new Set(vocabulary.map(v => v.category))).map(cat => ({
+    label: `📕 辞書 ${cat}`,
+    route: `/dictionary/${encodeURIComponent(cat)}`,
+  })),
+  // AI英会話：トップ（場面えらび）と、Unit別フリートークへの直接リンク
+  { label: '🤖 AI英会話（場面えらび画面）', route: '/ai' },
+  ...FREETALK_UNITS.map(u => ({
+    label: `🤖 AI英会話 ${u.label}`,
+    route: `/ai?unit=${u.id}`,
+  })),
 ];
 
 export const TeacherDashboard: React.FC = () => {

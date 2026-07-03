@@ -65,6 +65,8 @@ export const TextbookMode: React.FC = () => {
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizState, setQuizState] = useState<'idle' | 'playing' | 'bonus' | 'completed'>('idle');
+  // 動画を見たUnitのid。動画があるUnitは「動画を見る」を押すまでクイズをロックする。
+  const [watched, setWatched] = useState<Set<string>>(new Set());
   // 正解数（本問だけ・ボーナス除く）。加点を正答率でスケールするために数える。
   const [correctCount, setCorrectCount] = useState(0);
   // このクイズで実際にポイントが入ったか（正答率が足りないと0点）。完了画面の表示に使う。
@@ -316,23 +318,37 @@ export const TextbookMode: React.FC = () => {
                   <p style={{ margin: '0 0 1rem 0', color: '#64748b', fontSize: '0.9rem' }}>
                     {quiz.questions.length}問のクイズ{quiz.noBonus ? '' : ' ＋ ボーナス課題'}
                   </p>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {quiz.url && (
+                  {(() => {
+                    // 動画があるUnitは、動画を見るまでクイズをロック（見終わってから答える流れを守る）。
+                    const locked = !!quiz.url && !watched.has(quiz.id);
+                    return (
+                  <div className="flex-col" style={{ gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {quiz.url && (
+                        <button
+                          onClick={() => { window.open(quiz.url, '_blank'); setWatched(w => new Set(w).add(quiz.id)); }}
+                          style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: '2px solid #00b894', background: 'rgba(0, 184, 148, 0.1)', color: '#00b894', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}
+                        >
+                          📺 動画を見る
+                        </button>
+                      )}
                       <button
-                        onClick={() => window.open(quiz.url, '_blank')}
-                        style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: '2px solid #00b894', background: 'rgba(0, 184, 148, 0.1)', color: '#00b894', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}
+                        onClick={() => !locked && handleQuizSelect(quiz)}
+                        disabled={locked}
+                        className={locked ? '' : 'hover-scale'}
+                        style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: 'none', background: locked ? '#cbd5e1' : 'var(--color-primary)', color: 'white', fontWeight: 'bold', cursor: locked ? 'not-allowed' : 'pointer', fontSize: '0.95rem' }}
                       >
-                        📺 動画を見る
+                        {locked ? '🔒 クイズに挑戦' : '✏️ クイズに挑戦'}
                       </button>
+                    </div>
+                    {locked && (
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>
+                        先に「📺 動画を見る」を見てね
+                      </p>
                     )}
-                    <button
-                      onClick={() => handleQuizSelect(quiz)}
-                      className="hover-scale"
-                      style={{ flex: 1, padding: '0.7rem', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
-                    >
-                      ✏️ クイズに挑戦
-                    </button>
                   </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
