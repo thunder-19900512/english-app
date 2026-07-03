@@ -8,17 +8,31 @@ export const Login: React.FC = () => {
   const [classFilter, setClassFilter] = useState<'all' | 'A' | 'B'>('all');
   const visibleStudents = STUDENTS.filter(s => classFilter === 'all' || s.cls === classFilter);
 
-  // Testユーザー用のPIN入力モーダル（●●●●表示。モニター投影中でも見えないように）
-  const [showPinModal, setShowPinModal] = useState(false);
+  // PIN入力モーダル（●●●●表示。モニター投影中でも見えないように）。
+  // Testログインとスタッフ用画面の入口を兼ねる。
+  const [pinTarget, setPinTarget] = useState<'test' | 'staff' | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
+  const openPinModal = (target: 'test' | 'staff') => {
+    setPinInput('');
+    setPinError(false);
+    setPinTarget(target);
+  };
+
   const handlePinSubmit = () => {
     if (pinInput === '7777') {
-      setShowPinModal(false);
+      const target = pinTarget;
+      setPinTarget(null);
       setPinInput('');
       setPinError(false);
-      doLogin('00', 'Test');
+      if (target === 'test') {
+        doLogin('00', 'Test');
+      } else {
+        // 認証済みフラグ（このタブの間だけ有効）を立てて、PIN画面をスキップして直行
+        sessionStorage.setItem('staff_authed', '1');
+        navigate('/teacher');
+      }
     } else {
       setPinError(true);
       setPinInput('');
@@ -29,9 +43,7 @@ export const Login: React.FC = () => {
     // Testユーザー（id: 00）はスタッフ専用：PINを知らないと入れない。
     // その代わり全体ロック中でもロックされない（デモ用）ので、子どもに使わせない。
     if (studentId === '00') {
-      setPinInput('');
-      setPinError(false);
-      setShowPinModal(true);
+      openPinModal('test');
       return;
     }
     doLogin(studentId, studentName);
@@ -133,17 +145,17 @@ export const Login: React.FC = () => {
       <div className="flex-center" style={{ marginTop: '4rem' }}>
         <button
           className="btn btn-outline"
-          onClick={() => navigate('/teacher')}
+          onClick={() => openPinModal('staff')}
           style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
         >
           スタッフ用画面 (Staff)
         </button>
       </div>
 
-      {/* TestユーザーのPIN入力（●●●●表示。モニター投影中でも番号が見えない） */}
-      {showPinModal && (
+      {/* PIN入力モーダル（Test／スタッフ用画面 共用。●●●●表示で投影中も番号が見えない） */}
+      {pinTarget && (
         <div
-          onClick={() => setShowPinModal(false)}
+          onClick={() => setPinTarget(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div
@@ -151,7 +163,9 @@ export const Login: React.FC = () => {
             className="animate-pop"
             style={{ background: 'white', borderRadius: '16px', padding: '2rem', boxShadow: '0 12px 40px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', maxWidth: '90vw' }}
           >
-            <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#2d3436' }}>🔒 Testユーザーはスタッフ専用です</div>
+            <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#2d3436' }}>
+              {pinTarget === 'test' ? '🔒 Testユーザーはスタッフ専用です' : '🔒 スタッフ用画面をひらきます'}
+            </div>
             <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>PINを入力してください</p>
             <input
               type="password"
@@ -166,7 +180,7 @@ export const Login: React.FC = () => {
             />
             {pinError && <div style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '0.9rem' }}>PINが違います</div>}
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button className="btn btn-outline" onClick={() => setShowPinModal(false)} style={{ padding: '0.5rem 1.2rem' }}>やめる</button>
+              <button className="btn btn-outline" onClick={() => setPinTarget(null)} style={{ padding: '0.5rem 1.2rem' }}>やめる</button>
               <button className="btn" onClick={handlePinSubmit} style={{ padding: '0.5rem 1.6rem', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>ログイン</button>
             </div>
           </div>

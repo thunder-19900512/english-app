@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Key, Save, Mic, Target, Gauge } from 'lucide-react';
@@ -43,7 +43,8 @@ const MISSION_OPTIONS: MissionOption[] = [
 export const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [pin, setPin] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // ログイン画面のPINモーダルで認証済みなら、このタブの間はPIN画面をスキップ
+  const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('staff_authed') === '1');
   
   const [geminiKey, setGeminiKey] = useState('');
   const [azureKey, setAzureKey] = useState('');
@@ -85,13 +86,19 @@ export const TeacherDashboard: React.FC = () => {
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pin === '7777') {
+      sessionStorage.setItem('staff_authed', '1'); // このタブの間は再入力不要
       setIsAuthenticated(true);
-      fetchSettings();
     } else {
       alert('PINが違います');
       setPin('');
     }
   };
+
+  // 認証できたら設定・生徒データを読み込む（PINスキップ経由でも必ず動くようにeffectで）
+  useEffect(() => {
+    if (isAuthenticated) fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const fetchSettings = async () => {
     if (!supabase) return;
