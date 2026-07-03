@@ -219,17 +219,28 @@ export const TeacherDashboard: React.FC = () => {
   };
 
   // ふりかえり1件への「先生から」コメント＋スタンプ入力UI（生徒ごと／日ごと 共用）。
-  // navKeys を渡すと、Tab／Shift+Tab で前後の子のコメント欄へ直接移動できる。
+  // navKeys を渡すと、Enter＝送信して次の子へ／Tab＝次の子へ移動できる。
+  // ※ IME変換中（日本語入力の確定前）のEnter/Tabは変換操作なので奪わない。
   const renderFeedbackBox = (studentId: string, ref: any, navKeys?: string[]) => {
     const key = `${studentId}__${ref.id}`;
     const draft = fbDrafts[key] || { comment: ref.teacherComment || '', stamp: ref.teacherStamp || '' };
     const setDraft = (d: { comment: string; stamp: string }) => setFbDrafts(p => ({ ...p, [key]: d }));
+    const focusNeighbor = (dir: 1 | -1) => {
+      if (!navKeys) return;
+      const pos = navKeys.indexOf(key);
+      const nextKey = navKeys[pos + dir];
+      if (nextKey) fbInputRefs.current[nextKey]?.focus();
+    };
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // IME変換中はEnterもTabも変換の操作。ここで奪うと日本語が打てないので何もしない。
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       if (e.key === 'Tab' && navKeys) {
         e.preventDefault();
-        const pos = navKeys.indexOf(key);
-        const nextKey = e.shiftKey ? navKeys[pos - 1] : navKeys[pos + 1];
-        if (nextKey) fbInputRefs.current[nextKey]?.focus();
+        focusNeighbor(e.shiftKey ? -1 : 1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSaveFeedback(studentId, ref); // 確定Enter＝送信して…
+        focusNeighbor(1);                   // …次の子のコメント欄へ
       }
     };
     return (
@@ -761,7 +772,7 @@ export const TeacherDashboard: React.FC = () => {
             return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#0891b2' }}>
-                  💡 コメント欄で <b>Tab</b> を押すと、次の子のコメント欄へジャンプします（Shift+Tabで前へ）。
+                  💡 コメント欄で <b>Enter</b>＝送信して次の子へ／<b>Tab</b>＝送信せずに次の子へ（Shift+Tabで前へ）。日本語変換中のEnter/Tabはそのまま変換に使えます。
                 </p>
                 {dates.map(date => (
                   <div key={date} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
