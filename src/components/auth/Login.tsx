@@ -8,14 +8,36 @@ export const Login: React.FC = () => {
   const [classFilter, setClassFilter] = useState<'all' | 'A' | 'B'>('all');
   const visibleStudents = STUDENTS.filter(s => classFilter === 'all' || s.cls === classFilter);
 
+  // Testユーザー用のPIN入力モーダル（●●●●表示。モニター投影中でも見えないように）
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  const handlePinSubmit = () => {
+    if (pinInput === '7777') {
+      setShowPinModal(false);
+      setPinInput('');
+      setPinError(false);
+      doLogin('00', 'Test');
+    } else {
+      setPinError(true);
+      setPinInput('');
+    }
+  };
+
   const handleLogin = async (studentId: string, studentName: string) => {
     // Testユーザー（id: 00）はスタッフ専用：PINを知らないと入れない。
     // その代わり全体ロック中でもロックされない（デモ用）ので、子どもに使わせない。
     if (studentId === '00') {
-      const pin = window.prompt('Testユーザーはスタッフ専用です。PINを入力してください');
-      if (pin === null) return; // キャンセル
-      if (pin !== '7777') { alert('PINが違います'); return; }
+      setPinInput('');
+      setPinError(false);
+      setShowPinModal(true);
+      return;
     }
+    doLogin(studentId, studentName);
+  };
+
+  const doLogin = async (studentId: string, studentName: string) => {
     localStorage.setItem('studentId', studentId);
     localStorage.setItem('studentName', studentName);
     
@@ -109,14 +131,47 @@ export const Login: React.FC = () => {
       </div>
 
       <div className="flex-center" style={{ marginTop: '4rem' }}>
-        <button 
-          className="btn btn-outline" 
+        <button
+          className="btn btn-outline"
           onClick={() => navigate('/teacher')}
           style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
         >
           スタッフ用画面 (Staff)
         </button>
       </div>
+
+      {/* TestユーザーのPIN入力（●●●●表示。モニター投影中でも番号が見えない） */}
+      {showPinModal && (
+        <div
+          onClick={() => setShowPinModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="animate-pop"
+            style={{ background: 'white', borderRadius: '16px', padding: '2rem', boxShadow: '0 12px 40px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', maxWidth: '90vw' }}
+          >
+            <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#2d3436' }}>🔒 Testユーザーはスタッフ専用です</div>
+            <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>PINを入力してください</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoFocus
+              value={pinInput}
+              onChange={e => { setPinInput(e.target.value); setPinError(false); }}
+              onKeyDown={e => { if (e.key === 'Enter') handlePinSubmit(); }}
+              maxLength={4}
+              autoComplete="one-time-code"
+              style={{ fontSize: '2rem', textAlign: 'center', width: '150px', padding: '0.5rem', borderRadius: '8px', border: `2px solid ${pinError ? 'var(--color-error)' : '#ccc'}`, letterSpacing: '0.4rem' }}
+            />
+            {pinError && <div style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '0.9rem' }}>PINが違います</div>}
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button className="btn btn-outline" onClick={() => setShowPinModal(false)} style={{ padding: '0.5rem 1.2rem' }}>やめる</button>
+              <button className="btn" onClick={handlePinSubmit} style={{ padding: '0.5rem 1.6rem', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>ログイン</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
