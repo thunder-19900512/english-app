@@ -2,7 +2,9 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 
 export const GlobalLockScreen: React.FC<{ isLocked: boolean }> = ({ isLocked }) => {
-  if (!isLocked) return null;
+  // Testユーザー（id: 00）はロック対象外（ロック中にスタッフがデモを見せられるように）。
+  // TestのログインにはPINが必要なので、子どもがここを抜け道にはできない。
+  if (!isLocked || localStorage.getItem('studentId') === '00') return null;
 
   return (
     <div style={{

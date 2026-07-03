@@ -9,6 +9,13 @@ export const Login: React.FC = () => {
   const visibleStudents = STUDENTS.filter(s => classFilter === 'all' || s.cls === classFilter);
 
   const handleLogin = async (studentId: string, studentName: string) => {
+    // Testユーザー（id: 00）はスタッフ専用：PINを知らないと入れない。
+    // その代わり全体ロック中でもロックされない（デモ用）ので、子どもに使わせない。
+    if (studentId === '00') {
+      const pin = window.prompt('Testユーザーはスタッフ専用です。PINを入力してください');
+      if (pin === null) return; // キャンセル
+      if (pin !== '7777') { alert('PINが違います'); return; }
+    }
     localStorage.setItem('studentId', studentId);
     localStorage.setItem('studentName', studentName);
     
