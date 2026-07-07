@@ -34,6 +34,9 @@ const MISSION_OPTIONS: MissionOption[] = [
   })),
   // AI英会話：トップ（場面えらび）と、Unit別フリートークへの直接リンク
   { label: '🤖 AI英会話（場面えらび画面）', route: '/ai' },
+  // World Bento お店屋さん（AI＝客／児童＝店員）。開店前の練習を配信できる。
+  { label: '🍱 AI英会話 お店屋さん（シンプル）', route: '/ai?shop=simple' },
+  { label: '🍱 AI英会話 お店屋さん（チャレンジ）', route: '/ai?shop=challenge' },
   ...FREETALK_UNITS.map(u => ({
     label: `🤖 AI英会話 ${u.label}`,
     route: `/ai?unit=${u.id}`,

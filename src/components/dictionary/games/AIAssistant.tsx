@@ -84,6 +84,27 @@ interface Scenario {
   suggestions: Suggestion[];
 }
 
+// お店屋さんモードのゴール文（AIへの指示）。シンプル／チャレンジで goal を差し替える。
+const BENTO_SHOP_SIMPLE_GOAL =
+  'Flow:\n' +
+  '1) Greet and ask what they have.\n' +
+  '2) After the staff lists items, order ONE item at a time ("I\'d like ___, please."). Wait for the staff to tell you the price. If they don\'t say a price, ask "How much is it?".\n' +
+  '3) Order 2 or 3 items in total this way.\n' +
+  '4) Then say "That\'s all, thank you." and ask for the total ("How much is it all together?").\n' +
+  '5) Add up the prices the staff told you. If the total they say is correct, say "Great! Here you are." pay, and say goodbye. If it is wrong, kindly say what you think it should be and let them try once more.\n' +
+  'Be patient; if the staff is stuck, give a gentle hint.\n' +
+  'The goal is reached ONLY after the staff has: welcomed you, listed items, taken at least TWO orders with a price for each, and given the CORRECT total, and you have paid.';
+
+const BENTO_SHOP_CHALLENGE_GOAL =
+  'Follow the same flow as a normal customer (order 2-3 items one at a time, get each price, then get the total and pay).\n' +
+  'ALSO: one or two times during the ordering, ask a short, curious question about the food, such as "What\'s in it?", "What is ___?", or "Is it spicy?". React kindly to the answer, then continue ordering. Ask at most TWO such questions total — keep it light.\n' +
+  'The goal is reached ONLY after the staff has welcomed you, taken at least TWO orders with a price for each, given the CORRECT total, and you have paid.';
+
+const BENTO_SHOP_SIMPLE_LABEL =
+  '🎯 ミッション：お店の人になろう！ メニューをつたえる→注文をうける→ねだんを言う→合計を伝える→お客さんがはらったらクリア！';
+const BENTO_SHOP_CHALLENGE_LABEL =
+  '🎯 ミッション（チャレンジ）：お客さんが料理のしつもん（What\'s in it? など）もしてくるよ。答えながら、注文と合計までいけたらクリア！';
+
 const SCENARIOS: Record<string, Scenario> = {
   restaurant: {
     emoji: '🍔', title: 'お店屋さんごっこ', desc: 'ハンバーガー屋さんでお買い物をしてみよう！',
@@ -125,6 +146,21 @@ const SCENARIOS: Record<string, Scenario> = {
       { en: 'My favorite food is pizza.', ja: '好きな食べ物はピザです。' },
       { en: 'I have a dog.', ja: '犬を飼っています。' },
       { en: 'How are you?', ja: '元気ですか？' },
+    ],
+  },
+  // World Bento「お店屋さん」：役割を反転。AI＝お客さん／児童＝店員（店員の所作を練習）。
+  bentoShop: {
+    emoji: '🍱', title: 'World Bento お店屋さん', desc: 'あなたが店員さん！ AIのお客さんの注文をうけよう。',
+    role: 'You are a friendly, hungry CUSTOMER visiting a "World Bento" food shop run by young elementary-school students. The students are the SHOP STAFF; you are the CUSTOMER. Speak ONLY in simple, slow English (no Japanese). Keep every sentence short. Stay in character as the customer the whole time. Do NOT act as the staff and do NOT list the menu yourself — you do not know the menu until the staff tells you.',
+    goal: BENTO_SHOP_SIMPLE_GOAL,
+    goalLabel: BENTO_SHOP_SIMPLE_LABEL,
+    greeting: { en: "Hi! I'm so hungry. What do you have?", ja: 'こんにちは！おなかぺこぺこ。何がありますか？' },
+    suggestions: [
+      { en: 'We have curry and rice.', ja: 'カレーとごはんがあります。' },
+      { en: "It's 300 yen.", ja: '300円です。' },
+      { en: 'Anything else?', ja: 'ほかにはいかがですか？' },
+      { en: "That's 500 yen in total.", ja: '合計で500円です。' },
+      { en: 'Here you are. Thank you!', ja: 'はい、どうぞ。ありがとう！' },
     ],
   },
 };
@@ -403,13 +439,37 @@ export const AIAssistant: React.FC = () => {
     initChat('freetalk', opts);
   };
 
+  // お店屋さんモード開始（AI＝客／児童＝店員）。シンプル／チャレンジで goal を差し替える。
+  const startShop = (variant: 'simple' | 'challenge') => {
+    if (isTeam && teamMembers.length < 2) { alert('チームは2人以上選んでね！'); return; }
+    if (variant === 'challenge') {
+      initChat('bentoShop', {
+        goal: BENTO_SHOP_CHALLENGE_GOAL,
+        goalLabel: BENTO_SHOP_CHALLENGE_LABEL,
+        title: 'お店屋さん（チャレンジ）',
+        histSuffix: 'challenge',
+      });
+    } else {
+      initChat('bentoShop', { histSuffix: 'simple' });
+    }
+  };
+
   // URLパラメータ（?unit=g5-u1）で特定Unitのフリートークを直接ひらく（今日のミッション用）。
   // APIキーの読み込みを待ってから一度だけ自動開始する（キー未取得だとinitChatが空振りするため）。
   const [searchParams] = useSearchParams();
   const autoStartedRef = useRef(false);
   useEffect(() => {
+    if (autoStartedRef.current || !geminiApiKey) return;
+    // ?shop=simple / ?shop=challenge でお店屋さんモードを直接ひらく（今日のミッション用）
+    const shop = searchParams.get('shop');
+    if (shop === 'simple' || shop === 'challenge') {
+      autoStartedRef.current = true;
+      startShop(shop);
+      return;
+    }
+    // ?unit=g5-u1 で特定Unitのフリートークを直接ひらく
     const unitId = searchParams.get('unit');
-    if (!unitId || autoStartedRef.current || !geminiApiKey) return;
+    if (!unitId) return;
     const u = FREETALK_UNITS.find(x => x.id === unitId);
     if (!u) return;
     autoStartedRef.current = true;
@@ -465,6 +525,24 @@ export const AIAssistant: React.FC = () => {
               </div>
             </>
           )}
+        </div>
+
+        {/* World Bento お店屋さん（AI＝お客さん／児童＝店員） */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}>
+          <h3 style={{ margin: 0, color: '#b45309' }}>🍱 World Bento お店屋さん（店員の練習）</h3>
+          <p style={{ color: '#7a5a00', margin: 0, fontSize: '0.9rem' }}>
+            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューをつたえて、ねだんと合計を言おう。
+          </p>
+          <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
+            <button className="hover-scale" onClick={() => startShop('simple')}
+              style={{ flex: 1, minWidth: '140px', padding: '0.9rem', borderRadius: '12px', border: '2px solid #f59e0b', background: '#f59e0b', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
+              🟢 シンプル<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>注文→ねだん→合計</span>
+            </button>
+            <button className="hover-scale" onClick={() => startShop('challenge')}
+              style={{ flex: 1, minWidth: '140px', padding: '0.9rem', borderRadius: '12px', border: '2px solid #b45309', background: 'white', color: '#b45309', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
+              🔥 チャレンジ<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>料理のしつもんもくるよ</span>
+            </button>
+          </div>
         </div>
 
         {/* 教科書のUnitから場面をえらぶ */}
