@@ -101,9 +101,9 @@ const BENTO_SHOP_CHALLENGE_GOAL =
   'The goal is reached ONLY after the staff has welcomed you, taken at least TWO orders with a price for each, given the CORRECT total, and you have paid.';
 
 const BENTO_SHOP_SIMPLE_LABEL =
-  '🎯 ミッション：お店の人になろう！ メニューをつたえる→注文をうける→ねだんを言う→合計を伝える→お客さんがはらったらクリア！';
+  '🎯 ミッション：お店の人になろう！ メニューをつたえる→注文をうける→値段を言う→合計を伝える→お客さんがはらったらクリア！';
 const BENTO_SHOP_CHALLENGE_LABEL =
-  '🎯 ミッション（チャレンジ）：お客さんが料理のしつもん（What\'s in it? など）もしてくるよ。答えながら、注文と合計までいけたらクリア！';
+  '🎯 ミッション（チャレンジ）：お客さんが料理の質問（What\'s in it? など）もしてくるよ。答えながら、注文と合計までいけたらクリア！';
 
 const SCENARIOS: Record<string, Scenario> = {
   restaurant: {
@@ -531,16 +531,16 @@ export const AIAssistant: React.FC = () => {
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}>
           <h3 style={{ margin: 0, color: '#b45309' }}>🍱 World Bento お店屋さん（店員の練習）</h3>
           <p style={{ color: '#7a5a00', margin: 0, fontSize: '0.9rem' }}>
-            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューをつたえて、ねだんと合計を言おう。
+            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューをつたえて、値段と合計を言おう。
           </p>
           <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
             <button className="hover-scale" onClick={() => startShop('simple')}
               style={{ flex: 1, minWidth: '140px', padding: '0.9rem', borderRadius: '12px', border: '2px solid #f59e0b', background: '#f59e0b', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
-              🟢 シンプル<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>注文→ねだん→合計</span>
+              🟢 シンプル<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>注文→値段→合計</span>
             </button>
             <button className="hover-scale" onClick={() => startShop('challenge')}
               style={{ flex: 1, minWidth: '140px', padding: '0.9rem', borderRadius: '12px', border: '2px solid #b45309', background: 'white', color: '#b45309', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
-              🔥 チャレンジ<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>料理のしつもんもくるよ</span>
+              🔥 チャレンジ<br /><span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>料理の質問もくるよ</span>
             </button>
           </div>
         </div>
