@@ -178,6 +178,21 @@ export const DialogueTrainer: React.FC = () => {
         </div>
       )}
 
+      {dialogue.aiRoute && (
+        <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(245, 158, 11, 0.12)', border: '2px solid #f59e0b' }}>
+          <div style={{ fontSize: '0.9rem', color: '#7a5a00', marginBottom: '0.5rem' }}>
+            🍱 れんしゅうしたら、AIのお客さんと本番の練習をしてみよう！
+          </div>
+          <button
+            className="hover-scale"
+            onClick={() => navigate(dialogue.aiRoute!)}
+            style={{ padding: '0.6rem 1.2rem', borderRadius: '999px', border: 'none', background: '#f59e0b', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            {dialogue.aiLabel || 'AIと練習する'} →
+          </button>
+        </div>
+      )}
+
       {dialogue.relatedCategories && dialogue.relatedCategories.length > 0 && (
         <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(72, 219, 251, 0.12)', border: '2px solid var(--color-primary)' }}>
           <div style={{ fontSize: '0.9rem', color: '#555', marginBottom: '0.5rem' }}>

@@ -16,6 +16,8 @@ export interface Dialogue {
   lines: DialogueLine[];
   note?: string; // 文法のワンポイント（任意）
   relatedCategories?: string[]; // 関連するPicture Dictionaryの単元（任意）
+  aiRoute?: string; // 練習後に飛べるAI英会話へのリンク（任意。例 /ai?shop=simple）
+  aiLabel?: string; // 上のリンクのボタン表示
 }
 
 export const DIALOGUES: Dialogue[] = [
@@ -77,6 +79,26 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: '{Orange juice}, please.', ja: '【オレンジジュース】を。' },
     ],
     relatedCategories: ['食べ物', '飲み物'],
+  },
+  {
+    // World Bento「お店屋さん」練習用。児童＝店員(B)の所作を練習 → AI英会話(お客さん)や
+    // クラスメイトダイアログへ。{…}は自分のお店のメニュー・値段に変えてOK。
+    id: 'wb-shop', grade: 5, unitName: 'World Bento お店屋さん（店員）', targetPhrase: 'How much is it all together?',
+    lines: [
+      { speaker: 'A', en: 'Hello! What do you have?', ja: 'こんにちは！なにが ありますか？' },
+      { speaker: 'B', en: 'We have {curry}, {rice}, and {juice}.', ja: '【カレー・ごはん・ジュース】が あります。' },
+      { speaker: 'A', en: "I'd like a {curry}, please.", ja: '【カレー】を ください。' },
+      { speaker: 'B', en: 'Sure! Here you are.', ja: 'いいですよ！ どうぞ。' },
+      { speaker: 'A', en: 'How much is it?', ja: 'いくら ですか？' },
+      { speaker: 'B', en: "It's {300} yen.", ja: '【300】円 です。' },
+      { speaker: 'A', en: 'How much is it all together?', ja: 'ぜんぶで いくら ですか？' },
+      { speaker: 'B', en: "It's {500} yen in total.", ja: 'ごうけい【500】円 です。' },
+      { speaker: 'A', en: 'Great! Here you are. Goodbye!', ja: 'ありがとう！ さようなら！' },
+      { speaker: 'B', en: 'Thank you! Bye!', ja: 'ありがとう！ またね！' },
+    ],
+    note: 'あなたは店員さん(B)！ {…}は自分のお店のメニュー・値段に変えよう。チャレンジ：お客さんが "What\'s in it?"（なにが入ってる？）や "Is it spicy?"（からい？）と聞いてきたら、"It\'s {rice} and {meat}." や "It\'s yummy!" と答えてみよう。れんしゅうしたら、AIのお客さんや友だちと本番だ！',
+    relatedCategories: ['食べ物＋（世界の料理）'],
+    aiRoute: '/ai?shop=simple', aiLabel: 'AIのお客さんと練習する（お店屋さん）',
   },
   {
     id: 'g5-u7', grade: 5, unitName: 'Unit 7: Welcome to Japan.', targetPhrase: 'Why do you want to go there?',
