@@ -21,6 +21,21 @@ export interface Dialogue {
 }
 
 export const DIALOGUES: Dialogue[] = [
+  {
+    // English Workshop（789年生主催）向けの自己紹介練習。児童＝B。
+    // {…}は自分の名前・ニックネーム・好きなものに変える。→ 練習後にAI英会話や友だちと本番。
+    id: 'intro-workshop', grade: 5, unitName: '👋 自己紹介（English Workshop）', targetPhrase: "I'm ___. Call me ___. I like ___.",
+    lines: [
+      { speaker: 'A', en: 'Hi! Nice to meet you! What\'s your name?', ja: 'こんにちは！はじめまして！お名前は？' },
+      { speaker: 'B', en: "Hi! I'm {Yuji}.", ja: '【ゆうじ】です。' },
+      { speaker: 'B', en: 'Call me {Yu-chan}.', ja: '【ゆうちゃん】と呼んでね。' },
+      { speaker: 'A', en: 'Nice to meet you, {Yu-chan}! What do you like?', ja: 'よろしく、【ゆうちゃん】！何が好き？' },
+      { speaker: 'B', en: 'I like {soccer}.', ja: '【サッカー】が好きです。' },
+      { speaker: 'A', en: 'Me too! Let\'s have fun!', ja: 'ぼくも！楽しもう！' },
+    ],
+    note: 'あなたはB！ {…}を自分のことに変えよう。プラス1情報は好きな色・食べ物・スポーツなど何でもOK。れい："I like blue." / "I like pizza." / "I like baseball." れんしゅうしたら、AIや友だちと本番だ！',
+    aiRoute: '/ai?unit=intro-workshop', aiLabel: 'AIと自己紹介の練習をする',
+  },
   // ===== 5年生 =====
   {
     id: 'g5-u1', grade: 5, unitName: 'Unit 1: Hello, friends!', targetPhrase: 'What subject do you like?',
