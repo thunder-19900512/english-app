@@ -316,3 +316,61 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(0,0,0,0.2);
   transform: scale(1.1);
 }
+
+/* ============================================================
+   Apple-style fluid feel（WWDC "Designing Fluid Interfaces" 由来）
+   ・押した瞬間に反応（Response）
+   ・実体として現れる（Materialize）
+   ・字間の最適化 / アクセシビリティ
+   すべて追記のみ。既存のクラス指定が優先されるので安全。
+   ============================================================ */
+
+/* 1. Response：タップの手応え。押した瞬間に少し縮み、離すと戻る。
+   300msのタップ遅延とモバイルの青いタップ光も除去（＝直接さが上がる）。 */
+button,
+.hover-scale,
+.stage-tile {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+button { transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1); }
+button:active { transform: scale(0.96); }
+.hover-scale:active { transform: scale(0.97); }
+/* 押し込みは速く、離したときは既存のbounceでふわっと戻す */
+.btn:active,
+.stage-tile:active { transition-duration: 0.08s; }
+
+/* 2. Materialize：animate-pop を実体化（これまでクラス未定義で無効だった）。
+   ふわっと上がりながら現れ、わずかにオーバーシュート＝バネの余韻。
+   backwards指定にして、アニメ後は通常状態に戻す（hover-scale等と両立）。 */
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.94) translateY(6px); }
+  60%  { opacity: 1; transform: scale(1.008) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop { animation: pop-in 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+
+/* 3. Typography：大きな見出しほど字間を詰める（Appleのoptical tracking）。
+   本文は0のまま。 */
+h1 { letter-spacing: -0.02em; }
+h2 { letter-spacing: -0.015em; }
+h3 { letter-spacing: -0.01em; }
+
+/* 4. Accessibility：動き／透明が苦手な人に配慮（意味の伝達は残す）。 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.05s !important;
+  }
+  .animate-pop { animation: none; opacity: 1; }
+  .animate-float, .animate-recording { animation: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-card,
+  .modal-content {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #ffffff;
+  }
+}
