@@ -30,23 +30,98 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
     if (syncTimeout) {
       clearTimeout(syncTimeout);
     }
-    
+
     syncTimeout = setTimeout(async () => {
       try {
-        const { error } = await supabase
+        // ★保存は「上書き」ではなく「マージ」。まずDBの現在値を読み、ローカルと統合してから書く。
+        //   こうしないと、ローカルが空/古い状態でpushが走ったときにDBのふりかえり等を
+        //   まるごと消してしまう（実際に複数の児童のふりかえりが消えた原因）。
+        const { data: dbRow, error: readErr } = await supabase!
+          .from('students')
+          .select('*')
+          .eq('id', studentId)
+          .single();
+
+        if (readErr && readErr.code !== 'PGRST116') {
+          // 読み込み失敗（通信エラー等）：DBを壊さないため、空のコレクションは送らない
+          //   （＝そのカラムはDBの値を維持）。値のあるものだけ更新する。
+          const safe: Record<string, any> = { id: studentId, name, points, last_access: new Date().toISOString() };
+          if (badges.length) safe.badges = badges;
+          if (Object.keys(clear_counts).length) safe.clear_counts = clear_counts;
+          if (Object.keys(dictionary_progress).length) safe.dictionary_progress = dictionary_progress;
+          if (reflections.length) safe.reflections = reflections;
+          if (pronunciation_history.length) safe.pronunciation_history = pronunciation_history;
+          const { error } = await supabase!.from('students').upsert(safe, { onConflict: 'id' });
+          if (error) console.error('Failed to sync to Supabase (safe mode)', error);
+          resolve();
+          return;
+        }
+
+        const db: any = dbRow || {};
+
+        // ポイント：多いほうを採用（減らさない）
+        const mergedPoints = Math.max(points, db.points || 0);
+
+        // バッジ：和集合
+        const mergedBadges = Array.from(new Set([...(db.badges || []), ...badges]));
+
+        // クリア回数：キーごとに大きいほう
+        const mergedClearCounts: Record<string, number> = { ...(db.clear_counts || {}) };
+        for (const [k, v] of Object.entries(clear_counts)) {
+          mergedClearCounts[k] = Math.max(Number(v) || 0, mergedClearCounts[k] || 0);
+        }
+
+        // 辞書進捗：カテゴリ×フラグのOR（バッジは一度ついたら消えない）＋ベストタイムは速いほう
+        const FLAG_KEYS = ['learn', 'practice', 'spelling', 'voice', 'wordsearch'] as const;
+        const dbDict = db.dictionary_progress || {};
+        const mergedDict: Record<string, any> = { ...dbDict };
+        for (const cat of new Set([...Object.keys(dictionary_progress), ...Object.keys(dbDict)])) {
+          const l = dictionary_progress[cat] || {};
+          const d = dbDict[cat] || {};
+          const m: Record<string, any> = { ...d, ...l };
+          for (const fk of FLAG_KEYS) m[fk] = !!(l[fk] || d[fk]);
+          const times = [l.wordsearch_best_time, d.wordsearch_best_time].filter((t: any) => typeof t === 'number');
+          if (times.length) m.wordsearch_best_time = Math.min(...times);
+          mergedDict[cat] = m;
+        }
+
+        // ふりかえり：id（＝作成時刻）で和集合。先生コメント/スタンプは持っているほうを優先して残す
+        //   （子ども側のpushが先生の記入を消す、逆向きの消失も防ぐ）。
+        const reflMap = new Map<string, any>();
+        for (const r of (db.reflections || [])) if (r && r.id) reflMap.set(r.id, r);
+        for (const r of reflections) {
+          if (!r || !r.id) continue;
+          const prev = reflMap.get(r.id) || {};
+          reflMap.set(r.id, {
+            ...prev, ...r,
+            teacherComment: r.teacherComment || prev.teacherComment || '',
+            teacherStamp: r.teacherStamp || prev.teacherStamp || '',
+          });
+        }
+        const mergedReflections = Array.from(reflMap.values())
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        // 発音履歴：tsで和集合、古い順、直近300件
+        const pronMap = new Map<number, any>();
+        for (const p of [...(db.pronunciation_history || []), ...pronunciation_history]) {
+          if (p && typeof p.ts === 'number') pronMap.set(p.ts, p);
+        }
+        const mergedPron = Array.from(pronMap.values()).sort((a, b) => a.ts - b.ts).slice(-300);
+
+        const { error } = await supabase!
           .from('students')
           .upsert({
             id: studentId,
             name,
-            points,
-            badges,
-            clear_counts,
-            dictionary_progress,
-            reflections,
-            pronunciation_history,
+            points: mergedPoints,
+            badges: mergedBadges,
+            clear_counts: mergedClearCounts,
+            dictionary_progress: mergedDict,
+            reflections: mergedReflections,
+            pronunciation_history: mergedPron,
             last_access: new Date().toISOString()
           }, { onConflict: 'id' });
-          
+
         if (error) {
           console.error('Failed to sync to Supabase', error);
         }
