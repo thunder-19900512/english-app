@@ -48,6 +48,16 @@ export const CategoryDashboard: React.FC = () => {
           <h2 style={{ margin: 0 }}>選択モード</h2>
         </div>
 
+        <div
+          className="glass-card flex-col flex-center animate-pop"
+          style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(238, 82, 83, 0.15)', border: '2px dashed #ee5253' }}
+          onClick={() => navigate(`/dictionary/${category}/practice?hard=1`)}
+        >
+          <Target size={48} color="#ee5253" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ margin: 0 }}>🔥 選択（ハード）</h2>
+          <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>6択・ヒントなし・一発勝負</p>
+        </div>
+
         <div 
           className="glass-card flex-col flex-center animate-pop" 
           style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(255, 159, 67, 0.2)', position: 'relative' }}

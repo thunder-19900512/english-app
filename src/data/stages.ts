@@ -14,6 +14,8 @@ export interface StageData {
   blendItems?: { word: string, phonemes: string[] }[];
   alienWords?: string[];
   stories?: string[];
+  // エクストラ（挑戦用）ステージ。修了証や到達数のカウントには入れない。
+  extra?: boolean;
 }
 
 export const stages: StageData[] = [
@@ -204,6 +206,23 @@ export const stages: StageData[] = [
       'The frog is on the tree.',
       'I see three grapes.',
       'A dragon has a crown.'
+    ]
+  },
+  {
+    id: 11,
+    title: 'エクストラ：長い単語',
+    description: '全ステージ制覇者への挑戦状！音のかたまりで長い単語を読もう！',
+    badgeName: 'レジェンド・リーダー',
+    colorClass: 'stage-color-11',
+    explanation: '長い単語も、-ing・-er・-est・-tion・-ly などの「音のかたまり」に分けるとスラスラ読めるよ。かたまりを見つけて読もう！',
+    practiceItems: ['ing', 'er', 'est', 'tion', 'ly'],
+    hideListenPractice: true,
+    extra: true,
+    items: ['morning', 'evening', 'teacher', 'singer', 'winter', 'biggest', 'strongest', 'station', 'vacation', 'slowly', 'suddenly'],
+    stories: [
+      'The teacher sings in the morning.',
+      'Winter vacation is the best.',
+      'The singer walks slowly to the station.'
     ]
   },
 ];

@@ -14,8 +14,14 @@ import { showToast } from '../../ui/Toast';
 import { ArrowLeft, Trophy, Star, RefreshCw } from 'lucide-react';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 
-// 発音バトルの合格ライン（Azure発音判定の正確さスコア 0-100）。小学生向けに少しやさしめ。
-const PASS_SCORE = 60;
+// 発音バトルの合格ライン（Azure発音判定の正確さスコア 0-100）。
+// 「きびしすぎて理不尽」の声を受けて難易度選択制に（P1-2）。選択は端末に保存。
+const DIFFICULTIES = [
+  { key: 'easy', label: '🟢 やさしい', pass: 45 },
+  { key: 'normal', label: '🟡 ふつう', pass: 60 },
+  { key: 'hard', label: '🔴 きびしい', pass: 75 },
+] as const;
+type DiffKey = typeof DIFFICULTIES[number]['key'];
 
 const MONSTERS = ['👹', '👺', '🐉', '👾', '👻', '🦖', '🦈', '🕷️', '🐍', '🦇'];
 
@@ -27,13 +33,18 @@ export const VoiceBattle: React.FC = () => {
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { saveProgress } = useDictionaryProgress();
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();
 
   // Azureの発音採点で出た最新スコア（フィードバック表示用）
   const [lastScore, setLastScore] = useState<number | null>(null);
+  // 難易度（前回の選択を保存）
+  const [diffKey, setDiffKey] = useState<DiffKey>(() =>
+    (localStorage.getItem('voiceBattleDifficulty') as DiffKey) || 'normal');
+  const PASS_SCORE = DIFFICULTIES.find(d => d.key === diffKey)!.pass;
+  const changeDifficulty = (k: DiffKey) => { setDiffKey(k); localStorage.setItem('voiceBattleDifficulty', k); };
   const vocabulary = useVocabulary();
 
   const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory), [decodedCategory, vocabulary]);
@@ -124,7 +135,7 @@ export const VoiceBattle: React.FC = () => {
     const result = await assess(targetWord.english);
     if (!result) {
       // 採点に失敗（聞き取れず/設定ミス/通信エラー）。ノーカウントで、その場に通知して再挑戦を促す。
-      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -143,9 +154,12 @@ export const VoiceBattle: React.FC = () => {
       if (nextMistakes >= 3) {
         setMonsterState('attack');
         setTimeout(() => proceedToNextTurn(false), 1000);
+      } else {
+        // 救済（P1-2）：失敗したらお手本の音声をヒントとして自動再生
+        setTimeout(() => speak(targetWord.english), 700);
       }
     }
-  }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes, addScore]);
+  }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes, addScore, PASS_SCORE]);
 
   useEffect(() => {
     // Web Speech APIでの判定はAzure未設定のときだけ動かす
@@ -230,6 +244,21 @@ export const VoiceBattle: React.FC = () => {
         <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>モンスターバトル</h1>
         <div style={{ width: '100px' }} />
       </div>
+
+      {/* 難易度えらび（Azure採点のときだけ意味がある。合格ラインが変わる） */}
+      {azureAvailable && (
+        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {DIFFICULTIES.map(d => (
+            <button key={d.key} onClick={() => changeDifficulty(d.key)}
+              style={{ padding: '0.35rem 0.9rem', borderRadius: '999px', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer',
+                border: `2px solid ${diffKey === d.key ? 'var(--color-primary)' : '#cbd5e1'}`,
+                background: diffKey === d.key ? 'var(--color-primary)' : 'white',
+                color: diffKey === d.key ? 'white' : '#64748b' }}>
+              {d.label}（{d.pass}点〜）
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-primary)', marginRight: '1rem' }}>

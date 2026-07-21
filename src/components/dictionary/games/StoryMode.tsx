@@ -53,6 +53,7 @@ export const StoryMode: React.FC = () => {
     isAssessing,
     isAvailable: azureAvailable,
     lastRecordingUrl,
+    getLastError,
   } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { addScore } = usePronunciationHistory();
   // 音読のAzureスコア（表示用）
@@ -112,7 +113,7 @@ export const StoryMode: React.FC = () => {
     const result = await assess(targetSentence);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
 

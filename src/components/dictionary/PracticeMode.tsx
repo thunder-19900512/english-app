@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { type Vocabulary } from '../../data/vocabulary';
 import { useVocabulary } from '../../hooks/useVocabulary';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
@@ -12,6 +12,9 @@ export const PracticeMode: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
   const decodedCategory = decodeURIComponent(category || '');
+  // ハードモード（P1-3）：6択・ヒントなし・一発勝負。上位層向け。
+  const [searchParams] = useSearchParams();
+  const isHard = searchParams.get('hard') === '1';
   const { speak } = useSpeechSynthesis();
   const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
@@ -48,14 +51,14 @@ export const PracticeMode: React.FC = () => {
 
   // Load best time
   useEffect(() => {
-    const recordKey = `dict_practice_${decodedCategory}`;
+    const recordKey = `dict_practice${isHard ? '_hard' : ''}_${decodedCategory}`;
     const recordStr = localStorage.getItem(recordKey);
     if (recordStr) {
       setBestTime(JSON.parse(recordStr));
     } else {
       setBestTime(null);
     }
-  }, [decodedCategory]);
+  }, [decodedCategory, isHard]);
 
   // Live timer
   useEffect(() => {
@@ -80,11 +83,11 @@ export const PracticeMode: React.FC = () => {
 
     const others = words.filter(w => w.id !== target.id);
     const shuffledOthers = [...others].sort(() => 0.5 - Math.random());
-    const distractors = shuffledOthers.slice(0, 3);
+    const distractors = shuffledOthers.slice(0, isHard ? 5 : 3); // ハードは6択
     
     const newOptions = [target, ...distractors].sort(() => 0.5 - Math.random());
     setOptions(newOptions);
-  }, [words]);
+  }, [words, isHard]);
 
   useEffect(() => {
     if (shuffledWords.length > 0 && questionCount === 0 && !targetWord && !showCelebration && !showFailure) {
@@ -126,7 +129,7 @@ export const PracticeMode: React.FC = () => {
 
         if (newCC === TOTAL_QUESTIONS && startTime) {
           const timeTaken = Date.now() - startTime;
-          const recordKey = `dict_practice_${decodedCategory}`;
+          const recordKey = `dict_practice${isHard ? '_hard' : ''}_${decodedCategory}`;
           const recordStr = localStorage.getItem(recordKey);
           
           if (!recordStr) {
@@ -153,7 +156,7 @@ export const PracticeMode: React.FC = () => {
           // 加点は「一発正解の割合」でスケール（ヒントで正解しても加点は減る＝option2）。
           // さらに語数が少ないカテゴリ向けの補正（TOTAL/DEFAULT）も掛ける。
           const cleanRatio = TOTAL_QUESTIONS > 0 ? newFTC / TOTAL_QUESTIONS : 0;
-          const pts = await addPoints(`dict_practice_${decodedCategory}`, {
+          const pts = await addPoints(`dict_practice${isHard ? '_hard' : ''}_${decodedCategory}`, {
             isPerfect: newFTC === TOTAL_QUESTIONS, // 全問ヒント無しで正解のときだけパーフェクト
             isNewRecord: isNewBest,
             multiplier: (TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS) * Math.max(0.2, cleanRatio),
@@ -187,7 +190,8 @@ export const PracticeMode: React.FC = () => {
     const newMistakes = mistakes + 1;
     setMistakes(newMistakes);
 
-    if (newMistakes >= 2) {
+    // ハードは一発勝負：1回まちがえたら正解を見せて次へ（ヒントなし）
+    if (isHard || newMistakes >= 2) {
       setShowAnswerState(true);
       setTimeout(() => {
         setShowAnswerState(false);
@@ -271,7 +275,7 @@ export const PracticeMode: React.FC = () => {
         <Button variant="outline" onClick={() => navigate(`/dictionary/${category}`)} icon={ArrowLeft}>
           もどる
         </Button>
-        <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>選択モード</h1>
+        <h1 className="text-primary" style={{ fontSize: '2rem', margin: 0 }}>{isHard ? '🔥 選択モード（ハード）' : '選択モード'}</h1>
         <div style={{ width: '100px' }} /> {/* Spacer */}
       </div>
 
@@ -343,11 +347,11 @@ export const PracticeMode: React.FC = () => {
                 cursor: 'pointer', 
                 background: choiceError ? 'var(--color-error)' : 'rgba(255,255,255,0.8)',
                 minHeight: '150px',
-                opacity: mistakes >= 1 && opt.id !== targetWord.id ? 0.5 : 1
+                opacity: !isHard && mistakes >= 1 && opt.id !== targetWord.id ? 0.5 : 1
               }}
               onClick={() => handleOptionClick(opt)}
             >
-              {mistakes >= 1 && (
+              {!isHard && mistakes >= 1 && (
                 <div className="animate-pop" style={{ fontSize: '4rem', marginBottom: '1rem' }}>{opt.emoji}</div>
               )}
               <h2 style={{ fontSize: '1.8rem', margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--color-primary)' }}>

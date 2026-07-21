@@ -176,7 +176,6 @@ const FORMAT_INSTRUCTION =
   'OUTPUT FORMAT: Reply with exactly ONE short English sentence. Then a new line starting with "JA:" and the natural Japanese translation. ' +
   'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line).';
 
-const MESSAGE_COST = 5;
 const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
 
 // AIの返答から英語・日本語訳・クリア判定を取り出す
@@ -196,7 +195,7 @@ export const AIAssistant: React.FC = () => {
   const studentName = localStorage.getItem('studentName') || 'ゲスト';
   const { speak } = useSpeechSynthesis();
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
-  const { consumePoints, totalPoints, addPoints } = usePoints();
+  const { totalPoints, addPoints } = usePoints();
   const studentId = localStorage.getItem('studentId');
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -214,6 +213,9 @@ export const AIAssistant: React.FC = () => {
   const [showRecord, setShowRecord] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [recordMsg, setRecordMsg] = useState('');
+
+  // 上級モード（P1-3）：高習熟層向け。文で話す・追加質問・日本語NGを厳格化
+  const [isAdvanced, setIsAdvanced] = useState(false);
 
   // チームモード（4人1組などで、ターンごとに話す人をえらんでリレー）
   const [isTeam, setIsTeam] = useState(false);
@@ -389,8 +391,8 @@ export const AIAssistant: React.FC = () => {
       return;
     }
 
-    const ok = await consumePoints(MESSAGE_COST);
-    if (!ok) { alert(`ポイントが足りないよ！（${MESSAGE_COST}P ひつよう）`); return; }
+    // ポイント消費は廃止（2026-07 1学期ふりかえり反映）。
+    // 「AI会話だけ損」で子どもが会話練習を避けていたため。APIコストは1日上限（先生設定）で制御する。
 
     const newMessages: ChatMessage[] = [...messages, { role: 'user', text, ...(isTeam && currentSpeaker ? { speakerName: currentSpeaker.name } : {}) }];
     setMessages(newMessages);
@@ -435,10 +437,24 @@ export const AIAssistant: React.FC = () => {
     else { setTranscript(''); setInputText(''); startListening(); }
   };
 
-  // 会話を開始（チーム時はメンバー2人以上が必要）
+  // 上級モードでgoalに追記する指示（AIをきびしめに）
+  const ADVANCED_SUFFIX =
+    ' ADVANCED MODE: Be stricter. Require complete English sentences (not single words).' +
+    ' Before granting the goal, ask ONE extra follow-up question and wait for a good answer.' +
+    ' If the user writes Japanese, kindly ask them to say it in English. You may use slightly longer sentences yourself.';
+
+  // 会話を開始（チーム時はメンバー2人以上が必要。上級ONならgoalをきびしく）
   const startFreetalk = (opts: InitOpts) => {
     if (isTeam && teamMembers.length < 2) { alert('チームは2人以上選んでね！'); return; }
-    initChat('freetalk', opts);
+    const o = isAdvanced
+      ? {
+          ...opts,
+          goal: (opts.goal || SCENARIOS.freetalk.goal) + ADVANCED_SUFFIX,
+          goalLabel: `${opts.goalLabel || SCENARIOS.freetalk.goalLabel}（🔥上級）`,
+          histSuffix: `${opts.histSuffix || 'default'}_adv`,
+        }
+      : opts;
+    initChat('freetalk', o);
   };
 
   // お店屋さんモード開始（AI＝客／児童＝店員）。シンプル／チャレンジで goal を差し替える。
@@ -527,6 +543,17 @@ export const AIAssistant: React.FC = () => {
               </div>
             </>
           )}
+        </div>
+
+        {/* 上級モード（高習熟層向け。AIがきびしめになる） */}
+        <div className="glass-card" style={{ padding: '1rem 1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h3 style={{ margin: 0 }}>🔥 上級モード</h3>
+            <p style={{ color: '#666', margin: '0.2rem 0 0 0', fontSize: '0.85rem' }}>文で話す・追加の質問あり・日本語NG。物足りない人向け！</p>
+          </div>
+          <Button variant={isAdvanced ? 'primary' : 'outline'} onClick={() => setIsAdvanced(a => !a)} style={{ fontSize: '0.9rem', padding: '0.4rem 1rem' }}>
+            {isAdvanced ? 'ON（上級）' : 'OFF（ふつう）'}
+          </Button>
         </div>
 
         {/* World Bento お店屋さん（AI＝お客さん／児童＝店員） */}
@@ -714,10 +741,9 @@ export const AIAssistant: React.FC = () => {
           <form onSubmit={(e) => { e.preventDefault(); handleSend(inputText); }} style={{ display: 'flex', flex: 1, gap: '0.5rem', minWidth: '220px' }}>
             <input type="text" value={inputText} onChange={e => setInputText(e.target.value)} placeholder="ここに入力 or マイク/ヘルプ"
               style={{ flex: 1, padding: '0.8rem 1rem', fontSize: '1.1rem', borderRadius: '20px', border: '1px solid #ccc' }} />
-            <Button type="submit" disabled={isAiThinking || !inputText.trim() || (isTeam && !currentSpeaker)} style={{ borderRadius: '20px', padding: '0.8rem 1.2rem' }} icon={Send}>送る(5P)</Button>
+            <Button type="submit" disabled={isAiThinking || !inputText.trim() || (isTeam && !currentSpeaker)} style={{ borderRadius: '20px', padding: '0.8rem 1.2rem' }} icon={Send}>送る</Button>
           </form>
         </div>
-        <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#888', marginTop: '0.4rem' }}>メッセージを送るたびに5ポイント消費します。</div>
       </div>
     </div>
   );

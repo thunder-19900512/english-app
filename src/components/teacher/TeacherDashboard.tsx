@@ -76,6 +76,10 @@ export const TeacherDashboard: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
+  // ポイント手動加算（消失時の補填用）。同期がmaxマージのため加算のみ対応。
+  const [adjStudentId, setAdjStudentId] = useState('');
+  const [adjAmount, setAdjAmount] = useState('');
+  const [adjMsg, setAdjMsg] = useState('');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
   // 今日のミッション（複数OK）。旧形式（単数todayMission）のデータも読み込み時に配列へ変換
@@ -206,6 +210,30 @@ export const TeacherDashboard: React.FC = () => {
   const handleClearMission = async () => {
     setMissionRoute('');
     await persistMissions([], 'ミッションをすべて解除しました');
+  };
+
+  // ポイントを手動で加算する（消えた分の補填用）。DBの現在値に足す。
+  // 児童側の同期はポイントを「多いほう優先」でマージするため、加算はそのまま反映される。
+  const handleAdjustPoints = async () => {
+    if (!supabase) return;
+    const amount = parseInt(adjAmount, 10);
+    if (!adjStudentId || !amount || amount <= 0) {
+      setAdjMsg('生徒と加算ポイント（正の数）を入れてください');
+      setTimeout(() => setAdjMsg(''), 4000);
+      return;
+    }
+    const { data: row, error: readErr } = await supabase
+      .from('students').select('points, name').eq('id', adjStudentId).single();
+    if (readErr || !row) { setAdjMsg('読み込みエラー'); setTimeout(() => setAdjMsg(''), 4000); return; }
+    const newPoints = (row.points || 0) + amount;
+    const { error } = await supabase.from('students').update({ points: newPoints }).eq('id', adjStudentId);
+    if (error) { setAdjMsg('保存エラー'); }
+    else {
+      setAdjMsg(`${row.name} に +${amount}P（合計 ${newPoints}P）`);
+      setStudents(prev => prev.map(s => s.id === adjStudentId ? { ...s, points: newPoints } : s));
+      setAdjAmount('');
+    }
+    setTimeout(() => setAdjMsg(''), 6000);
   };
 
   const handleSaveGoals = async () => {
@@ -431,6 +459,33 @@ export const TeacherDashboard: React.FC = () => {
           <Button variant="outline" onClick={handleClearMission}>すべて解除</Button>
         </div>
         {missionStatus && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{missionStatus}</span>}
+      </div>
+
+      {/* ポイント手動加算（消失時の補填用） */}
+      <div className="glass-card" style={{ border: '2px solid #f59e0b' }}>
+        <h2 style={{ margin: '0 0 0.5rem 0' }}>🎁 ポイント加算（補填）</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          不具合でポイントが消えた子への補填用です。DBの現在値に<b>加算</b>します（減算は不可）。
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <select
+            value={adjStudentId}
+            onChange={e => setAdjStudentId(e.target.value)}
+            style={{ flex: 1, minWidth: '200px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem' }}
+          >
+            <option value="">（生徒を選ぶ）</option>
+            {students.map(s => (
+              <option key={s.id} value={s.id}>{s.id}. {s.name}（現在 {s.points || 0}P）</option>
+            ))}
+          </select>
+          <input
+            type="number" min="1" placeholder="加算P"
+            value={adjAmount} onChange={e => setAdjAmount(e.target.value)}
+            style={{ width: '110px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem' }}
+          />
+          <Button onClick={handleAdjustPoints}>加算する</Button>
+        </div>
+        {adjMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{adjMsg}</span>}
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
@@ -816,14 +871,14 @@ export const TeacherDashboard: React.FC = () => {
             // 各生徒の到達状況を集計（students行のclear_counts/badges/dictionary_progress/pronunciation_historyから）
             const dialogueClear = (cc: any, id: string) => (cc?.[`dialogue_${id}`] || 0) > 0;
             const dialogueTotal = DIALOGUES.length;
-            const phonicsTotal = stages.length;
+            const phonicsTotal = stages.filter(st => !st.extra).length; // エクストラは到達数に含めない
             const wbTotal = WORLD_BENTO_QUIZZES.length;
             const rows = students.map(s => {
               const cc = s.clear_counts || {};
               const badges: number[] = s.badges || [];
               const dict = s.dictionary_progress || {};
               const dialogueCount = DIALOGUES.filter(d => dialogueClear(cc, d.id)).length;
-              const phonicsCount = badges.length;
+              const phonicsCount = badges.filter((b: number) => stages.find(st => st.id === b && !st.extra)).length;
               const wbCount = WORLD_BENTO_QUIZZES.filter(q => (cc[`textbook_quiz_${q.id}`] || 0) > 0).length;
               const dictCount = Object.values(dict).filter((p: any) => p && (p.practice || p.spelling || p.speedKaruta || p.memoryGame)).length;
               const pron = s.pronunciation_history || [];

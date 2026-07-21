@@ -271,6 +271,7 @@ h1, h2, h3, h4, h5, h6 {
 .stage-color-8 { border-bottom: 6px solid var(--stage-8); }
 .stage-color-9 { border-bottom: 6px solid var(--stage-9); }
 .stage-color-10 { border-bottom: 6px solid var(--stage-10); }
+.stage-color-11 { border-bottom: 6px solid #6c5ce7; }
 
 /* Modal */
 .modal-overlay {

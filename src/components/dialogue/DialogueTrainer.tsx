@@ -35,7 +35,7 @@ export const DialogueTrainer: React.FC = () => {
   const goBack = useSafeBack();
   const { speak } = useSpeechSynthesis();
   const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
@@ -97,7 +97,7 @@ export const DialogueTrainer: React.FC = () => {
     const result = await assess(cleanText(line.en));
     if (!result) {
       // 聞き取れなかった/通信エラー：無反応だと押せたか分からないので、その場に通知
-      showToast('🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
       return;
     }
     // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）

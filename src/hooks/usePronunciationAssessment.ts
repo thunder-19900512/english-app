@@ -97,12 +97,28 @@ const downsample = (buffer: Float32Array, inRate: number, outRate: number): Floa
  * The subscription key is used directly in the browser (fromSubscription); it is
  * loaded from app settings (Supabase) and never committed to the repository.
  */
+// 録音がほぼ無音か（RMSで判定）。マイク不調と「聞き取れなかった」を区別するために使う。
+const isNearSilent = (chunks: Float32Array[]): boolean => {
+  let sum = 0;
+  let n = 0;
+  for (const c of chunks) {
+    for (let i = 0; i < c.length; i += 4) { // 1/4サンプリングで十分
+      sum += c[i] * c[i];
+      n++;
+    }
+  }
+  if (n === 0) return true;
+  return Math.sqrt(sum / n) < 0.008; // ほぼ無音のしきい値
+};
+
 export const usePronunciationAssessment = (
   key: string | null,
   region: string | null
 ) => {
   const [isAssessing, setIsAssessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 直近の失敗理由（呼び出し側がトースト表示に使う。state更新の遅延に左右されないようref）
+  const lastErrorRef = useRef<string | null>(null);
 
   const [lastRecordingUrl, setLastRecordingUrl] = useState<string | null>(null);
 
@@ -181,13 +197,15 @@ export const usePronunciationAssessment = (
       }
 
       setError(null);
+      lastErrorRef.current = null;
       setIsAssessing(true);
 
       try {
         await ensurePipeline();
       } catch (e) {
         setIsAssessing(false);
-        setError('マイクを使えませんでした。ブラウザのマイク許可を確認してね');
+        lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）をたしかめて、先生を呼ぼう！';
+        setError(lastErrorRef.current);
         return null;
       }
 
@@ -268,11 +286,14 @@ export const usePronunciationAssessment = (
                 );
                 finish(null);
               } else {
-                // 無音 / 認識できず（NoMatch）：これは「発音が下手で0点」ではなく
-                // 「うまく録れなかった／聞き取れなかった」なので、0点として記録せず
-                // null を返して呼び出し側に“ノーカウントで再挑戦”させる。
-                // （録音はできているのにAzureが認識できず0点になる、を防ぐ）
-                setError('声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね');
+                // 無音 / 認識できず（NoMatch）：0点として記録せず null を返して再挑戦させる。
+                // さらに録音がほぼ無音なら「マイクが拾えていない」と案内を分ける（P0-3）。
+                const silent = isNearSilent(recordedChunksRef.current);
+                const msg = silent
+                  ? '🎙️ マイクの音がとどいていないみたい。イヤホンマイクのさしこみや、マイクの許可をたしかめて、先生を呼ぼう！'
+                  : '声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね';
+                lastErrorRef.current = msg;
+                setError(msg);
                 finish(null);
               }
             } catch (e) {
@@ -290,5 +311,8 @@ export const usePronunciationAssessment = (
     [key, region, ensurePipeline]
   );
 
-  return { assess, isAssessing, error, isAvailable, lastRecordingUrl };
+  // 直近の失敗理由（トースト用）。assessがnullを返した直後に呼ぶ。
+  const getLastError = () => lastErrorRef.current;
+
+  return { assess, isAssessing, error, isAvailable, lastRecordingUrl, getLastError };
 };

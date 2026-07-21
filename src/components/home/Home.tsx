@@ -49,7 +49,9 @@ export const Home: React.FC = () => {
     }
   }, [navigate]);
 
-  const allCleared = earnedBadges.length === stages.length;
+  // 修了証はコアステージ（エクストラ除く）を全部クリアで出す
+  const coreStageIds = stages.filter(st => !st.extra).map(st => st.id);
+  const allCleared = coreStageIds.every(sid => earnedBadges.includes(sid));
 
   // 各モードとクリア印の絵文字（単元一覧に表示）
   const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice'; emoji: string }[] = [
@@ -83,6 +85,14 @@ export const Home: React.FC = () => {
           >
             <Star size={24} color="var(--color-accent)" />
             <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>今日のふりかえり</span>
+          </div>
+          <div
+            className="glass-card animate-pop hover-scale"
+            style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', background: 'rgba(29, 209, 161, 0.15)', border: '2px solid var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onClick={() => navigate('/mictest')}
+          >
+            <span style={{ fontSize: '1.4rem' }}>🎙️</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>マイクテスト</span>
           </div>
         </div>
       </div>
@@ -228,6 +238,16 @@ export const Home: React.FC = () => {
             <Sparkles size={40} color="#a29bfe" style={{ marginBottom: '0.5rem' }} />
             <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>AI英会話</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>AIキャラクターと<br/>声で英会話！</p>
+          </div>
+
+          <div
+            className="glass-card flex-col flex-center animate-pop hover-scale"
+            style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(0, 184, 148, 0.15)', border: '2px solid #00b894' }}
+            onClick={() => navigate('/romaji')}
+          >
+            <Keyboard size={40} color="#00b894" style={{ marginBottom: '0.5rem' }} />
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ローマ字タイピング</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ローマ字入力の<br/>基礎トレーニング！</p>
           </div>
         </div>
       )}

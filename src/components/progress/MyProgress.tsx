@@ -14,6 +14,7 @@ const MODE_STYLE: Record<ScoreMode, { color: string; label: string }> = {
   story: { color: '#d946ef', label: 'おはなし音読' },
   textbook: { color: '#00b894', label: '教科書ボーナス' },
   dialogue: { color: '#0984e3', label: 'ダイアログ' },
+  test: { color: '#f59e0b', label: '単語テスト' },
 };
 
 // 1カテゴリで挑戦できる4つのスキル。現在地マップの軸になる。
@@ -81,7 +82,10 @@ export const MyProgress: React.FC = () => {
 
   // ===== 3領域のざっくり進捗 =====
   // フォニックス：クリアしたステージ数 / 全ステージ
-  const phonicsPct = stages.length > 0 ? Math.round((badges.length / stages.length) * 100) : 0;
+  // フォニックス進捗はコアステージ（エクストラ除く）で計算
+  const coreStages = stages.filter(st => !st.extra);
+  const coreBadgeCount = badges.filter(b => coreStages.some(st => st.id === b)).length;
+  const phonicsPct = coreStages.length > 0 ? Math.round((coreBadgeCount / coreStages.length) * 100) : 0;
 
   // Picture Dictionary：達成スキル数 / (単元数 × 4スキル)
   const dictDone = catStats.reduce((sum, c) => sum + c.done, 0);
@@ -136,7 +140,7 @@ export const MyProgress: React.FC = () => {
 
       {/* 3領域のざっくり進捗 */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
-        <Ring pct={phonicsPct} color="#ff6b6b" emoji="🔤" label="Phonics" sub={`${badges.length}/${stages.length}`} />
+        <Ring pct={phonicsPct} color="#ff6b6b" emoji="🔤" label="Phonics" sub={`${coreBadgeCount}/${coreStages.length}`} />
         <Ring pct={dictPct} color="#48dbfb" emoji="📚" label="Picture Dictionary" sub={`${masteredCount}/${categories.length} 単元`} />
         <Ring pct={textbookPct} color="#00b894" emoji="📖" label="教科書モード" sub={`${textbookDone}/${DEFAULT_QUIZZES.length} Unit`} />
       </div>

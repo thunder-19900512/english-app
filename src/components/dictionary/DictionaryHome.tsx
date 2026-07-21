@@ -49,6 +49,20 @@ export const DictionaryHome: React.FC = () => {
         <p style={{ fontSize: '1.2rem', color: '#666' }}>単元を選んで単語を練習しよう！</p>
       </div>
 
+      {/* 実力テスト（P2-1）：既習カテゴリからランダム出題・一発勝負 */}
+      <div
+        className="glass-card hover-scale"
+        style={{ width: '100%', maxWidth: '800px', padding: '1.1rem 1.4rem', cursor: 'pointer', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', gap: '0.9rem' }}
+        onClick={() => navigate('/skilltest')}
+      >
+        <span style={{ fontSize: '1.8rem' }}>🧪</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#b45309' }}>単語実力テスト</div>
+          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>ならった単語からランダム10問・一発勝負！けっかはグラフに記録されるよ</div>
+        </div>
+        <span style={{ fontSize: '1.3rem', color: '#b45309' }}>›</span>
+      </div>
+
       {/* マイ単語をついか（先生がダッシュボードでONにしたときだけ表示） */}
       {customVocabEnabled && (
       <div style={{ width: '100%', maxWidth: '800px' }}>
