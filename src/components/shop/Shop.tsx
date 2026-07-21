@@ -33,7 +33,7 @@ const compressImage = (file: File): Promise<Blob> => new Promise((resolve, rejec
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, balance, totalPoints, buy, equipTitle, equipTheme, buyBackground, clearBackground } = useShop();
+  const { shop, balance, buy, equipTitle, equipTheme, buyBackground, clearBackground } = useShop();
   const [tab, setTab] = useState<Tab>('title');
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
@@ -111,9 +111,6 @@ export const Shop: React.FC = () => {
       <div className="glass-card" style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(253, 203, 110, 0.15)', border: '2px solid var(--color-accent)' }}>
         <div style={{ fontSize: '2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={28} /> つかえるポイント：{balance}P
-        </div>
-        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.3rem' }}>
-          ためたポイント（{totalPoints}P）は へらないよ。記録は そのまま安全！
         </div>
       </div>
 
