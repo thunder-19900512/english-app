@@ -24,8 +24,9 @@ import { TextbookMode } from './components/textbook/TextbookMode';
 import { MyProgress } from './components/progress/MyProgress';
 import { DialogueTrainer } from './components/dialogue/DialogueTrainer';
 import { MicTest } from './components/mic/MicTest';
+import { Shop } from './components/shop/Shop';
+import { ClassTree } from './components/tree/ClassTree';
 import { SkillTest } from './components/dictionary/SkillTest';
-import { RomajiTyping } from './components/typing/RomajiTyping';
 import { ToastHost } from './components/ui/Toast';
 
 
@@ -57,8 +58,9 @@ const App: React.FC = () => {
             <Route path="/textbook" element={<TextbookMode />} />
             <Route path="/progress" element={<MyProgress />} />
             <Route path="/mictest" element={<MicTest />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/tree" element={<ClassTree />} />
             <Route path="/skilltest" element={<SkillTest />} />
-            <Route path="/romaji" element={<RomajiTyping />} />
             <Route path="/dialogue" element={<DialogueTrainer />} />
 
             <Route path="/reflection" element={<ReflectionForm />} />

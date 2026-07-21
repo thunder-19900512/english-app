@@ -7,6 +7,8 @@ import { useVocabulary } from '../../hooks/useVocabulary';
 import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { useAppSettings } from '../../hooks/useAppSettings';
+import { useShop } from '../../hooks/useShop';
+import { findTitle } from '../../data/shopItems';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +24,8 @@ export const Home: React.FC = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
   const { todayMissions } = useAppSettings();
+  const { shop } = useShop();
+  const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
   const studentId = localStorage.getItem('studentId');
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export const Home: React.FC = () => {
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '900px', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="flex-col gap-sm">
-          <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}さん！</h1>
+          <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}{titleEmoji}さん！</h1>
           <p style={{ fontSize: '1.2rem', color: '#666', margin: 0 }}>今日も英語を楽しもう！</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -93,6 +97,14 @@ export const Home: React.FC = () => {
           >
             <span style={{ fontSize: '1.4rem' }}>🎙️</span>
             <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>マイクテスト</span>
+          </div>
+          <div
+            className="glass-card animate-pop hover-scale"
+            style={{ padding: '0.8rem 1.5rem', cursor: 'pointer', background: 'rgba(253, 121, 168, 0.18)', border: '2px solid #fd79a8', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            onClick={() => navigate('/shop')}
+          >
+            <span style={{ fontSize: '1.4rem' }}>🎁</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>ショップ</span>
           </div>
         </div>
       </div>
@@ -243,11 +255,11 @@ export const Home: React.FC = () => {
           <div
             className="glass-card flex-col flex-center animate-pop hover-scale"
             style={{ padding: '2rem', cursor: 'pointer', background: 'rgba(0, 184, 148, 0.15)', border: '2px solid #00b894' }}
-            onClick={() => navigate('/romaji')}
+            onClick={() => navigate('/tree')}
           >
-            <Keyboard size={40} color="#00b894" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>ローマ字タイピング</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ローマ字入力の<br/>基礎トレーニング！</p>
+            <span style={{ fontSize: '2.4rem', marginBottom: '0.3rem' }}>🌳</span>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>みんなの木</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ポイントをあげて<br/>チームの木を育てよう！</p>
           </div>
         </div>
       )}

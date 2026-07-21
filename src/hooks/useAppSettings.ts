@@ -21,6 +21,8 @@ export const useAppSettings = () => {
   const [customVocabEnabled, setCustomVocabEnabled] = useState<boolean>(false);
   // AI英会話の各Unitゴールの上書き（先生がダッシュボードで編集）。{ [unitId]: { goal, missionJa } }
   const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string }>>({});
+  // クラスの木のグループ分け（'cls'=56A対56B / 'grade'=5年対6年）。既定はcls。
+  const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
 
   useEffect(() => {
     if (!supabase) return;
@@ -39,6 +41,7 @@ export const useAppSettings = () => {
       if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }
       if (progress.customVocabEnabled !== undefined) setCustomVocabEnabled(progress.customVocabEnabled);
       if (progress.freetalkGoals !== undefined) setFreetalkGoals(progress.freetalkGoals || {});
+      if (progress.treeMode !== undefined) setTreeMode(progress.treeMode || 'cls');
     };
 
     const fetchSettings = async () => {
@@ -72,5 +75,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode };
 };

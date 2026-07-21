@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
+import { supabase } from '../../lib/supabase';
+import { findTitle } from '../../data/shopItems';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [classFilter, setClassFilter] = useState<'all' | 'A' | 'B'>('all');
   const visibleStudents = STUDENTS.filter(s => classFilter === 'all' || s.cls === classFilter);
+
+  // 各生徒の装備中称号の絵文字（名前タイルに表示して競争心を後押し）。
+  // fetch失敗してもログインは妨げない（絵文字なしで普通に表示）。
+  const [titleEmojiById, setTitleEmojiById] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { data } = await supabase!.from('students').select('id, shop');
+      if (!data) return;
+      const map: Record<string, string> = {};
+      data.forEach((r: any) => {
+        const emoji = findTitle(r.shop?.equippedTitle)?.emoji;
+        if (emoji) map[r.id] = emoji;
+      });
+      setTitleEmojiById(map);
+    })();
+  }, []);
 
   // PIN入力モーダル（●●●●表示。モニター投影中でも見えないように）。
   // Testログインとスタッフ用画面の入口を兼ねる。
@@ -132,7 +151,7 @@ export const Login: React.FC = () => {
             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
             onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
           >
-            <span>{student.id}. {student.name}</span>
+            <span>{student.id}. {student.name}{titleEmojiById[student.id] || ''}</span>
             {student.cls && (
               <span style={{ background: 'white', color: student.cls === 'A' ? '#d97706' : '#0891b2', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.05rem 0.5rem', borderRadius: '999px' }}>
 56{student.cls}

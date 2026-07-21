@@ -375,3 +375,34 @@ h3 { letter-spacing: -0.01em; }
     background: #ffffff;
   }
 }
+
+/* ============================================================
+   ごほうびショップ：きせかえテーマ（data-theme で色相を切替）。
+   yozoraはダーク基調なので背景色/文字色も上書き（可読性は白オーバーレイ等で担保）。
+   ============================================================ */
+:root[data-theme='th-sakura'] {
+  --color-primary: #e84393; --color-primary-hover: #d63384;
+  --color-secondary: #fd79a8; --color-accent: #ff9ff3;
+  --color-bg-primary: #fff0f6;
+}
+:root[data-theme='th-umi'] {
+  --color-primary: #0984e3; --color-primary-hover: #0770c4;
+  --color-secondary: #00cec9; --color-accent: #74b9ff;
+  --color-bg-primary: #eef7ff;
+}
+:root[data-theme='th-mori'] {
+  --color-primary: #00b894; --color-primary-hover: #009e80;
+  --color-secondary: #55efc4; --color-accent: #a8e063;
+  --color-bg-primary: #eefdf6;
+}
+:root[data-theme='th-yozora'] {
+  --color-primary: #a29bfe; --color-primary-hover: #8c83f7;
+  --color-secondary: #74b9ff; --color-accent: #ffeaa7;
+  --color-bg-primary: #1e2033; --color-bg-secondary: #2a2d44;
+  --color-text-main: #f5f6fa; --color-text-muted: #b2bec3;
+}
+:root[data-theme='th-gold'] {
+  --color-primary: #b8860b; --color-primary-hover: #a3760a;
+  --color-secondary: #d4a017; --color-accent: #ffd700;
+  --color-bg-primary: #fffdf0;
+}

@@ -80,6 +80,9 @@ export const TeacherDashboard: React.FC = () => {
   const [adjStudentId, setAdjStudentId] = useState('');
   const [adjAmount, setAdjAmount] = useState('');
   const [adjMsg, setAdjMsg] = useState('');
+  // クラスの木のグループ分け（56A対56B / 5年対6年）
+  const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
+  const [treeMsg, setTreeMsg] = useState('');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
   // 今日のミッション（複数OK）。旧形式（単数todayMission）のデータも読み込み時に配列へ変換
@@ -134,6 +137,9 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.freetalkGoals !== undefined) {
         setFreetalkGoals(data.dictionary_progress.freetalkGoals || {});
       }
+      if (data.dictionary_progress.treeMode !== undefined) {
+        setTreeMode(data.dictionary_progress.treeMode || 'cls');
+      }
       if (data.dictionary_progress.todayMissions !== undefined) {
         setCurrentMissions(data.dictionary_progress.todayMissions || []);
       } else if (data.dictionary_progress.todayMission) {
@@ -182,6 +188,7 @@ export const TeacherDashboard: React.FC = () => {
           azureDailyCap: azureCap,
           customVocabEnabled: customVocabEnabled,
           freetalkGoals: freetalkGoals,
+          treeMode: treeMode,
           ...overrides
         }
       }, { onConflict: 'id' });
@@ -486,6 +493,30 @@ export const TeacherDashboard: React.FC = () => {
           <Button onClick={handleAdjustPoints}>加算する</Button>
         </div>
         {adjMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{adjMsg}</span>}
+      </div>
+
+      {/* クラスの木：グループ分けの切替 */}
+      <div className="glass-card" style={{ border: '2px solid #00b894' }}>
+        <h2 style={{ margin: '0 0 0.5rem 0' }}>🌳 みんなの木：チーム分け</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          「みんなの木」を どのグループで競うか。切り替えると過去の寄付ぶんも組み替わります。
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {([['cls', '🔵 56A 対 🟠 56B'], ['grade', '🟢 5年 対 🟣 6年']] as const).map(([v, label]) => (
+            <button key={v}
+              onClick={async () => {
+                setTreeMode(v);
+                const { error } = await persistSettings({ treeMode: v });
+                setTreeMsg(error ? '通信エラー' : `「${label}」にしました`);
+                setTimeout(() => setTreeMsg(''), 4000);
+              }}
+              style={{ padding: '0.6rem 1.2rem', borderRadius: '999px', border: '2px solid #00b894', cursor: 'pointer', fontWeight: 'bold',
+                background: treeMode === v ? '#00b894' : 'white', color: treeMode === v ? 'white' : '#00b894' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {treeMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{treeMsg}</span>}
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>

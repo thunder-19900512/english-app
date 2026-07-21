@@ -2,6 +2,22 @@ import { supabase } from './supabase';
 
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// ショップ状態のマージ。消費額/寄付額はmax（単調・消失に強い）、所持は和集合、
+// 装備/背景はローカルに設定があればローカル優先（無ければDB値）。
+const mergeShop = (local: any, db: any): any => {
+  const l = local || {};
+  const d = db || {};
+  const hasLocal = !!local; // localStorageにshopがある＝この端末は設定を知っている
+  return {
+    spent: Math.max(l.spent || 0, d.spent || 0),
+    donated: Math.max(l.donated || 0, d.donated || 0),
+    owned: Array.from(new Set([...(d.owned || []), ...(l.owned || [])])),
+    equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
+    equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
+    bgImage: hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null),
+  };
+};
+
 export const pushToSupabase = async (studentId: string): Promise<void> => {
   if (!supabase) return;
 
@@ -24,6 +40,10 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   // 発音スコアの履歴（メタ認知・推移グラフ用）
   const pronStr = localStorage.getItem(`pronHistory_${studentId}`);
   const pronunciation_history = pronStr ? JSON.parse(pronStr) : [];
+
+  // ショップ状態（称号・きせかえ・消費額・寄付額・背景）
+  const shopStr = localStorage.getItem(`shop_${studentId}`);
+  const shop = shopStr ? JSON.parse(shopStr) : null; // 無い＝この端末は未設定
 
   // Debounce the actual push logic
   return new Promise((resolve) => {
@@ -51,6 +71,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           if (Object.keys(dictionary_progress).length) safe.dictionary_progress = dictionary_progress;
           if (reflections.length) safe.reflections = reflections;
           if (pronunciation_history.length) safe.pronunciation_history = pronunciation_history;
+          if (shop) safe.shop = shop; // 空(未設定)なら送らずDBを維持
           const { error } = await supabase!.from('students').upsert(safe, { onConflict: 'id' });
           if (error) console.error('Failed to sync to Supabase (safe mode)', error);
           resolve();
@@ -108,6 +129,9 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
         }
         const mergedPron = Array.from(pronMap.values()).sort((a, b) => a.ts - b.ts).slice(-300);
 
+        // ショップ：消費額/寄付額はmax（単調）、所持は和集合、装備/背景はローカルがあれば優先
+        const mergedShop = mergeShop(shop, db.shop);
+
         const { error } = await supabase!
           .from('students')
           .upsert({
@@ -119,6 +143,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
             dictionary_progress: mergedDict,
             reflections: mergedReflections,
             pronunciation_history: mergedPron,
+            shop: mergedShop,
             last_access: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -223,6 +248,13 @@ export const pullFromSupabase = async (studentId: string) => {
       .sort((a, b) => a.ts - b.ts)
       .slice(-300);
     localStorage.setItem(`pronHistory_${studentId}`, JSON.stringify(mergedPron));
+
+    // Merge shop（消費/寄付=max・所持=和集合・装備/背景=ローカル優先）
+    const localShopStr = localStorage.getItem(`shop_${studentId}`);
+    const localShop = localShopStr ? JSON.parse(localShopStr) : null;
+    const mergedShop = mergeShop(localShop, data.shop);
+    localStorage.setItem(`shop_${studentId}`, JSON.stringify(mergedShop));
+    window.dispatchEvent(new Event('shopUpdated'));
 
     return true;
   }
