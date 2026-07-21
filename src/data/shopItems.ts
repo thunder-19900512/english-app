@@ -24,6 +24,9 @@ export const THEMES: ShopItem[] = [
 export const findTitle = (id: string | null | undefined) => TITLES.find(t => t.id === id) || null;
 export const findTheme = (id: string | null | undefined) => THEMES.find(t => t.id === id) || null;
 
+// 背景画像を1枚つけるのにかかるポイント（つけるたびに消費。はずすと次はまた必要）
+export const BG_PRICE = 1000;
+
 // クラスの木：TREE_STEP ポイントごとに1段階成長（最大10段階）
 export const TREE_STAGES = ['🌱', '🌿', '🪴', '🌳', '🌳✨', '🌸🌳', '🌸🌳✨', '🍎🌳', '🍎🌳✨', '🏆🌳'];
 export const TREE_STEP = 500;

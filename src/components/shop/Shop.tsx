@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { TITLES, THEMES, type ShopItem } from '../../data/shopItems';
+import { TITLES, THEMES, BG_PRICE, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 
 type Tab = 'title' | 'theme' | 'bg';
@@ -33,7 +33,7 @@ const compressImage = (file: File): Promise<Blob> => new Promise((resolve, rejec
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, balance, totalPoints, buy, equipTitle, equipTheme, setBgImage } = useShop();
+  const { shop, balance, totalPoints, buy, equipTitle, equipTheme, buyBackground, clearBackground } = useShop();
   const [tab, setTab] = useState<Tab>('title');
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
@@ -48,6 +48,9 @@ export const Shop: React.FC = () => {
 
   const handleUpload = async (file: File) => {
     if (!supabase || !studentId) return;
+    // 先に残高チェック（アップロードしてから足りない、を防ぐ）
+    if (balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
+    if (!window.confirm(`はいけいを つけると ${BG_PRICE}P つかうよ。いい？`)) return;
     setUploading(true); setUploadMsg('');
     try {
       const blob = await compressImage(file);
@@ -55,13 +58,19 @@ export const Shop: React.FC = () => {
       const { error } = await supabase.storage.from('backgrounds').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
       if (error) throw error;
       const { data } = supabase.storage.from('backgrounds').getPublicUrl(path);
-      setBgImage(`${data.publicUrl}?t=${Date.now()}`); // キャッシュ回避
-      setUploadMsg('はいけいを かえたよ！🎉');
+      const ok = buyBackground(`${data.publicUrl}?t=${Date.now()}`); // 課金＆設定
+      setUploadMsg(ok ? 'はいけいを かえたよ！🎉' : 'ポイントが たりなかった…');
     } catch (e) {
       setUploadMsg('アップロードできなかった…もう一回ためしてね');
     } finally {
       setUploading(false);
       setTimeout(() => setUploadMsg(''), 5000);
+    }
+  };
+
+  const handleRemoveBg = () => {
+    if (window.confirm(`はいけいを はずすと、また つけるときに ${BG_PRICE}P かかるよ。はずす？`)) {
+      clearBackground();
     }
   };
 
@@ -141,17 +150,21 @@ export const Shop: React.FC = () => {
 
       {tab === 'bg' && (
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で はいけいをつける</div>
           <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
             すきな写真を えらぶと、アプリのはいけいに なるよ。<br />
             <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真にしよう！</span>
           </p>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.currentTarget.value = ''; }} />
-          <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
-            {uploading ? 'アップロード中…' : '📷 写真をえらぶ'}
+          <Button onClick={() => fileRef.current?.click()} disabled={uploading || balance < BG_PRICE}>
+            {uploading ? 'アップロード中…' : `📷 写真をえらぶ（${BG_PRICE}P）`}
           </Button>
+          {balance < BG_PRICE && !shop.bgImage && (
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>あと {BG_PRICE - balance}P たまったら つけられるよ</div>
+          )}
           {shop.bgImage && (
-            <Button variant="outline" onClick={() => setBgImage(null)}>はいけいを もとにもどす</Button>
+            <Button variant="outline" onClick={handleRemoveBg}>はいけいを はずす</Button>
           )}
           {uploadMsg && <div style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>{uploadMsg}</div>}
           {shop.bgImage && (

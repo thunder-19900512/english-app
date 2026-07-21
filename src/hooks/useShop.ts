@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { pushToSupabase } from '../lib/sync';
 import { usePoints } from './usePoints';
 import { showToast } from '../components/ui/Toast';
+import { BG_PRICE } from '../data/shopItems';
 import type { ShopItem } from '../data/shopItems';
 
 // ショップ状態。points（累計・単調増加）からは絶対に引かず、使った額を
@@ -74,9 +75,22 @@ export const useShop = () => {
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
-  const setBgImage = useCallback((url: string | null) => {
+  // 背景を「つける」＝BG_PRICE を消費（つけるたびにかかる）。残高不足なら失敗。
+  const buyBackground = useCallback((url: string): boolean => {
+    if (!studentId) return false;
+    const cur = readShop(studentId);
+    const bal = totalPoints - cur.spent - cur.donated;
+    if (bal < BG_PRICE) { showToast('ポイントが たりないよ！', 'fail'); return false; }
+    const next = { ...cur, spent: cur.spent + BG_PRICE, bgImage: url };
+    writeShop(studentId, next); setShop(next);
+    showToast(`🖼️ はいけいを かえた！（−${BG_PRICE}P）`, 'points');
+    return true;
+  }, [studentId, totalPoints]);
+
+  // 背景を「はずす」＝無料。再度つけるときはまた BG_PRICE がかかる。
+  const clearBackground = useCallback(() => {
     if (!studentId) return;
-    const next = { ...readShop(studentId), bgImage: url };
+    const next = { ...readShop(studentId), bgImage: null };
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
@@ -91,5 +105,5 @@ export const useShop = () => {
     return true;
   }, [studentId, totalPoints]);
 
-  return { shop, balance, totalPoints, buy, equipTitle, equipTheme, setBgImage, donate };
+  return { shop, balance, totalPoints, buy, equipTitle, equipTheme, buyBackground, clearBackground, donate };
 };
