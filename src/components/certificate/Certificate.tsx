@@ -33,7 +33,7 @@ export const Certificate: React.FC = () => {
           </div>
           
           <h1 style={{ fontSize: '4rem', color: 'var(--color-primary)', marginBottom: '1rem' }}>
-            Phonics Master
+            Eigo no Mori
           </h1>
           
           <p style={{ fontSize: '1.5rem', marginBottom: '2rem' }}>
