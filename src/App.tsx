@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { supabase } from './lib/supabase';
+import { ClassGate } from './components/auth/ClassGate';
 import { Layout } from './components/layout/Layout';
 import { Home } from './components/home/Home';
 import { Stage } from './components/stage/Stage';
@@ -31,6 +33,26 @@ import { ToastHost } from './components/ui/Toast';
 
 
 const App: React.FC = () => {
+  // クラス共通の「あいことば」でログイン済みか。
+  //  null=確認中 / false=未ログイン（ClassGateを出す） / true=ログイン済み（今まで通り）
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // 端末に保存されたログイン状態を確認（初回だけあいことば、以後はスキップ）
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
+    // ログイン／ログアウトの変化に追従（別タブでの変化やトークン失効にも対応）
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // セッション確認中は一瞬なので、ちらつき防止に何も出さない
+  if (authed === null) return null;
+
+  // 未ログインなら、あいことば画面だけを出す（子ども向けの入口）
+  if (!authed) return <ClassGate onAuthed={() => setAuthed(true)} />;
+
   return (
     <Router>
       {/* 画面固定の通知（ポイント獲得・クリア・もう一回）。スクロール位置に関係なく見える */}
