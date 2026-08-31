@@ -1,0 +1,82 @@
+[
+ {
+  "id": "station",
+  "title": "Karuizawa Station",
+  "canDo": "take a train",
+  "location": "in the center of town",
+  "query": "Karuizawa Station Nagano 2022",
+  "voice": "en-US-AnaNeural",
+  "ja1": "電車に乗れます。",
+  "ja2": "町の中心にあります。"
+ },
+ {
+  "id": "ginza",
+  "title": "Old Karuizawa Ginza",
+  "canDo": "buy souvenirs",
+  "location": "near the station",
+  "query": "Kyu-Karuizawa Ginza",
+  "voice": "en-US-GuyNeural",
+  "ja1": "おみやげが買えます。",
+  "ja2": "駅の近くにあります。"
+ },
+ {
+  "id": "kumoba",
+  "title": "Kumoba Pond",
+  "canDo": "see beautiful water",
+  "location": "next to the forest",
+  "query": "Kumoba Pond",
+  "voice": "en-US-JennyNeural",
+  "ja1": "きれいな水が見られます。",
+  "ja2": "森のとなりにあります。"
+ },
+ {
+  "id": "harunire",
+  "title": "Harunire Terrace",
+  "canDo": "eat lunch by the river",
+  "location": "near Hoshino",
+  "query": "Harunire Terrace",
+  "voice": "en-US-AnaNeural",
+  "ja1": "川のそばで昼食が食べられます。",
+  "ja2": "星野エリアの近くにあります。"
+ },
+ {
+  "id": "shiraito",
+  "title": "Shiraito Falls",
+  "canDo": "see a big waterfall",
+  "location": "in the mountains",
+  "query": "Shiraito Falls Karuizawa",
+  "voice": "en-US-GuyNeural",
+  "ja1": "大きな滝が見られます。",
+  "ja2": "山の中にあります。"
+ },
+ {
+  "id": "paulo",
+  "title": "St. Paul's Church",
+  "canDo": "see a famous church",
+  "location": "in the old town",
+  "query": "St Paul Catholic Church Karuizawa",
+  "voice": "en-US-JennyNeural",
+  "ja1": "有名な教会が見られます。",
+  "ja2": "旧軽井沢にあります。"
+ },
+ {
+  "id": "prince",
+  "title": "Prince Shopping Plaza",
+  "canDo": "buy many things",
+  "location": "next to the station",
+  "query": "Karuizawa Prince Shopping Plaza",
+  "voice": "en-US-AnaNeural",
+  "ja1": "いろいろな物が買えます。",
+  "ja2": "駅のとなりにあります。"
+ },
+ {
+  "id": "kazakoshi",
+  "title": "Kazakoshi Park",
+  "canDo": "play sports",
+  "location": "near our school",
+  "query": "Kazakoshi Park Karuizawa",
+  "voice": "en-US-GuyNeural",
+  "ja1": "スポーツができます。",
+  "ja2": "学校の近くにあります。"
+ }
+]
