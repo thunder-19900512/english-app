@@ -22,6 +22,19 @@ const SPOTS: SpotData[] = [
   { id: 'kazakoshi', name: '🏫 風越公園 (Kazakoshi Park)', canDo: 'play sports', location: 'near our school' },
 ];
 
+// 各スポットの学習動画（Drive・リンクを知っていれば閲覧可）。「📺 動画を見る」から外部視聴。
+// 画像はWikimedia Commonsの再利用可ライセンス（動画内にクレジット表示）。音声はAna/Guy/Jennyの3人ローテ。
+const VIDEO_URLS: Record<string, string> = {
+  station: 'https://drive.google.com/file/d/1cho-wEr6TFar6hDfFb3omj1RHnzCc_Bq/view',
+  ginza: 'https://drive.google.com/file/d/1Q8WSjwLQGQtoJdoSHZfyClueqod08C-p/view',
+  kumoba: 'https://drive.google.com/file/d/1eJ1BIfb2nB2MO_7Sh0UjHq7jPWx-tP4_/view',
+  harunire: 'https://drive.google.com/file/d/1cMFiz_XQLdqPGH4nsdeQYk801otomhft/view',
+  shiraito: 'https://drive.google.com/file/d/1l5QqKH7RHjcPVvHv9AthCf8GKzClAey3/view',
+  paulo: 'https://drive.google.com/file/d/1qOkBP7fou8cLZSVNcxq1lvLZfxW7fYTE/view',
+  prince: 'https://drive.google.com/file/d/1srjYyoToXFfz2vMSbqtO0MQfPq-NKwsy/view',
+  kazakoshi: 'https://drive.google.com/file/d/1S2H4M5u3Sn967KmSfCP2DbqOYgLqMi8m/view',
+};
+
 // 道案内語の問題プール（スポットidの順にローテ配置）
 const DIRECTION_QUESTIONS = [
   { question: '"Go straight" のいみは？', correct: 'まっすぐ進む', distractors: ['右に曲がる', '止まる'] },
@@ -59,6 +72,7 @@ export const KARUIZAWA_QUIZZES: TextbookQuiz[] = SPOTS.map((s, si) => {
     id: `kz-${s.id}`,
     grade: 5 as const,
     unitName: s.name,
+    url: VIDEO_URLS[s.id],
     noBonus: true, // 3問のみ（ボーナス課題なし）
     keyPhrase: 'You can ◯◯ here.',
     keyPhraseJapanese: 'ここで◯◯できます。',
