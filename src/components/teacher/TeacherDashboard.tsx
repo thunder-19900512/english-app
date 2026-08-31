@@ -11,6 +11,7 @@ import { FREETALK_UNITS } from '../dictionary/games/AIAssistant';
 import { fetchConversationLogs, type ConversationLog } from '../../lib/conversationLogs';
 import { saveTeacherFeedback } from '../../lib/teacherFeedback';
 import { WORLD_BENTO_QUIZZES } from '../textbook/worldBentoQuizData';
+import { KARUIZAWA_QUIZZES } from '../textbook/karuizawaQuizData';
 import { vocabulary } from '../../data/vocabulary';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
@@ -27,6 +28,12 @@ const MISSION_OPTIONS: MissionOption[] = [
   })),
   // World Bento（世界の弁当）クイズ：トップ画面（国の一覧）を開く。今回は国別までは指定しない。
   { label: '🍱 世界の弁当クイズ（トップ画面）', route: '/textbook?set=worldbento' },
+  // まちクイズ（軽井沢スポット）：P5 Town Guide の CHARGE の床。トップ画面（スポット一覧）を開く。
+  { label: '🏔 軽井沢まちクイズ（トップ画面）', route: '/textbook?set=karuizawa' },
+  ...KARUIZAWA_QUIZZES.map(q => ({
+    label: `🏔 まちクイズ ${q.unitName}`,
+    route: `/textbook?id=${q.id}`,
+  })),
   // Picture Dictionary の各カテゴリ（例：食べ物）。クイズと一緒に配信して「クイズ→語彙」の流れを作れる。
   ...Array.from(new Set(vocabulary.map(v => v.category))).map(cat => ({
     label: `📕 辞書 ${cat}`,
@@ -904,6 +911,7 @@ export const TeacherDashboard: React.FC = () => {
             const dialogueTotal = DIALOGUES.length;
             const phonicsTotal = stages.filter(st => !st.extra).length; // エクストラは到達数に含めない
             const wbTotal = WORLD_BENTO_QUIZZES.length;
+            const kzTotal = KARUIZAWA_QUIZZES.length;
             const rows = students.map(s => {
               const cc = s.clear_counts || {};
               const badges: number[] = s.badges || [];
@@ -911,11 +919,12 @@ export const TeacherDashboard: React.FC = () => {
               const dialogueCount = DIALOGUES.filter(d => dialogueClear(cc, d.id)).length;
               const phonicsCount = badges.filter((b: number) => stages.find(st => st.id === b && !st.extra)).length;
               const wbCount = WORLD_BENTO_QUIZZES.filter(q => (cc[`textbook_quiz_${q.id}`] || 0) > 0).length;
+              const kzCount = KARUIZAWA_QUIZZES.filter(q => (cc[`textbook_quiz_${q.id}`] || 0) > 0).length;
               const dictCount = Object.values(dict).filter((p: any) => p && (p.practice || p.spelling || p.speedKaruta || p.memoryGame)).length;
               const pron = s.pronunciation_history || [];
               const pronAvg = pron.length ? Math.round(pron.reduce((a: number, r: any) => a + (r.score || 0), 0) / pron.length) : null;
-              const mastery = phonicsCount + dialogueCount + wbCount + dictCount;
-              return { s, cc, badges, dialogueCount, phonicsCount, wbCount, dictCount, pronAvg, pronCount: pron.length, mastery, points: s.points || 0 };
+              const mastery = phonicsCount + dialogueCount + wbCount + kzCount + dictCount;
+              return { s, cc, badges, dialogueCount, phonicsCount, wbCount, kzCount, dictCount, pronAvg, pronCount: pron.length, mastery, points: s.points || 0 };
             });
             // ペア提案：到達スコア順にならべ、上位（ヘルパー）×下位（サポート）でペアに
             const sorted = [...rows].sort((a, b) => b.mastery - a.mastery);
@@ -938,7 +947,7 @@ export const TeacherDashboard: React.FC = () => {
                 <div className="glass-card" style={{ padding: '1.2rem', background: '#eef2ff', border: '1px solid #c7d2fe' }}>
                   <h3 style={{ margin: '0 0 0.3rem 0', color: '#4338ca' }}>🤝 ペア提案（教え合い）</h3>
                   <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem', color: '#6366f1' }}>
-                    到達スコア（フォニックス＋ダイアログ＋World Bento＋辞書のクリア数）が高い子（ヘルパー）と、サポートが要る子を組み合わせた案です。
+                    到達スコア（フォニックス＋ダイアログ＋World Bento＋まちクイズ＋辞書のクリア数）が高い子（ヘルパー）と、サポートが要る子を組み合わせた案です。
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     {pairs.map((p, idx) => (
@@ -968,7 +977,7 @@ export const TeacherDashboard: React.FC = () => {
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
                           <th style={{ textAlign: 'left', padding: '0.4rem 0.6rem', position: 'sticky', left: 0, background: '#f8fafc', minWidth: '110px' }}>生徒</th>
-                          {th('🔤 フォニックス')}{th('🗣️ ダイアログ')}{th('🍱 World Bento')}{th('📖 辞書')}{th('🎤 発音')}{th('🏅 到達')}{th('⭐ P')}
+                          {th('🔤 フォニックス')}{th('🗣️ ダイアログ')}{th('🍱 World Bento')}{th('🏔 まちクイズ')}{th('📖 辞書')}{th('🎤 発音')}{th('🏅 到達')}{th('⭐ P')}
                         </tr>
                       </thead>
                       <tbody>
@@ -978,6 +987,7 @@ export const TeacherDashboard: React.FC = () => {
                             {fracCell(r.phonicsCount, phonicsTotal)}
                             {fracCell(r.dialogueCount, dialogueTotal)}
                             {fracCell(r.wbCount, wbTotal)}
+                            {fracCell(r.kzCount, kzTotal)}
                             <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', fontWeight: 'bold', color: r.dictCount === 0 ? '#dc2626' : '#334155' }}>{r.dictCount}</td>
                             <td style={{ textAlign: 'center', padding: '0.35rem 0.4rem', borderRight: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>
                               {r.pronAvg !== null

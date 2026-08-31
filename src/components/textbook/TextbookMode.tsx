@@ -11,6 +11,7 @@ import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 import { WORLD_BENTO_QUIZZES } from './worldBentoQuizData';
+import { KARUIZAWA_QUIZZES } from './karuizawaQuizData';
 import { showToast } from '../ui/Toast';
 
 export type QuizQuestion = {
@@ -128,7 +129,7 @@ export const TextbookMode: React.FC = () => {
     // 学年はTOPのカードでえらぶ前提。学年選択画面は廃止し、未指定なら5年を既定にする。
     setGrade(g === '6' ? 6 : 5);
     if (id) {
-      const quiz = DEFAULT_QUIZZES.find(q => q.id === id) || WORLD_BENTO_QUIZZES.find(q => q.id === id);
+      const quiz = DEFAULT_QUIZZES.find(q => q.id === id) || WORLD_BENTO_QUIZZES.find(q => q.id === id) || KARUIZAWA_QUIZZES.find(q => q.id === id);
       if (quiz) handleQuizSelect(quiz);
     }
   }, [searchParams]);
@@ -274,16 +275,20 @@ export const TextbookMode: React.FC = () => {
   // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
   if (!grade) return null;
 
-  // ?set=worldbento のときは World Bento クイズ（国別）を表示。通常は学年の教科書Unit。
-  const isWorldBento = searchParams.get('set') === 'worldbento';
-  const listQuizzes = isWorldBento ? WORLD_BENTO_QUIZZES : quizzes.filter(q => q.grade === grade);
+  // ?set=worldbento / ?set=karuizawa のときは専用クイズ集を表示。通常は学年の教科書Unit。
+  const setParam = searchParams.get('set');
+  const isWorldBento = setParam === 'worldbento';
+  const isKaruizawa = setParam === 'karuizawa';
+  const listQuizzes = isWorldBento ? WORLD_BENTO_QUIZZES
+    : isKaruizawa ? KARUIZAWA_QUIZZES
+    : quizzes.filter(q => q.grade === grade);
 
   return (
     <div className="flex-col" style={{ flex: 1, padding: '2rem', gap: '1.5rem', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ margin: 0, fontSize: '1.8rem', flex: 1, textAlign: 'center' }}>
-          {isWorldBento ? '🍱 世界の料理クイズ' : `📖 ${grade}年生の教科書`}
+          {isWorldBento ? '🍱 世界の料理クイズ' : isKaruizawa ? '🏔 軽井沢まちクイズ' : `📖 ${grade}年生の教科書`}
         </h2>
       </div>
 
