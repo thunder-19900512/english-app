@@ -260,8 +260,8 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/tree')}
           >
             <span style={{ fontSize: '2.4rem', marginBottom: '0.3rem' }}>🌳</span>
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>みんなの木</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ポイントをあげて<br/>チームの木を育てよう！</p>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>みんなの町</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>森を育てて<br/>町をつくろう！</p>
           </div>
         </div>
       )}
