@@ -11,7 +11,10 @@ import { useLeaderboard } from '../../../hooks/useLeaderboard';
 import { Timer, Crown } from 'lucide-react';
 
 // --- Logic to Generate the Word Search Grid ---
-const GRID_SIZE = 8;
+// 盤の大きさ。ふつうは8マスだが、「年中行事」のように長い語が多い単元では
+// 語が入りきらず出題できなくなるため、いちばん長い語に合わせて最大12マスまで広げる。
+const GRID_MIN = 8;
+const GRID_MAX = 12;
 const DIRS = [
   { dr: 0, dc: 1 }, // Horizontal right
   { dr: 1, dc: 0 }  // Vertical down
@@ -30,25 +33,25 @@ interface WordLocation {
   endC: number;
 }
 
-const generateGrid = (words: string[]) => {
-  const grid: string[][] = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+const generateGrid = (words: string[], size: number) => {
+  const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
   const locations: WordLocation[] = [];
 
   for (const word of words) {
-    const w = word.toUpperCase().replace(/\s/g, ''); // ignore spaces
+    const w = word.toUpperCase().replace(/[^A-Z0-9]/g, ''); // 記号・空白は詰めて1マス1文字にする
     let placed = false;
     let attempts = 0;
 
     while (!placed && attempts < 100) {
       attempts++;
       const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
-      const startR = Math.floor(Math.random() * GRID_SIZE);
-      const startC = Math.floor(Math.random() * GRID_SIZE);
+      const startR = Math.floor(Math.random() * size);
+      const startC = Math.floor(Math.random() * size);
 
       const endR = startR + dir.dr * (w.length - 1);
       const endC = startC + dir.dc * (w.length - 1);
 
-      if (endR < GRID_SIZE && endC < GRID_SIZE) {
+      if (endR < size && endC < size) {
         // Check if path is clear
         let clear = true;
         for (let i = 0; i < w.length; i++) {
@@ -103,6 +106,7 @@ export const WordSearch: React.FC = () => {
   const { classBest } = useLeaderboard(category || '', 'wordsearch');
 
   const [grid, setGrid] = useState<CellInfo[][]>([]);
+  const [gridSize, setGridSize] = useState<number>(GRID_MIN);
   const [targetWords, setTargetWords] = useState<string[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   
@@ -120,15 +124,29 @@ export const WordSearch: React.FC = () => {
 
   const initGame = useCallback(() => {
     const catWords = vocabulary.filter(v => v.category === category);
-    // Pick 3-4 random short words
-    const shuffled = [...catWords]
-      .filter(w => w.english.length >= 3 && w.english.length <= 7) // keep it simple
-      .sort(() => 0.5 - Math.random());
+
+    // ★盤に置けるかは「記号・スペースを除いた文字数」で決まる（盤は8〜12マス）。
+    //   以前は英語表記そのままの長さで絞っていたため、"New Year's Day" のように
+    //   区切りを含む語が全部はじかれ、「年中行事」などは出せる語がゼロ＝
+    //   ターゲットが表示されないクロスワードになっていた。
+    const gridLen = (w: string) => w.toUpperCase().replace(/[^A-Z0-9]/g, '').length;
+    const fits = (w: string) => { const n = gridLen(w); return n >= 3 && n <= GRID_MAX; };
+
+    const shuffled = [...catWords].filter(w => fits(w.english)).sort(() => 0.5 - Math.random());
+
+    // それでも足りないカテゴリ（語が極端に長い等）は、短い順に拾って最低限成立させる
+    const pool = shuffled.length >= 3
+      ? shuffled
+      : [...catWords].sort((a, b) => gridLen(a.english) - gridLen(b.english)).filter(w => gridLen(w.english) >= 3);
+
+    const selected = pool.slice(0, 4).map(v => v.english);
+    // いちばん長い語が入る大きさにする（8〜12マス）
+    const needed = Math.max(GRID_MIN, ...selected.map(gridLen));
+    const size = Math.min(GRID_MAX, needed);
+    setGridSize(size);
+    const { grid: newGrid } = generateGrid(selected, size);
     
-    const selected = shuffled.slice(0, 4).map(v => v.english);
-    const { grid: newGrid } = generateGrid(selected);
-    
-    setTargetWords(selected.map(w => w.toUpperCase().replace(/\s/g, '')));
+    setTargetWords(selected.map(w => w.toUpperCase().replace(/[^A-Z0-9]/g, '')));
     setGrid(newGrid);
     setFoundWords([]);
     setSelectionStart(null);
@@ -213,7 +231,7 @@ export const WordSearch: React.FC = () => {
 
         if (matchedWord && !foundWords.includes(matchedWord)) {
       // Found a word!
-      const originalWord = vocabulary.find(v => v.english.toUpperCase().replace(/\s/g, '') === matchedWord)?.english;
+      const originalWord = vocabulary.find(v => v.english.toUpperCase().replace(/[^A-Z0-9]/g, '') === matchedWord)?.english;
       if (originalWord) speak(originalWord);
 
       setFoundWords(prev => {
@@ -341,7 +359,7 @@ export const WordSearch: React.FC = () => {
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '1rem' }}>
           {targetWords.map(word => {
             const isFound = foundWords.includes(word);
-            const orig = vocabulary.find(v => v.english.toUpperCase().replace(/\s/g, '') === word);
+            const orig = vocabulary.find(v => v.english.toUpperCase().replace(/[^A-Z0-9]/g, '') === word);
             return (
               <div 
                 key={word}
@@ -369,7 +387,7 @@ export const WordSearch: React.FC = () => {
         <div 
           style={{ 
             display: 'grid', 
-            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`, 
+            gridTemplateColumns: `repeat(${gridSize}, 1fr)`, 
             gap: '0.5rem',
             background: 'var(--color-primary)',
             padding: '0.5rem',

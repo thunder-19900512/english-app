@@ -11,7 +11,7 @@ export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const { totalPoints } = usePoints();
   const { isScreenLocked } = useAppSettings();
-  const { shop } = useShop();
+  const { shop, balance } = useShop();
 
   // Basic mock auth check (to be replaced with real context later)
   const studentId = localStorage.getItem('studentId');
@@ -61,9 +61,13 @@ export const Layout: React.FC = () => {
             <h2 className="text-primary" style={{ margin: 0 }}>
               こんにちは、{localStorage.getItem('studentName')}{titleEmoji}さん！
             </h2>
-            <div className="badge" style={{ background: 'var(--color-accent)', color: '#000', fontSize: '1.2rem', padding: '0.2rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Star fill="#fff" stroke="#fff" size={20} />
-              {totalPoints} pts
+            {/* ためた合計（減らない）と、ショップで使える残高を分けて示す。
+                同じ「pts」で2つの数字が出ると混乱するため、ラベルを付ける。 */}
+            <div className="badge" style={{ background: 'var(--color-accent)', color: '#000', fontSize: '1.05rem', padding: '0.2rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Star fill="#fff" stroke="#fff" size={18} />
+              <span>ためた {totalPoints}</span>
+              <span style={{ opacity: 0.45 }}>|</span>
+              <span>つかえる {balance}</span>
             </div>
           </div>
           

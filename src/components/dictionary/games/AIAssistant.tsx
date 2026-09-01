@@ -40,6 +40,26 @@ export const FREETALK_UNITS: FreetalkUnit[] = [
   { id: 'g6-u8', label: '6年 U8 将来の夢', situation: '将来なりたいものとその理由を話す', goal: 'The goal is reached only after the user has said what they want to be AND why.', missionJa: '将来なりたいものと、その理由を伝えよう！', greeting: { en: 'What do you want to be?', ja: '将来何になりたい？' } },
 ];
 
+
+// AIの通信エラーを、子どもが読んで次の行動が分かる日本語にする。
+// （英語の生エラーが会話に混ざると、何が起きたのか分からず不安になるため）
+const friendlyAiError = (err: any): string => {
+  const raw = String(err?.message || err || '');
+  if (/Failed to fetch|NetworkError|ERR_INTERNET|Load failed/i.test(raw)) {
+    return '📶 いま インターネットに つながらないみたい。少し待って もう一度おくってね。（なおらないときは先生を呼ぼう）';
+  }
+  if (/429|quota|RESOURCE_EXHAUSTED|rate/i.test(raw)) {
+    return '⏳ いま みんなが たくさん使っていて 混んでいます。少し待って もう一度おくってね。';
+  }
+  if (/API key|401|403|PERMISSION|invalid/i.test(raw)) {
+    return '🔑 AIのせっていに もんだいがあるみたい。先生を呼んでね。';
+  }
+  if (/500|503|internal|unavailable/i.test(raw)) {
+    return '🛠 AIのサーバーが こんでいます。少し待って もう一度ためしてね。';
+  }
+  return '⚠️ うまく おくれませんでした。もう一度ためして、なおらないときは先生を呼んでね。';
+};
+
 const stripSlots = (s: string) => s.replace(/[{}]/g, '');
 
 interface InitOpts {
@@ -361,7 +381,8 @@ export const AIAssistant: React.FC = () => {
       }
     } catch (err: any) {
       console.error('AI Init Error:', err);
-      setMessages([{ role: 'model', text: err.message ? `[システムエラー] ${err.message}` : '[システムエラー] AIの初期化に失敗しました。APIキーを確認してください。' }]);
+      console.error('AI init failed', err);
+      setMessages([{ role: 'model', text: friendlyAiError(err) }]);
       setIsAiThinking(false);
     }
   };
@@ -421,7 +442,8 @@ export const AIAssistant: React.FC = () => {
       }
     } catch (err: any) {
       console.error('AI Send Error:', err);
-      setMessages([...newMessages, { role: 'model', text: err.message ? `[エラー] ${err.message}` : "Oops, I didn't catch that. Can you say it again?" }]);
+      console.error('AI send failed', err);
+      setMessages([...newMessages, { role: 'model', text: friendlyAiError(err) }]);
     } finally {
       setIsAiThinking(false);
     }

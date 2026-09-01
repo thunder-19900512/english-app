@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { STUDENTS } from '../../data/students';
+import { STUDENTS, isRosterLoaded, loadRoster } from '../../data/students';
 import { useShop } from '../../hooks/useShop';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { Button } from '../ui/Button';
@@ -24,12 +24,31 @@ export const ClassTree: React.FC = () => {
   const load = async () => {
     if (!supabase) { setLoading(false); return; }
     setLoading(true);
+
+    // ★名簿はSupabaseから非同期で入る。空のまま集計すると全員がどちらの組にも
+    //   属さない扱いになり、木が0Pに見える（＝みんなの寄付が消えたように見える）。
+    //   そうならないよう、空なら読み込みを待ってから集計する。
+    if (!isRosterLoaded()) {
+      try { await loadRoster(); } catch { /* 通信エラー時は下のフォールバックで救う */ }
+    }
+
     const { data } = await supabase.from('students').select('id, shop');
     const donatedById = new Map<string, number>();
     (data || []).forEach((r: any) => { donatedById.set(r.id, r.shop?.donated || 0); });
 
     // ロスターの実生徒だけをグループ分けして集計（Test/設定行は除外）
     const roster = STUDENTS.filter(s => s.id !== '00');
+
+    // それでも名簿が取れなかったときは、組に分けず全体の合計を1本の木として出す。
+    // （0Pと表示して「消えた」と誤解させるより、合計が見えるほうが安全）
+    if (roster.length === 0) {
+      const total = [...donatedById.entries()]
+        .filter(([id]) => id !== '00' && /^\d+$/.test(id))
+        .reduce((a, [, v]) => a + v, 0);
+      setGroups([{ key: 'all', label: 'みんな', emoji: '🌏', total }]);
+      setLoading(false);
+      return;
+    }
     let g: Group[];
     if (treeMode === 'grade') {
       const sum = (grade: number) => roster.filter(s => s.grade === grade).reduce((a, s) => a + (donatedById.get(s.id) || 0), 0);
@@ -57,8 +76,8 @@ export const ClassTree: React.FC = () => {
     }
   };
 
-  const diff = groups ? Math.abs(groups[0].total - groups[1].total) : 0;
-  const leader = groups && groups[0].total !== groups[1].total
+  const diff = groups && groups.length > 1 ? Math.abs(groups[0].total - groups[1].total) : 0;
+  const leader = groups && groups.length > 1 && groups[0].total !== groups[1].total
     ? (groups[0].total > groups[1].total ? groups[0] : groups[1]) : null;
 
   return (

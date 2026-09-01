@@ -50,7 +50,15 @@ export const usePoints = () => {
     // 先に最新データをSupabaseから取り込む。
     // （あとで clearCounts を更新するより前にやらないと、pullがDBの古い値で
     //   こちらの増分を上書きして「クリア記録が消える」バグになる）
-    await pullFromSupabase(studentId);
+    //
+    // ★pullが失敗（通信断など）したときは、この端末のローカル値が古い可能性がある。
+    //   そのまま加点してpushすると、他端末で貯めた記録を古い値で塗り替えかねないので、
+    //   1回だけ待って再試行する。それでもダメなら加点はするが、その旨を伝える。
+    let synced = await pullFromSupabase(studentId);
+    if (!synced) {
+      await new Promise(r => setTimeout(r, 800));
+      synced = await pullFromSupabase(studentId);
+    }
 
     // Load clear counts（pull後の最新を読む）
     const countsKey = `clearCounts_${studentId}`;
@@ -94,6 +102,11 @@ export const usePoints = () => {
 
     // Sync to Supabase in the background
     pushToSupabase(studentId);
+
+    if (!synced) {
+      // 記録はローカルに残る（次に通信できたときpushされる）が、子どもに気づかせる
+      showToast('📶 つうしんが ふあんていです。先生に つたえてね', 'fail');
+    }
 
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
     if (earned > 0) {
