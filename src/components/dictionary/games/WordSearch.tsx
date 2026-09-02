@@ -134,10 +134,12 @@ export const WordSearch: React.FC = () => {
 
     const shuffled = [...catWords].filter(w => fits(w.english)).sort(() => 0.5 - Math.random());
 
-    // それでも足りないカテゴリ（語が極端に長い等）は、短い順に拾って最低限成立させる
+    // それでも足りないカテゴリは、短い順に拾って最低限成立させる。
+    //   「位置」(by / in / on / under)のように2文字の語しかない単元があるため、
+    //   このときだけ2文字まで許す（通常は3文字以上）。
     const pool = shuffled.length >= 3
       ? shuffled
-      : [...catWords].sort((a, b) => gridLen(a.english) - gridLen(b.english)).filter(w => gridLen(w.english) >= 3);
+      : [...catWords].sort((a, b) => gridLen(a.english) - gridLen(b.english)).filter(w => gridLen(w.english) >= 2);
 
     const selected = pool.slice(0, 4).map(v => v.english);
     // いちばん長い語が入る大きさにする（8〜12マス）
