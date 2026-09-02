@@ -13,12 +13,14 @@ import { saveTeacherFeedback } from '../../lib/teacherFeedback';
 import { WORLD_BENTO_QUIZZES } from '../textbook/worldBentoQuizData';
 import { KARUIZAWA_QUIZZES } from '../textbook/karuizawaQuizData';
 import { vocabulary } from '../../data/vocabulary';
+import { isArchived } from '../../data/archivedUnits';
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
 const MISSION_OPTIONS: MissionOption[] = [
+  // ※アーカイブ中の単元も先生には残す（📦付き）。配信すれば今までどおり使える。
   ...DIALOGUES.map(d => ({
-    label: `ダイアログ ${d.grade}年 ${d.unitName.replace(/:.*/, '')}`,
+    label: `${isArchived(d.id) ? '📦 ' : ''}ダイアログ ${d.grade}年 ${d.unitName.replace(/:.*/, '')}`,
     route: `/dialogue?grade=${d.grade}&id=${d.id}`,
   })),
   ...DEFAULT_QUIZZES.map(q => ({
@@ -27,7 +29,7 @@ const MISSION_OPTIONS: MissionOption[] = [
     videoUrl: q.url,
   })),
   // World Bento（世界の弁当）クイズ：トップ画面（国の一覧）を開く。今回は国別までは指定しない。
-  { label: '🍱 世界の弁当クイズ（トップ画面）', route: '/textbook?set=worldbento' },
+  { label: '📦 🍱 世界の弁当クイズ（トップ画面）', route: '/textbook?set=worldbento' },
   // まちクイズ（軽井沢スポット）：P5 Town Guide の CHARGE の床。トップ画面（スポット一覧）を開く。
   { label: '🏔 軽井沢まちクイズ（トップ画面）', route: '/textbook?set=karuizawa' },
   ...KARUIZAWA_QUIZZES.map(q => ({
@@ -42,10 +44,10 @@ const MISSION_OPTIONS: MissionOption[] = [
   // AI英会話：トップ（場面えらび）と、Unit別フリートークへの直接リンク
   { label: '🤖 AI英会話（場面えらび画面）', route: '/ai' },
   // World Bento お店屋さん（AI＝客／児童＝店員）。開店前の練習を配信できる。
-  { label: '🍱 AI英会話 お店屋さん（シンプル）', route: '/ai?shop=simple' },
-  { label: '🍱 AI英会話 お店屋さん（チャレンジ）', route: '/ai?shop=challenge' },
+  { label: '📦 🍱 AI英会話 お店屋さん（シンプル）', route: '/ai?shop=simple' },
+  { label: '📦 🍱 AI英会話 お店屋さん（チャレンジ）', route: '/ai?shop=challenge' },
   ...FREETALK_UNITS.map(u => ({
-    label: `🤖 AI英会話 ${u.label}`,
+    label: `${isArchived(u.id) ? '📦 ' : ''}🤖 AI英会話 ${u.label}`,
     route: `/ai?unit=${u.id}`,
   })),
 ];

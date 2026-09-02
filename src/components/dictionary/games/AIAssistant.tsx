@@ -13,6 +13,8 @@ import { ArrowLeft, Send, Sparkles, AlertTriangle, Coins, HelpCircle, Languages,
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { DIALOGUES } from '../../dialogue/dialogueData';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
+import { EIKEN_LEVELS, findEiken, loadEiken, saveEiken } from '../../../data/eikenLevels';
+import { isArchived } from '../../../data/archivedUnits';
 import { useSafeBack } from '../../../hooks/useSafeBack';
 
 // 教科書の各Unitに紐づくフリートークの場面とゴール。
@@ -187,13 +189,9 @@ const SCENARIOS: Record<string, Scenario> = {
   },
 };
 
-const ADAPTIVE_INSTRUCTION =
-  'ADAPT to the user\'s level: estimate their English ability from their messages. ' +
-  'If they write very short/simple text, make mistakes, or use Japanese, reply with VERY short and VERY simple English. ' +
-  'If they write well, you may use slightly longer and more natural English. Always one short sentence is safest for beginners.';
-
-const FORMAT_INSTRUCTION =
-  'OUTPUT FORMAT: Reply with exactly ONE short English sentence. Then a new line starting with "JA:" and the natural Japanese translation. ' +
+// 出力フォーマット。英文の本数は申告した英検レベルで変わる（上ほど長く自然に話す）。
+const formatInstruction = (sentences: string) =>
+  `OUTPUT FORMAT: Reply with ${sentences}. Then a new line starting with "JA:" and the natural Japanese translation. ` +
   'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line).';
 
 const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
@@ -236,6 +234,10 @@ export const AIAssistant: React.FC = () => {
 
   // 上級モード（P1-3）：高習熟層向け。文で話す・追加質問・日本語NGを厳格化
   const [isAdvanced, setIsAdvanced] = useState(false);
+
+  // 申告した英検レベル（AIの英語の難しさとクリア条件の土台になる）
+  const [eiken, setEiken] = useState<string>(() => loadEiken(studentId));
+  const chooseEiken = (id: string) => { setEiken(id); saveEiken(studentId, id); };
 
   // チームモード（4人1組などで、ターンごとに話す人をえらんでリレー）
   const [isTeam, setIsTeam] = useState(false);
@@ -304,7 +306,8 @@ export const AIAssistant: React.FC = () => {
     setCurrentSpeaker(null);
     setLastSpeakerId(null);
 
-    const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}`;
+    // レベルごとに会話を分ける（3級で話した続きを5級で読むと、難易度がちぐはぐになるため）
+    const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}_${eiken}`;
     const savedHist = localStorage.getItem(histKey);
     let pastMessages: ChatMessage[] = [];
     if (savedHist) {
@@ -343,14 +346,16 @@ export const AIAssistant: React.FC = () => {
         ? `The user set this situation (in Japanese): 「${opts.situation.trim()}」. Play along with this situation.`
         : '';
 
+      // 申告された英検レベルで、AIの英語の難しさとクリア条件を変える
+      const lv = findEiken(eiken);
       const systemText = [
         scenario.role,
         situationLine,
-        `GOAL: ${scenario.goal}`,
-        ADAPTIVE_INSTRUCTION,
+        `GOAL: ${scenario.goal}${lv.goalSuffix}`,
+        lv.spec,
         'Always reply in English only (never Japanese in the English line).',
         SAFETY_INSTRUCTION,
-        FORMAT_INSTRUCTION,
+        formatInstruction(lv.sentences),
       ].filter(Boolean).join('\n');
 
       const model = genAI.getGenerativeModel({ model: targetModel, systemInstruction: systemText });
@@ -370,7 +375,7 @@ export const AIAssistant: React.FC = () => {
         ];
       }
 
-      const chat = model.startChat({ history: historyForGemini, generationConfig: { maxOutputTokens: 120, temperature: 0.7 } });
+      const chat = model.startChat({ history: historyForGemini, generationConfig: { maxOutputTokens: lv.multiplier >= 1.4 ? 300 : lv.multiplier >= 1.25 ? 220 : 140, temperature: 0.7 } });
       setChatSession(chat);
 
       if (pastMessages.length === 0) {
@@ -421,7 +426,7 @@ export const AIAssistant: React.FC = () => {
     // チーム：話したら次は別の人がえらべるよう、直前の話者を記録して選択をリセット
     if (isTeam && currentSpeaker) { setLastSpeakerId(currentSpeaker.id); setCurrentSpeaker(null); }
 
-    const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
+    const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}_${eiken}`;
     try {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
       const result = await chatSession.sendMessage(text);
@@ -438,7 +443,8 @@ export const AIAssistant: React.FC = () => {
       if (didClear && !awardedRef.current) {
         awardedRef.current = true;
         setCleared(true);
-        addPoints(`ai_clear_${mode}`, {});
+        // きびしい条件をクリアした分だけ上乗せ（レベルを盛ってもラクにはならないので自己申告でよい）
+        addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
       }
     } catch (err: any) {
       console.error('AI Send Error:', err);
@@ -567,6 +573,34 @@ export const AIAssistant: React.FC = () => {
           )}
         </div>
 
+        {/* 英検レベルの申告（AIの英語の難しさとクリア条件が変わる） */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.2rem' }}>
+          <div>
+            <h3 style={{ margin: 0 }}>🎖 英検レベル</h3>
+            <p style={{ color: '#666', margin: '0.2rem 0 0 0', fontSize: '0.85rem' }}>
+              いまの自分に近いものをえらんでね。上のレベルほど<b>AIの英語が難しくなり、クリアの条件も増える</b>よ。
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {EIKEN_LEVELS.map(l => {
+              const on = l.id === eiken;
+              return (
+                <button key={l.id} onClick={() => chooseEiken(l.id)}
+                  style={{ padding: '0.45rem 0.9rem', borderRadius: '999px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold',
+                    border: `2px solid ${l.color}`, background: on ? l.color : 'white', color: on ? 'white' : l.color }}>
+                  {on ? '✓ ' : ''}{l.label}
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>{findEiken(eiken).hintJa}</p>
+          {findEiken(eiken).multiplier > 1 && (
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#b45309', fontWeight: 'bold' }}>
+              クリアすると ポイント ×{findEiken(eiken).multiplier}（条件がきびしいぶん多くもらえる）
+            </p>
+          )}
+        </div>
+
         {/* 上級モード（高習熟層向け。AIがきびしめになる） */}
         <div className="glass-card" style={{ padding: '1rem 1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
@@ -578,7 +612,9 @@ export const AIAssistant: React.FC = () => {
           </Button>
         </div>
 
-        {/* World Bento お店屋さん（AI＝お客さん／児童＝店員） */}
+        {/* World Bento お店屋さん（AI＝お客さん／児童＝店員）。
+            アーカイブ中は出さない → もどすときは archivedUnits.ts の 'worldbento' を消すだけ */}
+        {!isArchived('worldbento') && (<>
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}>
           <h3 style={{ margin: 0, color: '#b45309' }}>🍱 World Bento お店屋さん（店員の練習）</h3>
           <p style={{ color: '#7a5a00', margin: 0, fontSize: '0.9rem' }}>
@@ -595,13 +631,14 @@ export const AIAssistant: React.FC = () => {
             </button>
           </div>
         </div>
+        </>)}
 
         {/* 教科書のUnitから場面をえらぶ */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
           <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面をえらぶ</h3>
           <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>そのUnitの表現を使って、AIと会話の練習ができるよ。</p>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
-            {FREETALK_UNITS.map(u => (
+            {FREETALK_UNITS.filter(u => !isArchived(u.id)).map(u => (
               <button key={u.id} className="hover-scale"
                 onClick={() => startFreetalk(withGoalOverride(buildUnitOpts(u), u.id))}
                 style={{ padding: '0.7rem', borderRadius: '10px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'center' }}>
@@ -644,7 +681,7 @@ export const AIAssistant: React.FC = () => {
         <Button variant="outline" onClick={() => setShowTranslation(t => !t)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.7rem' }} icon={Languages}>
           {showTranslation ? '訳オフ' : '訳オン'}
         </Button>
-        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
+        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}_${eiken}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
         <Button variant="outline" onClick={() => setShowRecord(s => !s)} style={{ fontSize: '0.8rem', padding: '0.4rem' }} disabled={messages.length === 0}>📝 記録</Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--color-primary)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
           <Coins size={18} color="#FFD700" />{totalPoints} P

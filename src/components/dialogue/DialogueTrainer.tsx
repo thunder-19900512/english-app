@@ -10,6 +10,7 @@ import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { usePoints } from '../../hooks/usePoints';
 import { showToast } from '../ui/Toast';
 import { DIALOGUES, type Dialogue, type DialogueLine } from './dialogueData';
+import { isArchived } from '../../data/archivedUnits';
 
 // 発音採点に通すため {…} のスロット記号を外した素の文を作る
 const cleanText = (en: string) => en.replace(/[{}]/g, '');
@@ -110,7 +111,8 @@ export const DialogueTrainer: React.FC = () => {
 
   // Unitえらび
   if (!dialogue) {
-    const list = DIALOGUES.filter(d => d.grade === grade);
+    // アーカイブ中の単元は一覧に出さない（URL直指定では今までどおり開ける＝先生が配信できる）
+    const list = DIALOGUES.filter(d => d.grade === grade && !isArchived(d.id));
     return (
       <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

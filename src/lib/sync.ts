@@ -41,6 +41,9 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   const pronStr = localStorage.getItem(`pronHistory_${studentId}`);
   const pronunciation_history = pronStr ? JSON.parse(pronStr) : [];
 
+  // 申告した英検レベル（AI英会話の難易度。端末をまたいでも残るように同期する）
+  const eiken_level = localStorage.getItem(`eiken_${studentId}`) || null;
+
   // ショップ状態（称号・きせかえ・消費額・寄付額・背景）
   const shopStr = localStorage.getItem(`shop_${studentId}`);
   const shop = shopStr ? JSON.parse(shopStr) : null; // 無い＝この端末は未設定
@@ -72,6 +75,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           if (reflections.length) safe.reflections = reflections;
           if (pronunciation_history.length) safe.pronunciation_history = pronunciation_history;
           if (shop) safe.shop = shop; // 空(未設定)なら送らずDBを維持
+          if (eiken_level) safe.eiken_level = eiken_level;
           const { error } = await supabase!.from('students').upsert(safe, { onConflict: 'id' });
           if (error) console.error('Failed to sync to Supabase (safe mode)', error);
           resolve();
@@ -144,6 +148,8 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
             reflections: mergedReflections,
             pronunciation_history: mergedPron,
             shop: mergedShop,
+            // 英検レベル：この端末で申告があればそれ、無ければDBの値を維持
+            eiken_level: eiken_level || db.eiken_level || null,
             last_access: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -255,6 +261,11 @@ export const pullFromSupabase = async (studentId: string) => {
     const mergedShop = mergeShop(localShop, data.shop);
     localStorage.setItem(`shop_${studentId}`, JSON.stringify(mergedShop));
     window.dispatchEvent(new Event('shopUpdated'));
+
+    // 英検レベル：この端末に無ければDBの申告を取り込む（別の端末で申告した分を引き継ぐ）
+    if (!localStorage.getItem(`eiken_${studentId}`) && data.eiken_level) {
+      localStorage.setItem(`eiken_${studentId}`, data.eiken_level);
+    }
 
     return true;
   }
