@@ -90,16 +90,17 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['町', '道案内'],
   },
   {
-    // 話型B：目印（next to …）と、そこでできること（You can …）を足す。
+    // 話型B：距離(for ◯ blocks)・角(at the corner)・目印(It's by ◯◯.)と、
+    //   そこでできること（You can …）を足す。配布物「まなぶこと」の5フレーズに対応。
     // {…}は自分が案内したい軽井沢のスポットに変えてOK。
-    id: 'g5-u5b', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型B・軽井沢のスポット）", targetPhrase: "It's next to the forest. You can take a photo there!",
+    id: 'g5-u5b', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型B・軽井沢のスポット）", targetPhrase: "It's by the forest. You can take a photo there!",
     lines: [
       { speaker: 'A', en: 'Excuse me. Where is {Kumoba Pond}?', ja: 'すみません、【雲場池】はどこですか？' },
-      { speaker: 'B', en: "Go straight and turn left. It's next to the {forest}.", ja: 'まっすぐ行って左に曲がってください。【森】のとなりです。' },
+      { speaker: 'B', en: "Go straight for {two} blocks. Turn left at the corner. It's by the {forest}.", ja: '【2】ブロックまっすぐ行って、角を左に曲がってください。【森】のそばです。' },
       { speaker: 'B', en: 'You can {take a photo} there!', ja: 'そこで【写真をとる】ことができますよ！' },
       { speaker: 'A', en: 'Thank you so much!', ja: '本当にありがとうございます！' },
     ],
-    note: 'It\'s next to ◯◯. ＝「◯◯のとなりです」。目印を1つ足すと、ぐっと案内らしくなる。',
+    note: 'It\'s by ◯◯. ＝「◯◯のそばです」。next to（となり）でもOK。block＝1区画、corner＝角。',
     relatedCategories: ['町', '道案内', '位置', '道案内＋（プラスアルファ）'],
     aiRoute: '/ai?unit=g5-u5',
     aiLabel: 'AIに道案内してみる',
@@ -110,10 +111,11 @@ export const DIALOGUES: Dialogue[] = [
     lines: [
       { speaker: 'A', en: 'Where do you want to go?', ja: 'どこに行きたいですか？' },
       { speaker: 'B', en: 'I want to go to {Harunire Terrace}.', ja: '【ハルニレテラス】に行きたいです。' },
-      { speaker: 'A', en: 'OK! Go straight. You can {eat lunch} there.', ja: 'いいですね！まっすぐ行ってください。そこで【昼ごはんを食べる】ことができます。' },
+      { speaker: 'A', en: 'OK! Go straight. We have a nice {terrace}!', ja: 'いいですね！まっすぐ行ってください。すてきな【テラス】があるんですよ！' },
+      { speaker: 'A', en: 'You can {eat lunch} there.', ja: 'そこで【昼ごはんを食べる】ことができます。' },
       { speaker: 'B', en: 'Sounds nice!', ja: 'いいですね！' },
     ],
-    note: 'I want to go to ◯◯. ＝「◯◯に行きたい」。6年U4「行きたい国」でもそのまま使える型。',
+    note: 'I want to go to ◯◯. ＝「◯◯に行きたい」。6年U4「行きたい国」でもそのまま使える型。We have a nice ◯◯! ＝「すてきな◯◯があるんです」＝まちの自慢の型。',
     relatedCategories: ['町', '町＋（プラスアルファ）', '道案内'],
     aiRoute: '/ai?unit=g6-u4',
     aiLabel: 'AIと「行きたい場所」を話す',
