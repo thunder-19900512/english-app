@@ -65,7 +65,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g5-u3',
     grade: 5,
-    unitName: 'Unit 3: What do you have on Monday?',
+    unitName: 'Unit 3: Can you play dodgeball?',
     url: 'https://sw21.tsho.jp/06pk/e/5/3so-01/',
     keyPhrase: 'Can you play the piano?',
     keyPhraseJapanese: 'あなたはピアノを弾くことができますか？',
@@ -95,7 +95,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g5-u4',
     grade: 5,
-    unitName: 'Unit 4: He can bake bread well.',
+    unitName: 'Unit 4: Who is this?',
     url: 'https://sw21.tsho.jp/06pk/e/5/4so-01/',
     keyPhrase: 'She can play tennis very well.',
     keyPhraseJapanese: '彼女はとても上手にテニスができます。',
@@ -125,7 +125,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g5-u5',
     grade: 5,
-    unitName: 'Unit 5: Where is the post office?',
+    unitName: "Unit 5: Let's go to the zoo.",
     url: 'https://sw21.tsho.jp/06pk/e/5/5so-01/',
     keyPhrase: 'Where is the post office?',
     keyPhraseJapanese: '郵便局はどこですか？',
@@ -155,7 +155,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g5-u6',
     grade: 5,
-    unitName: 'Unit 6: What would you like?',
+    unitName: 'Unit 6: At a restaurant.',
     url: 'https://sw21.tsho.jp/06pk/e/5/6so-01/',
     keyPhrase: 'What would you like?',
     keyPhraseJapanese: '何になさいますか？（何を注文しますか？）',
@@ -186,7 +186,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g5-u7',
     grade: 5,
-    unitName: 'Unit 7: Welcome to Japan.',
+    unitName: 'Unit 7: Welcome to Japan!',
     url: 'https://sw21.tsho.jp/06pk/e/5/7so-01/',
     keyPhrase: 'Why do you want to go there?',
     keyPhraseJapanese: 'なぜそこに行きたいのですか？',
@@ -278,7 +278,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u2',
     grade: 6,
-    unitName: 'Unit 2: How is your school life?',
+    unitName: 'Unit 2: My Daily Schedule',
     url: 'https://sw21.tsho.jp/06pk/e/6/2so-01/',
     keyPhrase: 'What time do you get up?',
     keyPhraseJapanese: 'あなたは何時に起きますか？',
@@ -308,7 +308,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u3',
     grade: 6,
-    unitName: 'Unit 3: My Summer Vacation',
+    unitName: 'Unit 3: My Weekend',
     url: 'https://sw21.tsho.jp/06pk/e/6/3so-01/',
     keyPhrase: 'How was your weekend?',
     keyPhraseJapanese: '週末はどうでしたか？',
@@ -368,7 +368,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u5',
     grade: 6,
-    unitName: 'Unit 5: We live in a global village.',
+    unitName: 'Unit 5: Where is it from?',
     url: 'https://sw21.tsho.jp/06pk/e/6/5so-01/',
     keyPhrase: 'This sweater is from New Zealand.',
     keyPhraseJapanese: 'このセーターはニュージーランドから来ました（産です）。',
@@ -398,7 +398,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u6',
     grade: 6,
-    unitName: 'Unit 6: Let\'s think about our food.',
+    unitName: 'Unit 6: Save the animals.',
     url: 'https://sw21.tsho.jp/06pk/e/6/6so-01/',
     keyPhrase: 'What do sea turtles eat?',
     keyPhraseJapanese: 'ウミガメは何を食べますか？',
@@ -458,7 +458,7 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u8',
     grade: 6,
-    unitName: 'Unit 8: Future Dreams',
+    unitName: 'Unit 8: My Future, My Dream',
     url: 'https://sw21.tsho.jp/06pk/e/6/8so-01/',
     keyPhrase: 'I want to be a programmer.',
     keyPhraseJapanese: '私はプログラマーになりたいです。',
