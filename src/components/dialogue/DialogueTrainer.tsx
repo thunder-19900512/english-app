@@ -183,7 +183,7 @@ export const DialogueTrainer: React.FC = () => {
       {dialogue.aiRoute && (
         <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(245, 158, 11, 0.12)', border: '2px solid #f59e0b' }}>
           <div style={{ fontSize: '0.9rem', color: '#7a5a00', marginBottom: '0.5rem' }}>
-            🍱 れんしゅうしたら、AIのお客さんと本番の練習をしてみよう！
+            🤖 れんしゅうしたら、AIをあいてに本番の練習をしてみよう！
           </div>
           <button
             className="hover-scale"

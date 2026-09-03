@@ -77,13 +77,46 @@ export const DIALOGUES: Dialogue[] = [
     ],
     relatedCategories: ['動作など（5年）'],
   },
+  // P5「Town Guide 軽井沢あんない」の床。道案内は3つの話型で段階的に伸ばす。
+  //   A=基本（たずねる→答える）／ B=軽井沢のスポットで目印とできることを足す／
+  //   C=6年U4「行きたい場所」につながる型。仕様書_まちクイズ.md v2 §3。
   {
-    id: 'g5-u5', grade: 5, unitName: 'Unit 5: Where is the post office?', targetPhrase: 'Where is the post office?',
+    id: 'g5-u5', grade: 5, unitName: 'Unit 5: Where is the post office?（話型A・基本）', targetPhrase: 'Where is the post office?',
     lines: [
-      { speaker: 'A', en: 'Excuse me. Where is the {post office}?', ja: 'すみません、【郵便局】はどこ？' },
-      { speaker: 'B', en: 'Go straight and turn {right}.', ja: 'まっすぐ行って【右】へ。' },
+      { speaker: 'A', en: 'Excuse me. Where is the {post office}?', ja: 'すみません、【郵便局】はどこですか？' },
+      { speaker: 'B', en: 'Go straight and turn {right}.', ja: 'まっすぐ行って【右】に曲がってください。' },
       { speaker: 'A', en: 'Thank you!', ja: 'ありがとう！' },
     ],
+    relatedCategories: ['町', '道案内'],
+  },
+  {
+    // 話型B：目印（next to …）と、そこでできること（You can …）を足す。
+    // {…}は自分が案内したい軽井沢のスポットに変えてOK。
+    id: 'g5-u5b', grade: 5, unitName: 'Unit 5: 道案内（話型B・軽井沢のスポット）', targetPhrase: "It's next to the forest. You can take a photo there!",
+    lines: [
+      { speaker: 'A', en: 'Excuse me. Where is {Kumoba Pond}?', ja: 'すみません、【雲場池】はどこですか？' },
+      { speaker: 'B', en: "Go straight and turn left. It's next to the {forest}.", ja: 'まっすぐ行って左に曲がってください。【森】のとなりです。' },
+      { speaker: 'B', en: 'You can {take a photo} there!', ja: 'そこで【写真をとる】ことができますよ！' },
+      { speaker: 'A', en: 'Thank you so much!', ja: '本当にありがとうございます！' },
+    ],
+    note: 'It\'s next to ◯◯. ＝「◯◯のとなりです」。目印を1つ足すと、ぐっと案内らしくなる。',
+    relatedCategories: ['町', '道案内', '位置'],
+    aiRoute: '/ai?unit=g5-u5',
+    aiLabel: 'AIに道案内してみる',
+  },
+  {
+    // 話型C：6年U4「行きたい国・場所」へつながる型。案内する側が提案までする。
+    id: 'g5-u5c', grade: 5, unitName: 'Unit 5: 道案内（話型C・行きたい場所）', targetPhrase: 'I want to go to ___.',
+    lines: [
+      { speaker: 'A', en: 'Where do you want to go?', ja: 'どこに行きたいですか？' },
+      { speaker: 'B', en: 'I want to go to {Harunire Terrace}.', ja: '【ハルニレテラス】に行きたいです。' },
+      { speaker: 'A', en: 'OK! Go straight. You can {eat lunch} there.', ja: 'いいですね！まっすぐ行ってください。そこで【昼ごはんを食べる】ことができます。' },
+      { speaker: 'B', en: 'Sounds nice!', ja: 'いいですね！' },
+    ],
+    note: 'I want to go to ◯◯. ＝「◯◯に行きたい」。6年U4「行きたい国」でもそのまま使える型。',
+    relatedCategories: ['町', '道案内'],
+    aiRoute: '/ai?unit=g6-u4',
+    aiLabel: 'AIと「行きたい場所」を話す',
   },
   {
     id: 'g5-u6', grade: 5, unitName: 'Unit 6: What would you like?', targetPhrase: 'What would you like?',
