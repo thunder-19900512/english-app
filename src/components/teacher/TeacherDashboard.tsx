@@ -19,10 +19,15 @@ import { isArchived } from '../../data/archivedUnits';
 interface MissionOption { label: string; route: string; videoUrl?: string }
 const MISSION_OPTIONS: MissionOption[] = [
   // ※アーカイブ中の単元も先生には残す（📦付き）。配信すれば今までどおり使える。
-  ...DIALOGUES.map(d => ({
-    label: `${isArchived(d.id) ? '📦 ' : ''}ダイアログ ${d.grade}年 ${d.unitName.replace(/:.*/, '')}`,
-    route: `/dialogue?grade=${d.grade}&id=${d.id}`,
-  })),
+  ...DIALOGUES.map(d => {
+    // 「Unit 5」だけだと話型A/B/Cが同じ名前になって選べないので、（…）の中は残す
+    const base = d.unitName.replace(/:.*/, '');
+    const paren = (d.unitName.match(/（.*）$/) || [''])[0];
+    return {
+      label: `${isArchived(d.id) ? '📦 ' : ''}ダイアログ ${d.grade}年 ${base}${base.includes(paren) ? '' : paren}`,
+      route: `/dialogue?grade=${d.grade}&id=${d.id}`,
+    };
+  }),
   ...DEFAULT_QUIZZES.map(q => ({
     label: `教科書 ${q.grade}年 ${q.unitName.replace(/:.*/, '')}`,
     route: `/textbook?grade=${q.grade}&id=${q.id}`,
