@@ -629,6 +629,23 @@ export const vocabulary: Vocabulary[] = [
   { id: 'wb50', english: 'quinoa', japanese: 'キヌア', category: '食べ物＋（世界の料理）', page: 0, emoji: '🌾', keyPhrase: "I'd like ◯◯." },
   { id: 'wb51', english: 'lomo saltado', japanese: 'ロモサルタード', category: '食べ物＋（世界の料理）', page: 0, emoji: '🥩', keyPhrase: "I'd like ◯◯." },
 
+  // ここから：教科書には無いが、P5「Town Guide 軽井沢あんない」で要る語（2026-09 追加）
+  //   仕様書_まちクイズ.md v2 §1・§2 の残りぶん。「食べ物＋（世界の料理）」と同じ扱いで、
+  //   本体の単元とは分けてある（page: 0 ＝ 教科書のページ無し）。
+  { id: 'v700', english: 'bridge', japanese: '橋', category: '町＋（プラスアルファ）', page: 0, emoji: '🌉', keyPhrase: "We have a nice ◯◯." },
+  { id: 'v701', english: 'pond', japanese: '池', category: '町＋（プラスアルファ）', page: 0, emoji: '🦆', keyPhrase: "We have a nice ◯◯." },
+  { id: 'v702', english: 'waterfall', japanese: '滝', category: '町＋（プラスアルファ）', page: 0, emoji: '💧', keyPhrase: "We have a nice ◯◯." },
+  { id: 'v703', english: 'hotel', japanese: 'ホテル', category: '町＋（プラスアルファ）', page: 0, emoji: '🏨', keyPhrase: "We have a nice ◯◯." },
+  { id: 'v704', english: 'shop', japanese: '店（＝store）', category: '町＋（プラスアルファ）', page: 0, emoji: '🏬', keyPhrase: "We have a nice ◯◯." },
+  { id: 'v705', english: 'next to', japanese: '～のとなりに', category: '道案内＋（プラスアルファ）', page: 0, emoji: '↔️', keyPhrase: "It's ◯◯ the station." },
+  { id: 'v706', english: 'near', japanese: '～の近くに', category: '道案内＋（プラスアルファ）', page: 0, emoji: '📍', keyPhrase: "It's ◯◯ the station." },
+  { id: 'v707', english: 'in front of', japanese: '～の前に', category: '道案内＋（プラスアルファ）', page: 0, emoji: '🔜', keyPhrase: "It's ◯◯ the station." },
+  { id: 'v708', english: 'behind', japanese: '～のうしろに', category: '道案内＋（プラスアルファ）', page: 0, emoji: '🔙', keyPhrase: "It's ◯◯ the station." },
+  { id: 'v709', english: 'between', japanese: '～と～の間に', category: '道案内＋（プラスアルファ）', page: 0, emoji: '↕️', keyPhrase: "It's ◯◯ the bank and the park." },
+  { id: 'v710', english: 'map', japanese: '地図', category: '道案内＋（プラスアルファ）', page: 0, emoji: '🗺️', keyPhrase: "Look at the ◯◯." },
+  { id: 'v711', english: 'here', japanese: 'ここ', category: '道案内＋（プラスアルファ）', page: 0, emoji: '📌', keyPhrase: "It's over ◯◯." },
+  { id: 'v712', english: 'there', japanese: 'そこ・あそこ', category: '道案内＋（プラスアルファ）', page: 0, emoji: '👉', keyPhrase: "You can see it over ◯◯." },
+
   // ここから：My Picture Dictionary から抜けていた単元（2026-09 追加）
   // 町（p.26）／乗り物（p.26 囲み）／道案内（p.27）／位置（p.27）／生き物の問題・できること（p.17）
   { id: 'v600', english: 'house', japanese: '家', category: '町', page: 26, emoji: '🏠', keyPhrase: "We have a nice ◯◯." },
