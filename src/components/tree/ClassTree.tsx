@@ -221,7 +221,7 @@ export const ClassTree: React.FC = () => {
             <div className="glass-card flex-col flex-center gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
               <div style={{ fontWeight: 'bold' }}>森に ポイントを入れる</div>
               <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                つかえるポイント：<b>{balance}P</b>（入れると へります。ためた合計は へりません）
+                いま つかえる：<b>{balance.toLocaleString()}P</b>（入れると へります。これまでの合計は へりません）
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {[10, 50, 100].map(a => (
@@ -237,7 +237,7 @@ export const ClassTree: React.FC = () => {
                 つぎに つくるもの（すきなものに 入れてね）
               </div>
               <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#666' }}>
-                つかえるポイント：<b>{balance}P</b>
+                いま つかえる：<b>{balance.toLocaleString()}P</b>
               </div>
               {candidates.map(b => {
                 const got = town.funds[b.id] || 0;

@@ -110,7 +110,7 @@ export const Shop: React.FC = () => {
       {/* 残高 */}
       <div className="glass-card" style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(253, 203, 110, 0.15)', border: '2px solid var(--color-accent)' }}>
         <div style={{ fontSize: '2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={28} /> つかえるポイント：{balance}P
+          <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={28} /> いま つかえる：{balance.toLocaleString()}P
         </div>
       </div>
 

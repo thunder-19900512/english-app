@@ -68,7 +68,8 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
         if (readErr && readErr.code !== 'PGRST116') {
           // 読み込み失敗（通信エラー等）：DBを壊さないため、空のコレクションは送らない
           //   （＝そのカラムはDBの値を維持）。値のあるものだけ更新する。
-          const safe: Record<string, any> = { id: studentId, name, points, last_access: new Date().toISOString() };
+          // DBを読めていない＝名簿の名前が分からないので、name は送らない（DBの値を維持）
+          const safe: Record<string, any> = { id: studentId, points, last_access: new Date().toISOString() };
           if (badges.length) safe.badges = badges;
           if (Object.keys(clear_counts).length) safe.clear_counts = clear_counts;
           if (Object.keys(dictionary_progress).length) safe.dictionary_progress = dictionary_progress;
@@ -140,7 +141,9 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           .from('students')
           .upsert({
             id: studentId,
-            name,
+            // 名前は名簿（Supabase）が正。端末に残った古い名前で上書きしない
+            //   （改名したのに、その子のタブレットが次の同期で元に戻す事故を防ぐ）
+            name: db.name || name,
             points: mergedPoints,
             badges: mergedBadges,
             clear_counts: mergedClearCounts,
@@ -182,10 +185,9 @@ export const pullFromSupabase = async (studentId: string) => {
   
   if (data) {
     // Restore to local storage
-    const currentName = localStorage.getItem('studentName') || data.name;
-    if (!localStorage.getItem('studentName') && data.name) {
-      localStorage.setItem('studentName', data.name);
-    }
+    // 名前は名簿（DB）が正。改名したらこの端末の表示もその場で直る
+    const currentName = data.name || localStorage.getItem('studentName') || 'ゲスト';
+    if (data.name) localStorage.setItem('studentName', data.name);
     
     // Merge points (take the max)
     const localPoints = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);

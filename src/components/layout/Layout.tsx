@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Home, LogOut, Star } from 'lucide-react';
+import { Home, LogOut, Star, Coins } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
@@ -61,13 +61,30 @@ export const Layout: React.FC = () => {
             <h2 className="text-primary" style={{ margin: 0 }}>
               こんにちは、{localStorage.getItem('studentName')}{titleEmoji}さん！
             </h2>
-            {/* ためた合計（減らない）と、ショップで使える残高を分けて示す。
-                同じ「pts」で2つの数字が出ると混乱するため、ラベルを付ける。 */}
-            <div className="badge" style={{ background: 'var(--color-accent)', color: '#000', fontSize: '1.05rem', padding: '0.2rem 1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Star fill="#fff" stroke="#fff" size={18} />
-              <span>ためた {totalPoints}</span>
-              <span style={{ opacity: 0.45 }}>|</span>
-              <span>つかえる {balance}</span>
+            {/* ポイントは2種類ある。ひとつの帯に並べると読み違えるので、
+                「これまでの合計（減らない記録）」と「いま つかえる（残高）」を
+                別々のカードにして、ラベルを数字の上に置く。 */}
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <div
+                title="これまでに ためた ぜんぶの ポイント。つかっても へりません。"
+                style={{ background: 'rgba(253, 203, 110, 0.28)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.3rem 0.9rem', minWidth: '108px', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#7a5a00', letterSpacing: '0.02em' }}>これまでの合計</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '1.15rem', fontWeight: 'bold', color: '#000', lineHeight: 1.2 }}>
+                  <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={16} />
+                  {totalPoints.toLocaleString()}<span style={{ fontSize: '0.8rem' }}>P</span>
+                </div>
+              </div>
+              <div
+                title="いま つかえる ポイント。合計から、ショップで つかった分と 町に入れた分を ひいた のこりです。"
+                style={{ background: 'rgba(253, 121, 168, 0.16)', border: '2px solid #fd79a8', borderRadius: '14px', padding: '0.3rem 0.9rem', minWidth: '108px', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#b83280', letterSpacing: '0.02em' }}>いま つかえる</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '1.15rem', fontWeight: 'bold', color: '#000', lineHeight: 1.2 }}>
+                  <Coins size={16} color="#fd79a8" />
+                  {balance.toLocaleString()}<span style={{ fontSize: '0.8rem' }}>P</span>
+                </div>
+              </div>
             </div>
           </div>
           
