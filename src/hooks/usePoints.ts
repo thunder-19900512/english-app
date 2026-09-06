@@ -1,6 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 import { showToast } from '../components/ui/Toast';
+import { currentMission, MISSION_MULTIPLIER } from '../lib/missionBonus';
+
+// ボーナスの重ねがけの上限（ミッション×やりきり等）
+const MAX_MULTIPLIER = 2;
 
 export const usePoints = () => {
   const studentId = localStorage.getItem('studentId');
@@ -83,10 +87,17 @@ export const usePoints = () => {
       if (options.isNewRecord) earned += 10;
     }
 
-    // Apply multiplier if provided (for scaled down modes)
-    // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない。
-    if (options.multiplier !== undefined && options.multiplier < 1 && earned > 0) {
-      earned = Math.max(1, Math.round(earned * options.multiplier));
+    // 倍率をかける。正答率のような「減らす倍率」と、今日のミッションのような
+    // 「増やす倍率」の両方に効く。
+    // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない＝連打で稼げない。
+    const mission = currentMission();
+    const missionMul = mission ? MISSION_MULTIPLIER : 1;
+    // ボーナスが重なっても最大2倍まで。1回のクリアで稼ぎすぎて、
+    // 他の活動やショップ・町のバランスが壊れないようにする。
+    const raw = (options.multiplier !== undefined ? options.multiplier : 1) * missionMul;
+    const mul = Math.min(raw, MAX_MULTIPLIER);
+    if (mul !== 1 && earned > 0) {
+      earned = Math.max(1, Math.round(earned * mul));
     }
 
     // Update clear counts
@@ -110,7 +121,11 @@ export const usePoints = () => {
 
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
     if (earned > 0) {
-      showToast(`🎉 クリア！ ＋${earned}ポイント ゲット！`, 'points');
+      showToast(
+        mission
+          ? `🎯 今日のミッション！ ＋${earned}ポイント（${MISSION_MULTIPLIER}倍ボーナス）`
+          : `🎉 クリア！ ＋${earned}ポイント ゲット！`,
+        'points');
     } else {
       showToast('🎉 クリア！（くり返しのため、今回はポイントなし）', 'success');
     }

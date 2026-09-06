@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { setCap, getCap } from '../lib/apiUsage';
+import { saveMissionCache } from '../lib/missionBonus';
 
 export interface TodayMission {
   label: string;
@@ -34,8 +35,9 @@ export const useAppSettings = () => {
       if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
       // 複数ミッション（新形式）を優先。無ければ旧形式（単数）を配列に包んで互換維持
-      if (progress.todayMissions !== undefined) setTodayMissions(progress.todayMissions || []);
-      else if (progress.todayMission !== undefined) setTodayMissions(progress.todayMission ? [progress.todayMission] : []);
+      // ボーナス判定は加点の瞬間に端末側で行うので、受け取ったミッションを控えておく
+      if (progress.todayMissions !== undefined) { setTodayMissions(progress.todayMissions || []); saveMissionCache(progress.todayMissions || []); }
+      else if (progress.todayMission !== undefined) { const one = progress.todayMission ? [progress.todayMission] : []; setTodayMissions(one); saveMissionCache(one); }
       // APIの1日上限を localStorage にミラーして、各画面の使用量チェックから参照できるようにする。
       if (progress.geminiDailyCap !== undefined) { setCap('gemini', progress.geminiDailyCap); setGeminiDailyCap(progress.geminiDailyCap); }
       if (progress.azureDailyCap !== undefined) { setCap('azure', progress.azureDailyCap); setAzureDailyCap(progress.azureDailyCap); }

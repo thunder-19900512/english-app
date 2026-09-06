@@ -9,6 +9,7 @@ import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
+import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -125,8 +126,14 @@ export const Home: React.FC = () => {
             >
               <span style={{ fontSize: '2.5rem' }}>🎯</span>
               <div style={{ flex: 1, minWidth: '180px' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
-                  今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
+                    今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
+                  </span>
+                  {/* ここをやると得だと一目で分かるようにする（誘導のかなめ） */}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', background: 'white', color: '#c0392b', borderRadius: '999px', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>
+                    ⭐ ポイント {MISSION_MULTIPLIER}倍
+                  </span>
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
               </div>
