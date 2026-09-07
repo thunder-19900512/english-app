@@ -15,9 +15,11 @@ export interface ShopState {
   equippedTheme: string | null;
   bgImage: string | null;   // 持っている背景写真（1枚だけ。けしても消えない）
   bgOn: boolean;            // いま背景を使っているか（つけ外しは無料）
+  bgSetAt: number;          // 写真を登録した時刻。先生のリセットより古ければ消える
+  bgClearedAt: number;      // 先生がリセットした時刻（DB側から降ってくる）
 }
 
-const EMPTY: ShopState = { spent: 0, donated: 0, owned: [], equippedTitle: null, equippedTheme: null, bgImage: null, bgOn: false };
+const EMPTY: ShopState = { spent: 0, donated: 0, owned: [], equippedTitle: null, equippedTheme: null, bgImage: null, bgOn: false, bgSetAt: 0, bgClearedAt: 0 };
 
 const keyFor = (id: string) => `shop_${id}`;
 
@@ -86,11 +88,13 @@ export const useShop = () => {
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
-  // 写真を登録する。まだ買っていなければ、このとき1回だけ BG_PRICE を消費する。
-  // 2枚目以降は「入れかえ」なので無料（持てる写真は1枚だけ＝保存先も上書き）。
+  // 写真を登録する。登録できるのは1回だけ（あとから入れかえはできない）。
+  // このとき BG_PRICE を消費する。
   const setBackgroundImage = useCallback((url: string): boolean => {
     if (!studentId) return false;
     const cur = readShop(studentId);
+    if (cur.bgImage) { showToast('はいけいの写真は 1まいだけだよ', 'fail'); return false; }
+    // すでに買っている（＝先生に消してもらった後の登録し直し）なら、もう払わない
     const unlocked = cur.owned.includes(BG_UNLOCK_ID);
     if (!unlocked) {
       const bal = totalPoints - cur.spent - cur.donated;
@@ -102,9 +106,10 @@ export const useShop = () => {
       owned: unlocked ? cur.owned : [...cur.owned, BG_UNLOCK_ID],
       bgImage: url,
       bgOn: true,
+      bgSetAt: Date.now(),
     };
     writeShop(studentId, next); setShop(next);
-    showToast(unlocked ? '🖼️ はいけいの写真を かえた！' : `🖼️ はいけいを 手に入れた！（−${BG_PRICE}P）`, 'points');
+    showToast(unlocked ? '🖼️ はいけいを 登録したよ！' : `🖼️ はいけいを 手に入れた！（−${BG_PRICE}P）`, 'points');
     return true;
   }, [studentId, totalPoints]);
 
@@ -116,10 +121,11 @@ export const useShop = () => {
     showToast(on ? '🖼️ はいけいを つけたよ' : '🖼️ はいけいを けしたよ', 'success');
   }, [studentId]);
 
-  // 持っている写真そのものを捨てる（買った権利は残るので、また無料で登録できる）。
+  // 写真を消す。子どもの画面からは呼ばない（1枚しか登録できない仕様のため）。
+  // 先生が「ふさわしくない写真」をリセットしたときに、同期側から使う。
   const clearBackground = useCallback(() => {
     if (!studentId) return;
-    const next = { ...readShop(studentId), bgImage: null, bgOn: false };
+    const next = { ...readShop(studentId), bgImage: null, bgOn: false, bgSetAt: 0, bgClearedAt: 0 };
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 

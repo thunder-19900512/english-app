@@ -14,9 +14,21 @@ const mergeShop = (local: any, db: any): any => {
     owned: Array.from(new Set([...(d.owned || []), ...(l.owned || [])])),
     equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
     equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
-    bgImage: hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null),
-    // 背景の「つける／けす」も端末の設定として扱う（未設定なら写真があるかで決める）
-    bgOn: hasLocal ? (l.bgOn ?? !!l.bgImage) : (d.bgOn ?? !!d.bgImage),
+    // 背景の写真は端末優先（アップロード直後に消されないように）。
+    // ただし先生がリセットした時刻(bgClearedAt)より前に登録した写真は消す。
+    //   ＝ふさわしくない写真を、先生が全端末から確実に取り消せるようにするための仕掛け。
+    ...(() => {
+      const clearedAt = Math.max(l.bgClearedAt || 0, d.bgClearedAt || 0);
+      const img = hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null);
+      const setAt = hasLocal ? (l.bgSetAt ?? 0) : (d.bgSetAt ?? 0);
+      const wiped = !!img && clearedAt > 0 && setAt <= clearedAt;
+      return {
+        bgImage: wiped ? null : img,
+        bgOn: wiped ? false : (hasLocal ? (l.bgOn ?? !!l.bgImage) : (d.bgOn ?? !!d.bgImage)),
+        bgSetAt: wiped ? 0 : setAt,
+        bgClearedAt: clearedAt,
+      };
+    })(),
   };
 };
 

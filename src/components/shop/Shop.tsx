@@ -48,7 +48,7 @@ const compressImage = async (file: File): Promise<Blob> => {
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn, clearBackground } = useShop();
+  const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn } = useShop();
   const [tab, setTab] = useState<Tab>('title');
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
@@ -70,11 +70,14 @@ export const Shop: React.FC = () => {
       setUploadMsg(`この写真は大きすぎるよ（${BG_MAX_INPUT_MB}MBまで）。ちがう写真をえらんでね`);
       setTimeout(() => setUploadMsg(''), 6000); return;
     }
-    // まだ買っていないときだけ、先に残高チェックと確認をする
-    if (!bgUnlocked) {
-      if (balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
-      if (!window.confirm(`はいけいを 手に入れると ${BG_PRICE}P つかうよ。\n一度かえば、つけたり けしたり、写真の入れかえは ずっと無料だよ。いい？`)) return;
-    }
+    if (shop.bgImage) return; // すでに1枚もっている（入れかえはできない）
+    if (!bgUnlocked && balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
+    if (!window.confirm(
+      (bgUnlocked ? 'この写真を はいけいにするよ。（ポイントは かからないよ）\n\n'
+                  : `この写真を はいけいにすると ${BG_PRICE}P つかうよ。\n\n`)
+      + '★ 登録できるのは 1まいだけ。あとから 写真を かえることは できません。\n'
+      + '（つけたり けしたりは、いつでも 無料でできるよ）\n\n'
+      + 'この写真で いい？')) return;
     setUploading(true); setUploadMsg('');
     try {
       const blob = await compressImage(file);
@@ -89,12 +92,6 @@ export const Shop: React.FC = () => {
     } finally {
       setUploading(false);
       setTimeout(() => setUploadMsg(''), 5000);
-    }
-  };
-
-  const handleDeletePhoto = () => {
-    if (window.confirm('この写真を すてる？\n（買ったことは のこるので、また 無料で 写真をえらべるよ）')) {
-      clearBackground();
     }
   };
 
@@ -176,15 +173,16 @@ export const Shop: React.FC = () => {
               <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で はいけいを 手に入れる</div>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
                 すきな写真を 1まい えらぶと、アプリのはいけいに なるよ。<br />
-                <b>一度かえば、つけたり けしたり、写真の入れかえは ずっと無料。</b><br />
-                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真にしよう！</span>
+                買ったあとは、<b>つけたり けしたり いつでも 無料</b>。<br />
+                <b style={{ color: '#c0392b' }}>★ 登録できるのは 1まいだけ。あとから かえられないよ。</b><br />
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真をえらぼう！</span>
               </p>
             </>
           ) : (
             <>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-success)' }}>✅ はいけい（もっているよ）</div>
               <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                つけたり けしたり、写真の入れかえは 無料。もてる写真は 1まいだよ。
+                つけたり けしたりは <b>いつでも 無料</b>。写真は この1まいだよ。
               </p>
             </>
           )}
@@ -212,14 +210,13 @@ export const Shop: React.FC = () => {
             </div>
           )}
 
-          <Button onClick={() => fileRef.current?.click()} disabled={uploading || (!bgUnlocked && balance < BG_PRICE)}
-            variant={bgUnlocked ? 'outline' : 'primary'}>
-            {uploading ? 'アップロード中…'
-              : bgUnlocked ? (shop.bgImage ? '📷 写真を いれかえる（無料）' : '📷 写真をえらぶ（無料）')
-              : `📷 写真をえらぶ（${BG_PRICE}P）`}
-          </Button>
+          {!shop.bgImage && (
+            <Button onClick={() => fileRef.current?.click()} disabled={uploading || (!bgUnlocked && balance < BG_PRICE)}>
+              {uploading ? 'アップロード中…' : bgUnlocked ? '📷 写真をえらぶ（無料）' : `📷 写真をえらぶ（${BG_PRICE}P）`}
+            </Button>
+          )}
 
-          {!bgUnlocked && balance < BG_PRICE && (
+          {!shop.bgImage && !bgUnlocked && balance < BG_PRICE && (
             <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>あと {BG_PRICE - balance}P たまったら 手に入れられるよ</div>
           )}
 
@@ -236,15 +233,14 @@ export const Shop: React.FC = () => {
                   </div>
                 )}
               </div>
-              <button onClick={handleDeletePhoto}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}>
-                この写真を すてる
-              </button>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                写真は かえられないよ。こまったときは 先生に つたえてね
+              </div>
             </>
           )}
 
           <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1まい）
+            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1まい・入れかえ不可）
           </div>
         </div>
       )}

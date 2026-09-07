@@ -92,6 +92,8 @@ export const TeacherDashboard: React.FC = () => {
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
   // ポイント手動加算（消失時の補填用）。同期がmaxマージのため加算のみ対応。
   const [adjStudentId, setAdjStudentId] = useState('');
+  const [bgStudentId, setBgStudentId] = useState('');
+  const [bgMsg, setBgMsg] = useState('');
   const [adjAmount, setAdjAmount] = useState('');
   const [adjMsg, setAdjMsg] = useState('');
   // クラスの木のグループ分け（56A対56B / 5年対6年）
@@ -235,6 +237,30 @@ export const TeacherDashboard: React.FC = () => {
 
   // ポイントを手動で加算する（消えた分の補填用）。DBの現在値に足す。
   // 児童側の同期はポイントを「多いほう優先」でマージするため、加算はそのまま反映される。
+  // 背景写真のリセット（ふさわしくない写真だったときの取り消し）。
+  // 子どもは1枚しか登録できないので、先生が消さないと直せない。
+  const handleResetBackground = async () => {
+    if (!supabase || !bgStudentId) { setBgMsg('生徒を選んでください'); setTimeout(() => setBgMsg(''), 4000); return; }
+    const target = students.find(s => s.id === bgStudentId);
+    if (!window.confirm(`${target?.name || bgStudentId} の背景写真を消します。\nこのあと、その子はもう一度（無料で）写真を選べるようになります。`)) return;
+
+    const { data: row, error: readErr } = await supabase
+      .from('students').select('shop, name').eq('id', bgStudentId).single();
+    if (readErr || !row) { setBgMsg('読み込みエラー'); setTimeout(() => setBgMsg(''), 4000); return; }
+
+    const shop = row.shop || {};
+    // 「この時刻より前に登録された写真は無効」という印を立てる。
+    // これで、その子の端末に残っている写真も次の同期で消える（sync.tsのmergeShop）。
+    const next = { ...shop, bgImage: null, bgOn: false, bgSetAt: 0, bgClearedAt: Date.now() };
+    const { error } = await supabase.from('students').update({ shop: next }).eq('id', bgStudentId);
+
+    // 保存してあるファイル自体も消す（残しておく理由がない）
+    await supabase.storage.from('backgrounds').remove([`${bgStudentId}.jpg`]);
+
+    setBgMsg(error ? '保存エラー' : `${row.name} の背景写真を消しました（もう一度えらべます）`);
+    setTimeout(() => setBgMsg(''), 6000);
+  };
+
   const handleAdjustPoints = async () => {
     if (!supabase) return;
     const amount = parseInt(adjAmount, 10);
@@ -507,6 +533,30 @@ export const TeacherDashboard: React.FC = () => {
           <Button onClick={handleAdjustPoints}>加算する</Button>
         </div>
         {adjMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{adjMsg}</span>}
+      </div>
+
+      {/* 背景写真のリセット（1人1枚・入れかえ不可なので、先生だけが取り消せる） */}
+      <div className="glass-card" style={{ border: '2px solid #fd79a8' }}>
+        <h2 style={{ margin: '0 0 0.5rem 0' }}>🖼️ 背景写真のリセット</h2>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          子どもが登録できる背景写真は<b>1人1枚・入れかえ不可</b>です。
+          ふさわしくない写真や、まちがえて登録した場合はここで消してください。
+          消すと、その子は<b>もう一度（追加のポイントなしで）</b>写真を選べます。
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <select
+            value={bgStudentId}
+            onChange={e => setBgStudentId(e.target.value)}
+            style={{ flex: 1, minWidth: '200px', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontSize: '1rem' }}
+          >
+            <option value="">（生徒を選ぶ）</option>
+            {students.map(s => (
+              <option key={s.id} value={s.id}>{s.id}. {s.name}{s.shop?.bgImage ? '（背景あり）' : ''}</option>
+            ))}
+          </select>
+          <Button onClick={handleResetBackground} variant="outline">背景を消す</Button>
+        </div>
+        {bgMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{bgMsg}</span>}
       </div>
 
       {/* クラスの木：グループ分けの切替 */}
