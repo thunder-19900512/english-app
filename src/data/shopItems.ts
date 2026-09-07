@@ -24,8 +24,16 @@ export const THEMES: ShopItem[] = [
 export const findTitle = (id: string | null | undefined) => TITLES.find(t => t.id === id) || null;
 export const findTheme = (id: string | null | undefined) => THEMES.find(t => t.id === id) || null;
 
-// 背景画像を1枚つけるのにかかるポイント（つけるたびに消費。はずすと次はまた必要）
+// 背景画像を使えるようにするポイント（最初の1回だけ）。
+// 買ったあとは「つける／けす」も「写真の入れかえ」も無料。
+// ※ 以前は“つけるたび”に消費していたので、けすと再課金になり、
+//   実質つけっぱなしにするしかなかった（子どもからの要望で変更）。
 export const BG_PRICE = 1000;
+
+// 背景の持ち物は「1人1枚」。保存先も {studentId}.jpg の上書きなので増えない。
+export const BG_UNLOCK_ID = 'bg-unlock';       // 買ったかどうかの印（owned に入る）
+export const BG_MAX_INPUT_MB = 12;             // これより大きい写真は受け取らない
+export const BG_MAX_STORED_KB = 900;           // 保存する画像はこのサイズ以下まで圧縮する
 
 // クラスの木：TREE_STEP ポイントごとに1段階成長（最大10段階）
 export const TREE_STAGES = ['🌱', '🌿', '🪴', '🌳', '🌳✨', '🌸🌳', '🌸🌳✨', '🍎🌳', '🍎🌳✨', '🏆🌳'];

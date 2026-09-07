@@ -20,7 +20,7 @@ export const Layout: React.FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = shop.equippedTheme || '';
-    if (shop.bgImage) {
+    if (shop.bgImage && shop.bgOn) {
       // 白の半透明オーバーレイで文字の可読性を確保
       document.body.style.backgroundImage =
         `linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)), url("${shop.bgImage}")`;
@@ -34,7 +34,7 @@ export const Layout: React.FC = () => {
       root.dataset.theme = '';
       document.body.style.backgroundImage = '';
     };
-  }, [shop.equippedTheme, shop.bgImage]);
+  }, [shop.equippedTheme, shop.bgImage, shop.bgOn]);
 
   const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
 

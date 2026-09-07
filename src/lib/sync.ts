@@ -15,6 +15,8 @@ const mergeShop = (local: any, db: any): any => {
     equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
     equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
     bgImage: hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null),
+    // 背景の「つける／けす」も端末の設定として扱う（未設定なら写真があるかで決める）
+    bgOn: hasLocal ? (l.bgOn ?? !!l.bgImage) : (d.bgOn ?? !!d.bgImage),
   };
 };
 

@@ -3,18 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { TITLES, THEMES, BG_PRICE, type ShopItem } from '../../data/shopItems';
+import { TITLES, THEMES, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 
 type Tab = 'title' | 'theme' | 'bg';
 
-// 画像をcanvasで最大1600px・JPEG品質0.8に圧縮してBlobにする
-const compressImage = (file: File): Promise<Blob> => new Promise((resolve, reject) => {
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    const max = 1600;
+// 読み込んだ写真を、指定の大きさ・品質でJPEGにする
+const toJpeg = (img: HTMLImageElement, max: number, quality: number): Promise<Blob> =>
+  new Promise((resolve, reject) => {
     let { width, height } = img;
     if (width > max || height > max) {
       const r = Math.min(max / width, max / height);
@@ -25,15 +21,34 @@ const compressImage = (file: File): Promise<Blob> => new Promise((resolve, rejec
     const ctx = canvas.getContext('2d');
     if (!ctx) return reject(new Error('no ctx'));
     ctx.drawImage(img, 0, 0, width, height);
-    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', 0.8);
-  };
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', quality);
+  });
+
+const loadImage = (file: File): Promise<HTMLImageElement> => new Promise((resolve, reject) => {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
   img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img load failed')); };
   img.src = url;
 });
 
+// 保存サイズが上限（BG_MAX_STORED_KB）に収まるまで、段階的に小さく・粗くする。
+// 大きな写真をそのまま貯めないための歯止め。1人1枚しか持てないので、
+// これで保存容量は「人数 × 1MB弱」で頭打ちになる。
+const compressImage = async (file: File): Promise<Blob> => {
+  const img = await loadImage(file);
+  const steps: [number, number][] = [[1600, 0.8], [1280, 0.7], [1024, 0.6], [800, 0.5]];
+  let last: Blob | null = null;
+  for (const [max, q] of steps) {
+    last = await toJpeg(img, max, q);
+    if (last.size <= BG_MAX_STORED_KB * 1024) return last;
+  }
+  return last!; // ここまで縮めれば十分小さい
+};
+
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, balance, buy, equipTitle, equipTheme, buyBackground, clearBackground } = useShop();
+  const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn, clearBackground } = useShop();
   const [tab, setTab] = useState<Tab>('title');
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
@@ -46,19 +61,28 @@ export const Shop: React.FC = () => {
     if (window.confirm(`「${item.name}」を ${item.price}P で かいますか？`)) buy(item);
   };
 
+  const bgUnlocked = shop.owned.includes(BG_UNLOCK_ID);
+
   const handleUpload = async (file: File) => {
     if (!supabase || !studentId) return;
-    // 先に残高チェック（アップロードしてから足りない、を防ぐ）
-    if (balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
-    if (!window.confirm(`はいけいを つけると ${BG_PRICE}P つかうよ。いい？`)) return;
+    // 大きすぎる写真はそもそも受け取らない（読み込みで固まるのを防ぐ）
+    if (file.size > BG_MAX_INPUT_MB * 1024 * 1024) {
+      setUploadMsg(`この写真は大きすぎるよ（${BG_MAX_INPUT_MB}MBまで）。ちがう写真をえらんでね`);
+      setTimeout(() => setUploadMsg(''), 6000); return;
+    }
+    // まだ買っていないときだけ、先に残高チェックと確認をする
+    if (!bgUnlocked) {
+      if (balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
+      if (!window.confirm(`はいけいを 手に入れると ${BG_PRICE}P つかうよ。\n一度かえば、つけたり けしたり、写真の入れかえは ずっと無料だよ。いい？`)) return;
+    }
     setUploading(true); setUploadMsg('');
     try {
       const blob = await compressImage(file);
-      const path = `${studentId}.jpg`;
+      const path = `${studentId}.jpg`; // 1人1枚。前の写真は上書きされる
       const { error } = await supabase.storage.from('backgrounds').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
       if (error) throw error;
       const { data } = supabase.storage.from('backgrounds').getPublicUrl(path);
-      const ok = buyBackground(`${data.publicUrl}?t=${Date.now()}`); // 課金＆設定
+      const ok = setBackgroundImage(`${data.publicUrl}?t=${Date.now()}`);
       setUploadMsg(ok ? 'はいけいを かえたよ！🎉' : 'ポイントが たりなかった…');
     } catch (e) {
       setUploadMsg('アップロードできなかった…もう一回ためしてね');
@@ -68,8 +92,8 @@ export const Shop: React.FC = () => {
     }
   };
 
-  const handleRemoveBg = () => {
-    if (window.confirm(`はいけいを はずすと、また つけるときに ${BG_PRICE}P かかるよ。はずす？`)) {
+  const handleDeletePhoto = () => {
+    if (window.confirm('この写真を すてる？\n（買ったことは のこるので、また 無料で 写真をえらべるよ）')) {
       clearBackground();
     }
   };
@@ -147,28 +171,84 @@ export const Shop: React.FC = () => {
 
       {tab === 'bg' && (
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で はいけいをつける</div>
-          <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
-            すきな写真を えらぶと、アプリのはいけいに なるよ。<br />
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真にしよう！</span>
-          </p>
+          {!bgUnlocked ? (
+            <>
+              <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で はいけいを 手に入れる</div>
+              <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
+                すきな写真を 1まい えらぶと、アプリのはいけいに なるよ。<br />
+                <b>一度かえば、つけたり けしたり、写真の入れかえは ずっと無料。</b><br />
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真にしよう！</span>
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-success)' }}>✅ はいけい（もっているよ）</div>
+              <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                つけたり けしたり、写真の入れかえは 無料。もてる写真は 1まいだよ。
+              </p>
+            </>
+          )}
+
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.currentTarget.value = ''; }} />
-          <Button onClick={() => fileRef.current?.click()} disabled={uploading || balance < BG_PRICE}>
-            {uploading ? 'アップロード中…' : `📷 写真をえらぶ（${BG_PRICE}P）`}
+
+          {/* もっている人：まず「つける／けす」を大きく出す（ここが要望の中心） */}
+          {bgUnlocked && shop.bgImage && (
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button
+                onClick={() => setBackgroundOn(true)}
+                variant={shop.bgOn ? 'primary' : 'outline'}
+                style={{ minWidth: '130px' }}
+              >
+                {shop.bgOn ? '✅ ついている' : '🖼️ つける'}
+              </Button>
+              <Button
+                onClick={() => setBackgroundOn(false)}
+                variant={!shop.bgOn ? 'primary' : 'outline'}
+                style={{ minWidth: '130px' }}
+              >
+                {!shop.bgOn ? '✅ けしている' : '🚫 けす'}
+              </Button>
+            </div>
+          )}
+
+          <Button onClick={() => fileRef.current?.click()} disabled={uploading || (!bgUnlocked && balance < BG_PRICE)}
+            variant={bgUnlocked ? 'outline' : 'primary'}>
+            {uploading ? 'アップロード中…'
+              : bgUnlocked ? (shop.bgImage ? '📷 写真を いれかえる（無料）' : '📷 写真をえらぶ（無料）')
+              : `📷 写真をえらぶ（${BG_PRICE}P）`}
           </Button>
-          {balance < BG_PRICE && !shop.bgImage && (
-            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>あと {BG_PRICE - balance}P たまったら つけられるよ</div>
+
+          {!bgUnlocked && balance < BG_PRICE && (
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>あと {BG_PRICE - balance}P たまったら 手に入れられるよ</div>
           )}
-          {shop.bgImage && (
-            <Button variant="outline" onClick={handleRemoveBg}>はいけいを はずす</Button>
-          )}
+
           {uploadMsg && <div style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>{uploadMsg}</div>}
+
           {shop.bgImage && (
-            <img src={shop.bgImage} alt="はいけい" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '12px' }} />
+            <>
+              <div style={{ position: 'relative' }}>
+                <img src={shop.bgImage} alt="はいけい"
+                  style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '12px', opacity: shop.bgOn ? 1 : 0.4 }} />
+                {!shop.bgOn && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#475569' }}>
+                    いま けしているよ
+                  </div>
+                )}
+              </div>
+              <button onClick={handleDeletePhoto}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                この写真を すてる
+              </button>
+            </>
           )}
+
+          <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1まい）
+          </div>
         </div>
       )}
+
     </div>
   );
 };
