@@ -15,6 +15,27 @@ import { KARUIZAWA_QUIZZES } from '../textbook/karuizawaQuizData';
 import { vocabulary } from '../../data/vocabulary';
 import { isArchived } from '../../data/archivedUnits';
 
+// Azure Speech のキーが「いま実際に使えるか」を確かめる。
+// アプリ本体（Speech SDK の fromSubscription）と同じ「キー＋リージョン」の組み合わせで
+// トークンを1つ発行してもらうだけ。音声は送らないので課金は発生しない。
+const testAzureKey = async (key: string, region: string): Promise<{ ok: boolean; message: string }> => {
+  try {
+    const res = await fetch(`https://${region}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+      method: 'POST',
+      headers: { 'Ocp-Apim-Subscription-Key': key },
+    });
+    if (res.ok) return { ok: true, message: 'OK' };
+    if (res.status === 401) {
+      return { ok: false, message: 'キーが違うか、リージョンが合っていません（401）。Azureポータルの「キーとエンドポイント」で、KEY 1 と「場所/地域」をそのままコピーしてください。※ Azure AI Foundry の複数サービス用リソースのキーはここでは使えないことがあります。「Speech service」という種類のリソースを作ってそのキーを使ってください' };
+    }
+    if (res.status === 403) return { ok: false, message: 'このキーは無効化されています（403）。サブスクリプションの支払い状態や、無料枠の期限を確認してください' };
+    if (res.status === 429) return { ok: false, message: 'いま混み合っています（429）。少し待ってもう一度' };
+    return { ok: false, message: `Azureが ${res.status} を返しました` };
+  } catch (e) {
+    return { ok: false, message: 'Azureに つながりませんでした（ネットワーク/CORS）' };
+  }
+};
+
 // 🎙️ 音声の成功／失敗ログ（voice_logs）。「マイクが認識されない」がどの経路・どんな理由かを数字で見る。
 const VoiceLogCard: React.FC<{ students: any[] }> = ({ students }) => {
   const [rows, setRows] = useState<any[]>([]);
@@ -501,8 +522,18 @@ export const TeacherDashboard: React.FC = () => {
       return;
     }
 
-    setAzureSaveStatus('保存中...');
+    // ★保存する前に、そのキーが本当に使えるかAzureに聞く。
+    //   「保存はできたが、授業では全滅」を防ぐ（2026年7月から実際にこの状態が続いていた）。
+    setAzureSaveStatus('キーをたしかめています...');
     setAzureIsError(false);
+    const check = await testAzureKey(cleanedKey, cleanedRegion);
+    if (!check.ok) {
+      setAzureIsError(true);
+      setAzureSaveStatus(`このキーでは使えません → ${check.message}（保存していません）`);
+      return;
+    }
+
+    setAzureSaveStatus('保存中...');
 
     const { error } = await persistSettings({
       azureSpeechKey: cleanedKey,
@@ -515,8 +546,8 @@ export const TeacherDashboard: React.FC = () => {
       console.error(error);
     } else {
       setAzureIsError(false);
-      setAzureSaveStatus('保存しました！');
-      setTimeout(() => setAzureSaveStatus(''), 3000);
+      setAzureSaveStatus('✅ このキーは使えます。保存しました！');
+      setTimeout(() => setAzureSaveStatus(''), 6000);
     }
   };
 
@@ -708,8 +739,9 @@ export const TeacherDashboard: React.FC = () => {
             <h2 style={{ margin: 0 }}>発音判定設定 (Azure Speech)</h2>
           </div>
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            「発音バトル」で発音の正確さを採点するために使います。<br/>
-            Azureの「キーとエンドポイント」からコピーした<strong>キー</strong>と<strong>リージョン</strong>（例: japaneast）を入力してください。
+            発音バトル・ダイアログ・教科書クイズの音読で、発音の正確さを採点するために使います。<br/>
+            Azureポータルの「キーとエンドポイント」から <strong>KEY 1</strong> と <strong>場所/地域</strong>（例: japaneast）をコピーしてください。<br/>
+            <b>保存ボタンを押すと、まずAzureに問い合わせて「本当に使えるキーか」を確かめます</b>（使えないキーは保存しません）。
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
@@ -740,7 +772,13 @@ export const TeacherDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Button onClick={handleAzureSave} icon={Save}>発音判定の設定を保存</Button>
+            <Button onClick={handleAzureSave} icon={Save}>たしかめて保存</Button>
+            <Button variant="outline" onClick={async () => {
+              setAzureSaveStatus('いま保存されているキーをためしています...');
+              const r = await testAzureKey(azureKey.trim(), azureRegion.trim());
+              setAzureIsError(!r.ok);
+              setAzureSaveStatus(r.ok ? '✅ いまのキーは 使えます' : `❌ いまのキーは 使えません → ${r.message}`);
+            }}>いまのキーをためす</Button>
             {azureSaveStatus && <span style={{ color: azureIsError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{azureSaveStatus}</span>}
           </div>
         </div>
