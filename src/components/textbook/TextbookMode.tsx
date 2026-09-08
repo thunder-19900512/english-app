@@ -51,14 +51,14 @@ export const TextbookMode: React.FC = () => {
   const goBack = useSafeBack();
   const { addPoints } = usePoints();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
+  const { azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint } = useAppSettings();
   const {
     assess,
     isAssessing,
     isAvailable: azureAvailable,
     lastRecordingUrl,
     getLastError,
-  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint);
   const { addScore } = usePronunciationHistory();
   // ボーナス課題のAzureスコア（表示用）と、ボーナス獲得済みフラグ（ポイント二重取り防止）
   const [bonusScore, setBonusScore] = useState<number | null>(null);

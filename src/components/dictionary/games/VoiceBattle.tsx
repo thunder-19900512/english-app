@@ -32,8 +32,8 @@ export const VoiceBattle: React.FC = () => {
   
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint } = useAppSettings();
+  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint);
   const { saveProgress } = useDictionaryProgress();
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();

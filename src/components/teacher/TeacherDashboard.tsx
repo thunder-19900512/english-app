@@ -18,15 +18,21 @@ import { isArchived } from '../../data/archivedUnits';
 // Azure Speech のキーが「いま実際に使えるか」を確かめる。
 // アプリ本体（Speech SDK の fromSubscription）と同じ「キー＋リージョン」の組み合わせで
 // トークンを1つ発行してもらうだけ。音声は送らないので課金は発生しない。
-const testAzureKey = async (key: string, region: string): Promise<{ ok: boolean; message: string }> => {
+const testAzureKey = async (key: string, region: string, endpoint?: string): Promise<{ ok: boolean; message: string }> => {
   try {
-    const res = await fetch(`https://${region}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+    // エンドポイントが入っていればそちらで確かめる（アプリ本体と同じ経路）
+    const base = endpoint
+      ? endpoint.replace(/\/+$/, '') + '/sts/v1.0/issueToken'
+      : `https://${region}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
+    const res = await fetch(base, {
       method: 'POST',
       headers: { 'Ocp-Apim-Subscription-Key': key },
     });
     if (res.ok) return { ok: true, message: 'OK' };
     if (res.status === 401) {
-      return { ok: false, message: 'キーが違うか、リージョンが合っていません（401）。Azureポータルの「キーとエンドポイント」で、KEY 1 と「場所/地域」をそのままコピーしてください。※ Azure AI Foundry の複数サービス用リソースのキーはここでは使えないことがあります。「Speech service」という種類のリソースを作ってそのキーを使ってください' };
+      return { ok: false, message: endpoint
+        ? 'キーかエンドポイントが違います（401）。Azureポータルの「キーとエンドポイント」の値をそのままコピーしてください'
+        : 'キーが違うか、リージョンだけでは認証できません（401）。Azure AI Foundry / AI services のリソースの場合は、下の「エンドポイント」欄に https://〇〇.cognitiveservices.azure.com/ を入れてください' };
     }
     if (res.status === 403) return { ok: false, message: 'このキーは無効化されています（403）。サブスクリプションの支払い状態や、無料枠の期限を確認してください' };
     if (res.status === 429) return { ok: false, message: 'いま混み合っています（429）。少し待ってもう一度' };
@@ -172,6 +178,7 @@ export const TeacherDashboard: React.FC = () => {
   const [geminiKey, setGeminiKey] = useState('');
   const [azureKey, setAzureKey] = useState('');
   const [azureRegion, setAzureRegion] = useState('');
+  const [azureEndpoint, setAzureEndpoint] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const [isError, setIsError] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -246,6 +253,9 @@ export const TeacherDashboard: React.FC = () => {
       }
       if (data.dictionary_progress.azureSpeechKey) {
         setAzureKey(data.dictionary_progress.azureSpeechKey);
+      }
+      if (data.dictionary_progress.azureSpeechEndpoint) {
+        setAzureEndpoint(data.dictionary_progress.azureSpeechEndpoint);
       }
       if (data.dictionary_progress.azureSpeechRegion) {
         setAzureRegion(data.dictionary_progress.azureSpeechRegion);
@@ -526,7 +536,8 @@ export const TeacherDashboard: React.FC = () => {
     //   「保存はできたが、授業では全滅」を防ぐ（2026年7月から実際にこの状態が続いていた）。
     setAzureSaveStatus('キーをたしかめています...');
     setAzureIsError(false);
-    const check = await testAzureKey(cleanedKey, cleanedRegion);
+    const cleanedEndpoint = azureEndpoint.trim();
+    const check = await testAzureKey(cleanedKey, cleanedRegion, cleanedEndpoint || undefined);
     if (!check.ok) {
       setAzureIsError(true);
       setAzureSaveStatus(`このキーでは使えません → ${check.message}（保存していません）`);
@@ -537,7 +548,8 @@ export const TeacherDashboard: React.FC = () => {
 
     const { error } = await persistSettings({
       azureSpeechKey: cleanedKey,
-      azureSpeechRegion: cleanedRegion
+      azureSpeechRegion: cleanedRegion,
+      azureSpeechEndpoint: cleanedEndpoint || null
     });
 
     if (error) {
@@ -771,11 +783,27 @@ export const TeacherDashboard: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <input
+              type="text"
+              value={azureEndpoint}
+              onChange={e => setAzureEndpoint(e.target.value)}
+              placeholder="エンドポイント（例 https://xxx.cognitiveservices.azure.com/）※ 必要なときだけ"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace', boxSizing: 'border-box' }}
+              autoComplete="off"
+              name="azure_speech_endpoint"
+            />
+            <p style={{ color: '#666', fontSize: '0.85rem', margin: '0.4rem 0 0' }}>
+              リージョンだけで401になる場合はここを入れる。Azure AI Foundry / AI services のリソースは<b>エンドポイントが必須</b>です
+              （ポータルの「キーとエンドポイント」に出ている <code>https://〜.cognitiveservices.azure.com/</code>）。
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <Button onClick={handleAzureSave} icon={Save}>たしかめて保存</Button>
             <Button variant="outline" onClick={async () => {
               setAzureSaveStatus('いま保存されているキーをためしています...');
-              const r = await testAzureKey(azureKey.trim(), azureRegion.trim());
+              const r = await testAzureKey(azureKey.trim(), azureRegion.trim(), azureEndpoint.trim() || undefined);
               setAzureIsError(!r.ok);
               setAzureSaveStatus(r.ok ? '✅ いまのキーは 使えます' : `❌ いまのキーは 使えません → ${r.message}`);
             }}>いまのキーをためす</Button>

@@ -129,7 +129,13 @@ const explainCancel = (details: string): { msg: string; throttled: boolean } => 
 
 export const usePronunciationAssessment = (
   key: string | null,
-  region: string | null
+  region: string | null,
+  /**
+   * カスタムドメインのエンドポイント（例 https://xxx.cognitiveservices.azure.com/）。
+   * Azure AI Foundry / AI services 系のリソースは、リージョン名だけでは認証できず
+   * このエンドポイントが要る。空なら従来どおり「キー＋リージョン」で接続する。
+   */
+  endpoint?: string | null
 ) => {
   const [isAssessing, setIsAssessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +151,7 @@ export const usePronunciationAssessment = (
   // 録音再生用に、流し込んだのと同じ 16kHz PCM を溜めておく。
   const recordedChunksRef = useRef<Float32Array[]>([]);
 
-  const isAvailable = !!(key && region);
+  const isAvailable = !!(key && (region || endpoint));
 
   // マイク＋WebAudio のパイプラインを一度だけ用意する（クリック起点で呼ぶ）。
   const ensurePipeline = useCallback(async () => {
@@ -201,7 +207,7 @@ export const usePronunciationAssessment = (
 
   const assess = useCallback(
     async (referenceText: string): Promise<PronunciationResult | null> => {
-      if (!key || !region) {
+      if (!key || !(region || endpoint)) {
         setError('Azure Speech is not configured');
         return null;
       }
@@ -231,7 +237,10 @@ export const usePronunciationAssessment = (
       // 子どもにもう一度言わせなくて済む）。
       const runOnce = (replay: Float32Array[] | null, allowRetry: boolean): Promise<PronunciationResult | null> =>
       new Promise((resolve) => {
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(key, region);
+        // エンドポイントが設定されていればそれを優先（カスタムドメインのリソース対応）
+        const speechConfig = endpoint
+          ? SpeechSDK.SpeechConfig.fromEndpoint(new URL(endpoint), key)
+          : SpeechSDK.SpeechConfig.fromSubscription(key, region!);
         speechConfig.speechRecognitionLanguage = 'en-US';
         speechConfig.setProperty(
           SpeechSDK.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs,
@@ -354,7 +363,7 @@ export const usePronunciationAssessment = (
 
       return runOnce(null, true);
     },
-    [key, region, ensurePipeline]
+    [key, region, endpoint, ensurePipeline]
   );
 
   // 直近の失敗理由（トースト用）。assessがnullを返した直後に呼ぶ。

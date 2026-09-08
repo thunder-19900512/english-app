@@ -35,8 +35,8 @@ export const DialogueTrainer: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
   const { speak } = useSpeechSynthesis();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint } = useAppSettings();
+  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint);
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);

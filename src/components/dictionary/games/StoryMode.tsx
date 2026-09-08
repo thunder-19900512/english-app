@@ -44,7 +44,7 @@ export const StoryMode: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
   const vocabulary = useVocabulary();
-  const { geminiApiKey, azureSpeechKey, azureSpeechRegion } = useAppSettings();
+  const { geminiApiKey, azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint } = useAppSettings();
   const { addPoints } = usePoints();
   const { speak } = useSpeechSynthesis();
   const { progress } = useDictionaryProgress();
@@ -54,7 +54,7 @@ export const StoryMode: React.FC = () => {
     isAvailable: azureAvailable,
     lastRecordingUrl,
     getLastError,
-  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint);
   const { addScore } = usePronunciationHistory();
   // 音読のAzureスコア（表示用）
   const [readScore, setReadScore] = useState<number | null>(null);

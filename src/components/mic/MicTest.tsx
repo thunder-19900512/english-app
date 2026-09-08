@@ -19,8 +19,8 @@ export const MicTest: React.FC = () => {
   const [errMsg, setErrMsg] = useState('');
   // ③④：「マイクは動くのにAI/発音チェックで失敗」を切り分けるため、実際の2つの経路を通す。
   //   ③ Chromeの音声認識（AI英会話・QAが使う）  ④ Azure発音チェック（ダイアログ・バトル・教科書が使う）
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint } = useAppSettings();
+  const { assess, isAssessing, isAvailable: azureAvailable, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint);
   const [srState, setSrState] = useState<'idle' | 'listening' | 'ok' | 'ng'>('idle');
   const [srText, setSrText] = useState('');
   const [paState, setPaState] = useState<'idle' | 'ok' | 'ng'>('idle');
