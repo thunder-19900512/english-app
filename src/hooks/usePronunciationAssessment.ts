@@ -111,6 +111,21 @@ const isNearSilent = (chunks: Float32Array[]): boolean => {
   return Math.sqrt(sum / n) < 0.008; // ほぼ無音のしきい値
 };
 
+// Azureからの中止理由を、子ども向けの言葉にする。混雑（429/throttle）は true を返して再試行の対象にする。
+const explainCancel = (details: string): { msg: string; throttled: boolean } => {
+  const d = details || '';
+  if (/429|4429|Too many|throttl|quota|exceeded/i.test(d)) {
+    return { msg: '⏳ いま みんなが 発音チェックを 使っていて 混んでいます。少し待って もう一回ためしてね', throttled: true };
+  }
+  if (/401|403|Authentication|subscription|key/i.test(d)) {
+    return { msg: '🔑 発音チェックの せっていに もんだいがあるみたい。先生を呼んでね', throttled: false };
+  }
+  if (/1006|network|WebSocket|Unable to contact|connection/i.test(d)) {
+    return { msg: '📶 通信が とぎれたみたい。少し待って もう一回ためしてね', throttled: false };
+  }
+  return { msg: '⚠️ 発音チェックが できなかったよ。もう一回ためして、なおらなければ 先生に つたえてね', throttled: false };
+};
+
 export const usePronunciationAssessment = (
   key: string | null,
   region: string | null
@@ -209,7 +224,11 @@ export const usePronunciationAssessment = (
         return null;
       }
 
-      return new Promise((resolve) => {
+      // 1回の採点処理。live=true ならマイクから流し込む。
+      // replay に録音済みチャンクを渡すと、同じ音声をもう一度Azureに送る（混雑時のリトライ用。
+      // 子どもにもう一度言わせなくて済む）。
+      const runOnce = (replay: Float32Array[] | null, allowRetry: boolean): Promise<PronunciationResult | null> =>
+      new Promise((resolve) => {
         const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(key, region);
         speechConfig.speechRecognitionLanguage = 'en-US';
         speechConfig.setProperty(
@@ -234,15 +253,21 @@ export const usePronunciationAssessment = (
         );
         paConfig.applyTo(recognizer);
 
-        // ここから processor の音声が pushStream に流れ込む。録音バッファもリセット。
-        recordedChunksRef.current = [];
-        activePushRef.current = pushStream;
+        if (replay) {
+          // 録音済みの音声をそのまま流し込んで閉じる（マイクは使わない）
+          for (const c of replay) pushStream.write(floatTo16BitPCM(c));
+          pushStream.close();
+        } else {
+          // ここから processor の音声が pushStream に流れ込む。録音バッファもリセット。
+          recordedChunksRef.current = [];
+          activePushRef.current = pushStream;
+        }
 
         const finish = (value: PronunciationResult | null) => {
           activePushRef.current = null;
           // 今回マイクから拾った音を WAV にして、再生できるようにする。
-          const chunks = recordedChunksRef.current;
-          recordedChunksRef.current = [];
+          const chunks = replay || recordedChunksRef.current;
+          if (!replay) recordedChunksRef.current = [];
           if (chunks.length > 0) {
             setLastRecordingUrl((prev) => {
               if (prev) URL.revokeObjectURL(prev);
@@ -281,9 +306,20 @@ export const usePronunciationAssessment = (
                 });
               } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
                 const cancel = SpeechSDK.CancellationDetails.fromResult(result);
-                setError(
-                  `${SpeechSDK.CancellationReason[cancel.reason]}: ${cancel.errorDetails || 'キー/リージョンを確認してください'}`
-                );
+                console.error('Azure canceled:', cancel.errorDetails);
+                const { msg, throttled } = explainCancel(cancel.errorDetails || '');
+                const chunks = replay || recordedChunksRef.current;
+                if (throttled && allowRetry && chunks.length > 0) {
+                  // 混雑：同じ録音で1回だけ自動リトライ（子どもは待つだけ）
+                  const keep = chunks.slice();
+                  activePushRef.current = null;
+                  try { pushStream.close(); } catch { /* noop */ }
+                  recognizer.close();
+                  setTimeout(() => { runOnce(keep, false).then(resolve); }, 1800);
+                  return;
+                }
+                lastErrorRef.current = msg;
+                setError(msg);
                 finish(null);
               } else {
                 // 無音 / 認識できず（NoMatch）：0点として記録せず null を返して再挑戦させる。
@@ -302,11 +338,15 @@ export const usePronunciationAssessment = (
             }
           },
           (err) => {
-            setError(String(err));
+            const { msg } = explainCancel(String(err));
+            lastErrorRef.current = msg;
+            setError(msg);
             finish(null);
           }
         );
       });
+
+      return runOnce(null, true);
     },
     [key, region, ensurePipeline]
   );

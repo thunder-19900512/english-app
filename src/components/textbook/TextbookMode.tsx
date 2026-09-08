@@ -345,7 +345,8 @@ export const TextbookMode: React.FC = () => {
           <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(0, 184, 148, 0.1)', border: '2px solid #00b894' }}>
             <p style={{ margin: 0, fontSize: '1.1rem', color: '#2d3436' }}>
               📺 まずUnitの「<strong>動画を見る</strong>」ボタンで動画を見よう。<br/>
-              見終わったら「<strong>クイズに挑戦</strong>」でポイントをもらおう！
+              見終わったら「<strong>クイズに挑戦</strong>」でポイントをもらおう！<br/>
+              <span style={{ fontSize: '0.9rem', color: '#555' }}>問題は動画の順番どおり（1本目の動画→1問目、2本目→2問目…）に出るよ。</span>
             </p>
           </div>
 
@@ -448,7 +449,7 @@ export const TextbookMode: React.FC = () => {
                 {selectedQuiz.unitName}
               </h3>
               <span style={{ display: 'inline-block', background: '#e2e8f0', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginTop: '0.5rem' }}>
-                📺 {currentQuestion.videoRef}
+                📺 {currentQuestion.videoRef}（{currentQuestionIndex + 1}本目の動画の内容だよ）
               </span>
             </div>
             <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '1.1rem' }}>

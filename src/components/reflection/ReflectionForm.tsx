@@ -10,12 +10,25 @@ export const ReflectionForm: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
   const { reflections, saveReflection } = useReflections();
-  const { addPoints } = usePoints();
+  const { addFixedPoints } = usePoints();
   
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+  const [dice, setDice] = useState<number | null>(null);   // 出た目（サイコロを振ったときだけ）
+  const [rolling, setRolling] = useState(false);
+
+  // 「3行以上」の判定。改行しない子もいるので、30文字を1行ぶんとして数える。
+  const effectiveLines = (text: string) => {
+    const byNewline = text.split('\n').filter(l => l.trim()).length;
+    const byLength = Math.ceil(text.trim().length / 30);
+    return Math.max(byNewline, byLength);
+  };
+  const DICE_LINES = 3;
+  const BASE_POINTS = 2;        // 3行未満でも、書いたことは認める
+  const diceToPoints = (d: number) => d + 2; // 🎲1〜6 → 3〜8P（1Pにはならない）
+  const qualifies = effectiveLines(comment) >= DICE_LINES;
 
   const HALF_DAY_MS = 12 * 60 * 60 * 1000;
   const lastReflectionDate = reflections.length > 0 ? new Date(reflections[0].date) : null;
@@ -26,8 +39,17 @@ export const ReflectionForm: React.FC = () => {
     saveReflection(stars, comment);
     
     if (canEarnPoints) {
-      // Give some small points (multiplier 0.25 -> 5 points first time)
-      const pts = await addPoints('daily_reflection', { multiplier: 0.25 });
+      if (qualifies) {
+        // 3行以上 → サイコロ。ちょっとしたゲーム性で「書く」をうながす。
+        setSubmitted(true); setRolling(true);
+        const d = 1 + Math.floor(Math.random() * 6);
+        await new Promise(r => setTimeout(r, 1200)); // ころがる演出
+        setDice(d); setRolling(false);
+        const pts = await addFixedPoints('daily_reflection', diceToPoints(d));
+        setEarnedPoints(pts);
+        return;
+      }
+      const pts = await addFixedPoints('daily_reflection', BASE_POINTS);
       setEarnedPoints(pts);
     } else {
       setEarnedPoints(0);
@@ -39,11 +61,22 @@ export const ReflectionForm: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%', textAlign: 'center' }}>
         <h1 className="text-primary" style={{ fontSize: '3rem' }}>ふりかえり完了！</h1>
-        <div className="animate-float" style={{ fontSize: '6rem' }}>📝</div>
-        {earnedPoints !== null && earnedPoints > 0 && (
+        <div className="animate-float" style={{ fontSize: '6rem' }}>{rolling ? '🎲' : '📝'}</div>
+        {rolling && (
+          <div style={{ fontSize: '1.4rem', color: '#666', fontWeight: 'bold' }}>3行以上 書けたから サイコロ！ ころころ…</div>
+        )}
+        {!rolling && dice !== null && (
+          <div className="animate-pop" style={{ fontSize: '1.4rem', color: '#7a5a00', fontWeight: 'bold', background: 'rgba(253,203,110,0.3)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.5rem 1.2rem' }}>
+            🎲 {['⚀','⚁','⚂','⚃','⚄','⚅'][dice - 1]} {dice} が出た！
+          </div>
+        )}
+        {!rolling && earnedPoints !== null && earnedPoints > 0 && (
           <div className="animate-pop" style={{ fontSize: '2rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
             +{earnedPoints} ポイントゲット！✨
           </div>
+        )}
+        {!rolling && earnedPoints === 0 && (
+          <p style={{ fontSize: '1rem', color: '#94a3b8', margin: 0 }}>（ポイントは12時間に1回だよ。記録は のこったよ）</p>
         )}
         <p style={{ fontSize: '1.5rem' }}>えらい！今日もがんばったね！</p>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -96,8 +129,13 @@ export const ReflectionForm: React.FC = () => {
         <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '1rem' }}>
           かんそうをかこう！
         </h2>
-        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '1rem', textAlign: 'center' }}>
+        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '0.5rem', textAlign: 'center' }}>
           （ここがよかった・難しかった・こんな風に学びたい...など）
+        </p>
+        <p style={{ fontSize: '1rem', color: qualifies ? '#b45309' : '#94a3b8', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>
+          {qualifies
+            ? '🎲 3行いじょう！ 送るとサイコロで 3〜8ポイント'
+            : `${DICE_LINES}行いじょう書くと、サイコロで ポイントが決まるよ（いま ${effectiveLines(comment)}行）`}
         </p>
 
         <textarea
@@ -127,7 +165,7 @@ export const ReflectionForm: React.FC = () => {
             opacity: stars === 0 ? 0.5 : 1
           }}
         >
-          {canEarnPoints ? '送ってポイントをもらう！' : '送って記録する'}
+          {!canEarnPoints ? '送って記録する' : qualifies ? '送ってサイコロを振る！🎲' : '送ってポイントをもらう！'}
         </Button>
       </div>
     </div>

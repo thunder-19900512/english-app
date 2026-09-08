@@ -133,5 +133,26 @@ export const usePoints = () => {
     return earned;
   }, [studentId, getPoints]);
 
-  return { getPoints, addPoints, consumePoints, totalPoints, setTotalPoints };
+  // 逓減ルールに乗せない「固定ポイント」。毎日書く「ふりかえり」のように、
+  // くり返すこと自体が目的の活動に使う（addPoints だと5日目以降は1→0Pになり、
+  // がんばって書いたのに1P、という状態になっていた）。
+  // 回数の上限（1日1回など）は呼び出し側で守ること。points は累計・単調増加のまま。
+  const addFixedPoints = useCallback(async (stageKey: string, amount: number): Promise<number> => {
+    if (!studentId || amount <= 0) return 0;
+    let synced = await pullFromSupabase(studentId);
+    if (!synced) { await new Promise(r => setTimeout(r, 800)); synced = await pullFromSupabase(studentId); }
+    const countsKey = `clearCounts_${studentId}`;
+    const clearCounts = JSON.parse(localStorage.getItem(countsKey) || '{}');
+    clearCounts[stageKey] = (clearCounts[stageKey] || 0) + 1; // 記録としては数える
+    localStorage.setItem(countsKey, JSON.stringify(clearCounts));
+    const newTotal = getPoints() + Math.round(amount);
+    localStorage.setItem(`points_${studentId}`, newTotal.toString());
+    setTotalPoints(newTotal);
+    window.dispatchEvent(new Event('pointsUpdated'));
+    pushToSupabase(studentId);
+    if (!synced) showToast('📶 つうしんが ふあんていです。先生に つたえてね', 'fail');
+    return Math.round(amount);
+  }, [studentId, getPoints]);
+
+  return { getPoints, addPoints, addFixedPoints, consumePoints, totalPoints, setTotalPoints };
 };

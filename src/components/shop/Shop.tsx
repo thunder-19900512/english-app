@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
@@ -50,6 +50,14 @@ export const Shop: React.FC = () => {
   const navigate = useNavigate();
   const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn } = useShop();
   const [tab, setTab] = useState<Tab>('title');
+  // きせかえの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
+  const [previewTheme, setPreviewTheme] = useState<string | null>(null);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = previewTheme ?? (shop.equippedTheme || '');
+    return () => { root.dataset.theme = shop.equippedTheme || ''; }; // ページを出たら元にもどす
+  }, [previewTheme, shop.equippedTheme]);
+  useEffect(() => { if (tab !== 'theme') setPreviewTheme(null); }, [tab]);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -95,17 +103,22 @@ export const Shop: React.FC = () => {
     }
   };
 
-  const ItemCard: React.FC<{ item: ShopItem; equipped: boolean; onEquip: () => void; onUnequip: () => void }> =
-    ({ item, equipped, onEquip, onUnequip }) => {
+  const ItemCard: React.FC<{ item: ShopItem; equipped: boolean; onEquip: () => void; onUnequip: () => void; onPreview?: () => void; previewing?: boolean }> =
+    ({ item, equipped, onEquip, onUnequip, onPreview, previewing }) => {
       const has = owned(item.id);
       const canBuy = balance >= item.price;
       return (
-        <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', alignItems: 'center', gap: '1rem', border: equipped ? '2px solid var(--color-success)' : '1px solid #e2e8f0' }}>
+        <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', alignItems: 'center', gap: '1rem', border: equipped ? '2px solid var(--color-success)' : previewing ? '2px dashed var(--color-primary)' : '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '2.4rem' }}>{item.emoji}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{item.name} {equipped && <span style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>（つけてる）</span>}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{item.name} {equipped && <span style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>（つけてる）</span>}{previewing && <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)' }}>（おためし中）</span>}</div>
             <div style={{ fontSize: '0.85rem', color: '#666' }}>{item.desc}</div>
           </div>
+          {onPreview && !equipped && (
+            <Button variant="outline" onClick={onPreview} style={{ fontSize: '0.8rem', padding: '0.45rem 0.8rem' }}>
+              {previewing ? 'やめる' : '👀 おためし'}
+            </Button>
+          )}
           {!has ? (
             <button onClick={() => handleBuy(item)} disabled={!canBuy}
               style={{ padding: '0.6rem 1rem', borderRadius: '999px', border: 'none', cursor: canBuy ? 'pointer' : 'default', fontWeight: 'bold', whiteSpace: 'nowrap',
@@ -158,10 +171,19 @@ export const Shop: React.FC = () => {
 
       {tab === 'theme' && (
         <div className="flex-col gap-md">
-          <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>つけると、画面のいろが かわるよ！</p>
+          <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>
+            つけると、画面のいろが かわるよ！ 「👀 おためし」で、買う前に このページの中だけ ためせるよ。
+          </p>
+          {previewTheme && (
+            <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
+              👀 おためし中：{THEMES.find(t => t.id === previewTheme)?.name}（このページを出ると もとにもどるよ）
+            </div>
+          )}
           {THEMES.map(t => (
             <ItemCard key={t.id} item={t} equipped={shop.equippedTheme === t.id}
-              onEquip={() => equipTheme(t.id)} onUnequip={() => equipTheme(null)} />
+              previewing={previewTheme === t.id}
+              onPreview={() => setPreviewTheme(prev => prev === t.id ? null : t.id)}
+              onEquip={() => { setPreviewTheme(null); equipTheme(t.id); }} onUnequip={() => equipTheme(null)} />
           ))}
         </div>
       )}

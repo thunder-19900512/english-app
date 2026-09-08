@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { pushToSupabase } from '../lib/sync';
+import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 
 export interface Reflection {
   id: string;
@@ -17,14 +17,19 @@ export const useReflections = () => {
   useEffect(() => {
     if (!studentId) return;
     const key = `reflections_${studentId}`;
-    const data = localStorage.getItem(key);
-    if (data) {
+    const load = () => {
+      const data = localStorage.getItem(key);
+      if (!data) return;
       try {
-        setReflections(JSON.parse(data));
+        const list = JSON.parse(data);
+        setReflections(Array.isArray(list) ? list.filter(Boolean) : []);
       } catch (e) {
         console.error('Failed to parse reflections', e);
       }
-    }
+    };
+    load();
+    // 別の端末で書いた分や先生のコメントを取り込む（表示されない・二重加点を防ぐ）
+    pullFromSupabase(studentId).then(load).catch(() => {});
   }, [studentId]);
 
   const saveReflection = useCallback((stars: number, comment: string) => {
