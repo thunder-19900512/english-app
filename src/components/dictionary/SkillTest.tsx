@@ -10,7 +10,7 @@ import { ArrowLeft, Volume2, RefreshCw, Trophy } from 'lucide-react';
 import type { Vocabulary } from '../../data/vocabulary';
 
 // 単語実力テスト（P2-1）：既習カテゴリからランダム10問・一発勝負・ヒントなし。
-// スコアは「じぶんの記録」の推移グラフ（単語テスト）に記録される＝実力の伸びが見える。
+// スコアは「自分の記録」の推移グラフ（単語テスト）に記録される＝実力の伸びが見える。
 const TOTAL = 10;
 
 interface Question {
@@ -67,7 +67,7 @@ export const SkillTest: React.FC = () => {
       if (qIndex + 1 >= questions.length) {
         setFinished(true);
         const pct = Math.round((newCorrect / questions.length) * 100);
-        // 実力の記録（じぶんの記録の推移グラフへ）
+        // 実力の記録（自分の記録の推移グラフへ）
         addScore('test', pct, `単語テスト ${newCorrect}/${questions.length}問`);
         // 加点は正答率スケール・半分未満は0（ポイント設計ルール準拠）
         if (newCorrect / questions.length >= 0.5) {
@@ -109,10 +109,10 @@ export const SkillTest: React.FC = () => {
             ? <p style={{ fontSize: '1.3rem', color: 'var(--color-accent)', fontWeight: 'bold', margin: 0 }}>＋{earned} ポイント！✨</p>
             : <p style={{ fontSize: '1rem', color: '#94a3b8', margin: 0 }}>半分以上正解するとポイントがもらえるよ</p>
         )}
-        <p style={{ fontSize: '1rem', color: '#666', margin: 0 }}>けっかは「じぶんの記録」のグラフにのこるよ📈</p>
+        <p style={{ fontSize: '1rem', color: '#666', margin: 0 }}>結果は「自分の記録」のグラフに残るよ📈</p>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <Button onClick={restart} variant="outline" icon={RefreshCw}>もう一回</Button>
-          <Button onClick={() => navigate('/progress')}>じぶんの記録を見る</Button>
+          <Button onClick={restart} variant="outline" icon={RefreshCw}>もう一度</Button>
+          <Button onClick={() => navigate('/progress')}>自分の記録を見る</Button>
           <Button variant="outline" onClick={() => navigate('/dictionary')}>もどる</Button>
         </div>
       </div>

@@ -134,7 +134,7 @@ export const MyProgress: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, fontSize: '1.8rem', marginRight: '90px' }}>
-          🗺️ じぶんの記録
+          🗺️ 自分の記録
         </h1>
       </div>
 
@@ -157,7 +157,7 @@ export const MyProgress: React.FC = () => {
         </div>
       </div>
 
-      {/* これまでのふりかえりへ（じぶんの記録からも飛べるように） */}
+      {/* これまでのふりかえりへ（自分の記録からも飛べるように） */}
       <button
         className="glass-card hover-scale"
         onClick={() => navigate('/reflection/history')}
@@ -247,7 +247,7 @@ export const MyProgress: React.FC = () => {
       {/* おすすめ */}
       {recommendations.length > 0 && (
         <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(162, 155, 254, 0.12)', border: '2px solid #a29bfe' }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#6c5ce7' }}>✨ つぎにやってみよう！</h3>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#6c5ce7' }}>✨ 次にやってみよう！</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
             {recommendations.map(({ cat, skill }) => (
               <button

@@ -81,7 +81,7 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/progress')}
           >
             <span style={{ fontSize: '1.4rem' }}>🗺️</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>じぶんの記録</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>自分の記録</span>
           </div>
           <div
             className="glass-card animate-pop hover-scale"
@@ -366,7 +366,7 @@ export const Home: React.FC = () => {
             <div className="modal-overlay" onClick={() => setExpandedCategory(null)}>
               <div className="modal-content animate-pop" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={() => setExpandedCategory(null)}>✕</button>
-                <h2 className="text-primary" style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.8rem' }}>【{expandedCategory}】のモードをえらぶ</h2>
+                <h2 className="text-primary" style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.8rem' }}>【{expandedCategory}】のモードを選ぶ</h2>
                 
                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', width: '100%' }}>
                   <div

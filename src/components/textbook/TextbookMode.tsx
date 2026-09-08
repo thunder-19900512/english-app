@@ -235,7 +235,7 @@ export const TextbookMode: React.FC = () => {
     const result = await assess(selectedQuiz.keyPhrase);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -292,7 +292,7 @@ export const TextbookMode: React.FC = () => {
     const correct = correctCountRef.current;
     const ratio = total > 0 ? correct / total : 0;
     if (ratio < 0.5) {
-      setEarnedPoints(0); // ほとんど不正解 → 今回は加点なし（もう一回！）
+      setEarnedPoints(0); // ほとんど不正解 → 今回は加点なし（もう一度！）
       return;
     }
     // ボーナス課題（キーフレーズの音読）まで合格した子は上乗せ＝「最後までやると得」。
@@ -316,7 +316,7 @@ export const TextbookMode: React.FC = () => {
     const gained = await addPoints(`textbook_set_${currentSetKey()}`, {});
     if (gained > 0) {
       setSetBonus(gained);
-      showToast(`🏁 ぜんぶクリア！ 完走ボーナス ＋${gained}ポイント`, 'points');
+      showToast(`🏁 全部クリア！ 完走ボーナス ＋${gained}ポイント`, 'points');
     }
   };
 
@@ -362,7 +362,7 @@ export const TextbookMode: React.FC = () => {
                   <span style={{ fontSize: '1.5rem' }}>🏁</span>
                   <span style={{ fontWeight: 'bold', color: '#7a5a00', fontSize: '1.05rem' }}>
                     {setDone
-                      ? `完走ずみ！ ぜんぶ（${listQuizzes.length}／${listQuizzes.length}）クリアしたよ`
+                      ? `完走済み！ 全部（${listQuizzes.length}／${listQuizzes.length}）クリアしたよ`
                       : rest === 0
                         ? 'あと1回クイズをおえると 完走ボーナス！'
                         : `完走ボーナスまで あと${rest}Unit（${done}／${listQuizzes.length} クリア）`}
@@ -372,7 +372,7 @@ export const TextbookMode: React.FC = () => {
                   <div style={{ width: `${listQuizzes.length ? (done / listQuizzes.length) * 100 : 0}%`, height: '100%', background: 'var(--color-accent)' }} />
                 </div>
                 <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#7a5a00' }}>
-                  ぜんぶクリアすると 完走ボーナス。音読（ボーナス課題）までやると、そのUnitのポイントが {BONUS_FINISH_MULTIPLIER}倍！
+                  全部クリアすると 完走ボーナス。音読（ボーナス課題）までやると、そのUnitのポイントが {BONUS_FINISH_MULTIPLIER}倍！
                 </p>
               </div>
             );
@@ -672,7 +672,7 @@ export const TextbookMode: React.FC = () => {
                 onClick={finishQuiz}
                 style={{ width: '100%', marginTop: '0.5rem' }}
               >
-                {bonusEarned ? 'おわってけっかを見る →' : 'スキップしてけっかを見る →'}
+                {bonusEarned ? 'おわって結果を見る →' : 'スキップして結果を見る →'}
               </Button>
             )}
           </div>
@@ -686,7 +686,7 @@ export const TextbookMode: React.FC = () => {
           </div>
 
           <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>
-            {earnedPoints && earnedPoints > 0 ? 'Unit Clear!' : 'おしい！もう一回！'}
+            {earnedPoints && earnedPoints > 0 ? 'Unit Clear!' : 'おしい！もう一度！'}
           </h2>
 
           <p style={{ fontSize: '1.3rem', margin: 0 }}>
@@ -700,13 +700,13 @@ export const TextbookMode: React.FC = () => {
                 </p>
                 {setBonus !== null && setBonus > 0 && (
                   <p style={{ fontSize: '1.2rem', margin: 0, fontWeight: 'bold', color: '#b45309', background: 'rgba(253,203,110,0.3)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.5rem 1rem' }}>
-                    🏁 ぜんぶクリア！ 完走ボーナス ＋{setBonus} ポイント
+                    🏁 全部クリア！ 完走ボーナス ＋{setBonus} ポイント
                   </p>
                 )}
               </>
             ) : (
               <p style={{ fontSize: '1.05rem', margin: 0, color: '#94a3b8' }}>
-                半分以上正解すると、ポイントがもらえるよ。動画をもう一回見てチャレンジ！
+                半分以上正解すると、ポイントがもらえるよ。動画をもう一度見てチャレンジ！
               </p>
             )
           )}
@@ -716,7 +716,7 @@ export const TextbookMode: React.FC = () => {
               クイズ一覧にもどる
             </Button>
             <Button onClick={() => handleQuizSelect(selectedQuiz)}>
-              もう一回チャレンジ！
+              もう一度チャレンジ！
             </Button>
           </div>
         </div>

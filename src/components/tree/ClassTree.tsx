@@ -161,7 +161,7 @@ export const ClassTree: React.FC = () => {
       </p>
 
       {loading || !groups ? (
-        <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>よみこみ中…</div>
+        <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>読み込み中…</div>
       ) : (
         <>
           {/* 森／町の様子 */}
@@ -191,7 +191,7 @@ export const ClassTree: React.FC = () => {
                   {opened && <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>町ひらき！建物をたてよう🎉</div>}
                   {/* 少額の子もふくめ「何人が参加したか」を見せる */}
                   <div style={{ fontSize: '0.85rem' }}>{'🍃'.repeat(Math.min(g.donors, 12))}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{g.donors}人が いれたよ</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{g.donors}人が 入れたよ</div>
                 </div>
               );
             })}
@@ -199,7 +199,7 @@ export const ClassTree: React.FC = () => {
 
           {/* みんなの共同目標（対戦だけにしない） */}
           <div style={{ textAlign: 'center', fontSize: '0.9rem', color: '#666' }}>
-            ぜんぶ あわせて <b style={{ color: 'var(--color-success)' }}>{totalAll.toLocaleString()}P</b>
+            全部 合わせて <b style={{ color: 'var(--color-success)' }}>{totalAll.toLocaleString()}P</b>
             {todayGain > 0 && <span style={{ marginLeft: '0.8rem', color: 'var(--color-primary)' }}>きょう あなたは +{todayGain}P</span>}
           </div>
 
@@ -221,12 +221,12 @@ export const ClassTree: React.FC = () => {
             <div className="glass-card flex-col flex-center gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
               <div style={{ fontWeight: 'bold' }}>森に ポイントを入れる</div>
               <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                いま つかえる：<b>{balance.toLocaleString()}P</b>（入れると へります。これまでの合計は へりません）
+                いま 使える：<b>{balance.toLocaleString()}P</b>（入れると 減ります。これまでの合計は 減りません）
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {[10, 50, 100].map(a => (
                   <Button key={a} onClick={() => handleDonate(a)} disabled={balance < a || busy}>
-                    {a}P（のこり{Math.max(0, balance - a)}P）
+                    {a}P（残り{Math.max(0, balance - a)}P）
                   </Button>
                 ))}
               </div>
@@ -237,7 +237,7 @@ export const ClassTree: React.FC = () => {
                 つぎに つくるもの（すきなものに 入れてね）
               </div>
               <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#666' }}>
-                いま つかえる：<b>{balance.toLocaleString()}P</b>
+                いま 使える：<b>{balance.toLocaleString()}P</b>
               </div>
               {candidates.map(b => {
                 const got = town.funds[b.id] || 0;
@@ -267,7 +267,7 @@ export const ClassTree: React.FC = () => {
                       {left <= balance && left > 0 && (
                         <Button onClick={() => handleFund(b, left)} disabled={busy}
                           style={{ fontSize: '0.9rem', padding: '0.45rem 0.9rem', background: '#ee5253', color: '#fff' }}>
-                          あと{left}Pぜんぶ！
+                          あと{left}P全部！
                         </Button>
                       )}
                     </div>
@@ -276,14 +276,14 @@ export const ClassTree: React.FC = () => {
               })}
               {candidates.length === 0 && (
                 <div className="glass-card" style={{ padding: '1.5rem', textAlign: 'center' }}>
-                  🏆 ぜんぶ たてた！ すごい町ができたね！
+                  🏆 全部 たてた！ すごい町ができたね！
                 </div>
               )}
             </div>
           )}
 
           <div className="flex-center">
-            <Button variant="outline" onClick={load} icon={RefreshCw}>さいしんにする</Button>
+            <Button variant="outline" onClick={load} icon={RefreshCw}>最新にする</Button>
           </div>
         </>
       )}

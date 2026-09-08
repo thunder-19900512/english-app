@@ -116,7 +116,7 @@ export const usePoints = () => {
 
     if (!synced) {
       // 記録はローカルに残る（次に通信できたときpushされる）が、子どもに気づかせる
-      showToast('📶 つうしんが ふあんていです。先生に つたえてね', 'fail');
+      showToast('📶 通信が 不安定です。先生に 伝えてね', 'fail');
     }
 
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
@@ -150,7 +150,7 @@ export const usePoints = () => {
     setTotalPoints(newTotal);
     window.dispatchEvent(new Event('pointsUpdated'));
     pushToSupabase(studentId);
-    if (!synced) showToast('📶 つうしんが ふあんていです。先生に つたえてね', 'fail');
+    if (!synced) showToast('📶 通信が 不安定です。先生に 伝えてね', 'fail');
     return Math.round(amount);
   }, [studentId, getPoints]);
 

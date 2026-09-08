@@ -5,7 +5,7 @@ export const TITLES: ShopItem[] = [
   { id: 't-phonics', emoji: '🔤', name: 'フォニックスの旅人', desc: '音のぼうけんに出た証', price: 100 },
   { id: 't-talk', emoji: '🗣️', name: 'トーキング・スター', desc: '会話をがんばる人', price: 150 },
   { id: 't-bento', emoji: '🍱', name: 'ベントーマスター', desc: '世界の料理博士', price: 150 },
-  { id: 't-word', emoji: '📚', name: 'たんごハンター', desc: '単語をあつめる人', price: 200 },
+  { id: 't-word', emoji: '📚', name: 'たんごハンター', desc: '単語を集める人', price: 200 },
   { id: 't-mic', emoji: '🎤', name: '発音キング', desc: '発音チェックの達人', price: 300 },
   { id: 't-trophy', emoji: '🏆', name: 'レジェンド', desc: 'つよい。', price: 500 },
   { id: 't-star', emoji: '🌟', name: 'スーパースター', desc: 'かがやいている', price: 800 },

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { showToast } from './Toast';
 
-// 画面の右下に置く「こまった／こうしたい」の受付。
+// 画面の右下に置く「困った／こうしたい」の受付。
 // 子どもがその場で気づいたことを、先生を探しに行かずに送れるようにする。
 // 送り先はSupabaseの feedback テーブル。スタッフ画面で読めるほか、
 // Mac側の巡回（feedback_watch.py）が新着をメールで知らせる。
@@ -32,18 +32,18 @@ export const FeedbackButton: React.FC = () => {
     });
     setSending(false);
     if (error) {
-      showToast('おくれませんでした。もう一回ためしてね', 'fail');
+      showToast('送れませんでした。もう一度試してね', 'fail');
       return;
     }
     setText(''); setOpen(false);
-    showToast('📮 おくったよ！ 先生に とどきます。ありがとう！', 'points');
+    showToast('📮 送ったよ！ 先生に 届きます。ありがとう！', 'points');
   };
 
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        title="こまったこと・こうしたいことを先生に送る"
+        title="困ったこと・こうしたいことを先生に送る"
         style={{
           position: 'fixed', right: '16px', bottom: '16px', zIndex: 900,
           width: '54px', height: '54px', borderRadius: '50%', cursor: 'pointer',
@@ -64,7 +64,7 @@ export const FeedbackButton: React.FC = () => {
       boxShadow: '0 8px 28px rgba(0,0,0,0.25)', padding: '1rem',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-        <b style={{ color: 'var(--color-primary)' }}>📮 先生に つたえる</b>
+        <b style={{ color: 'var(--color-primary)' }}>📮 先生に 伝える</b>
         <button onClick={() => setOpen(false)}
           style={{ border: 'none', background: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
       </div>
@@ -101,11 +101,11 @@ export const FeedbackButton: React.FC = () => {
             background: text.trim() ? 'var(--color-primary)' : '#e2e8f0',
             color: text.trim() ? 'white' : '#94a3b8',
           }}>
-          {sending ? 'おくっています…' : 'おくる'}
+          {sending ? '送っています…' : '送る'}
         </button>
       </div>
       <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.5rem 0 0' }}>
-        いま見ている画面と なまえも いっしょに とどきます
+        いま見ている画面と 名前も いっしょに 届きます
       </p>
     </div>
   );

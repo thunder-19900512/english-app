@@ -135,7 +135,7 @@ export const VoiceBattle: React.FC = () => {
     const result = await assess(targetWord.english);
     if (!result) {
       // 採点に失敗（聞き取れず/設定ミス/通信エラー）。ノーカウントで、その場に通知して再挑戦を促す。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -332,7 +332,7 @@ export const VoiceBattle: React.FC = () => {
               color: lastScore >= PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
             }}
           >
-            発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一回！）'}
+            発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一度！）'}
           </div>
         )}
         {azureAvailable && azureError && monsterState === 'idle' && (

@@ -155,8 +155,8 @@ export const ReflectionForm: React.FC = () => {
         </p>
         <p style={{ fontSize: '1rem', color: qualifies ? '#b45309' : '#94a3b8', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>
           {qualifies
-            ? `🎲 ${DICE_CHARS}字いじょう！ 送るとサイコロで 3〜8ポイント`
-            : `${DICE_CHARS}字いじょう書くと、サイコロで ポイントが決まるよ（いま ${countChars(comment)}字）`}
+            ? `🎲 ${DICE_CHARS}字以上！ 送るとサイコロで 3〜8ポイント`
+            : `${DICE_CHARS}字以上書くと、サイコロで ポイントが決まるよ（いま ${countChars(comment)}字）`}
         </p>
 
         <textarea

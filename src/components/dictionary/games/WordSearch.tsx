@@ -310,7 +310,7 @@ export const WordSearch: React.FC = () => {
         )}
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
           <Button onClick={initGame} variant="outline" icon={RefreshCw}>もう一度</Button>
-          <Button onClick={() => navigate(`/dictionary/${category}`)}>べつのモードをえらぶ</Button>
+          <Button onClick={() => navigate(`/dictionary/${category}`)}>別のモードを選ぶ</Button>
           <Button onClick={() => navigate('/home')} variant="outline">ホームにもどる</Button>
         </div>
       </div>

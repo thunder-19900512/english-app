@@ -59,7 +59,7 @@ export const TOWN_BUILDINGS: TownBuilding[] = [
   { id: 'play2', kind: 'あそび', level: 2, emoji: '⛸️', name: 'スケートリンク', desc: '風越公園みたいな氷の広場', cost: 2500 },
   { id: 'play3', kind: 'あそび', level: 3, emoji: '🎿', name: 'スキー場', desc: '冬の軽井沢の楽しみ', cost: 4000 },
   // ランドマーク
-  { id: 'land1', kind: 'ランドマーク', level: 1, emoji: '🗼', name: 'タワー', desc: '町がぜんぶ見わたせる', cost: 3000 },
+  { id: 'land1', kind: 'ランドマーク', level: 1, emoji: '🗼', name: 'タワー', desc: '町が全部見わたせる', cost: 3000 },
   { id: 'land2', kind: 'ランドマーク', level: 2, emoji: '🏰', name: 'お城', desc: '町のシンボル', cost: 5000 },
   { id: 'land3', kind: 'ランドマーク', level: 3, emoji: '🚀', name: 'ロケット発射台', desc: '町から宇宙へ！さいごの目標', cost: 8000 },
 ];

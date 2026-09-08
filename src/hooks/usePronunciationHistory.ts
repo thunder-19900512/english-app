@@ -22,7 +22,7 @@ const readHistory = (studentId: string): ScoreRecord[] => {
 /**
  * 発音スコアの履歴を貯める・読むフック。
  * VoiceBattle / StoryMode / TextbookMode から addScore で記録し、
- * MyProgress（じぶんの記録）で推移グラフに使う。localStorage＋Supabaseに同期。
+ * MyProgress（自分の記録）で推移グラフに使う。localStorage＋Supabaseに同期。
  */
 export const usePronunciationHistory = () => {
   const studentId = localStorage.getItem('studentId');

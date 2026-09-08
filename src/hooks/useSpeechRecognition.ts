@@ -10,17 +10,17 @@ export const friendlySpeechError = (code: string): string | null => {
   switch (code) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return '🔒 マイクの許可が オフになっているよ。アドレスバーの🔒→マイク→許可 にして、もう一回ためしてね';
+      return '🔒 マイクの許可が オフになっているよ。アドレスバーの🔒→マイク→許可 にして、もう一度試してね';
     case 'network':
-      return '📶 このネットワークでは 音声認識（Chromeのしくみ）が つかえないみたい。先生に つたえてね';
+      return '📶 このネットワークでは 音声認識（Chromeの仕組み）が 使えないみたい。先生に 伝えてね';
     case 'no-speech':
       return '🎙️ 声が聞こえなかったよ。マイクボタンを押してから、はっきり話してね';
     case 'audio-capture':
-      return '🎙️ マイクが 見つからないよ。イヤホンマイクのさしこみを たしかめてね';
+      return '🎙️ マイクが 見つからないよ。イヤホンマイクのさしこみを 確かめてね';
     case 'aborted':
       return null; // 自分で止めたときは何も出さない
     default:
-      return `⚠️ 音声認識が うまくいかなかったよ（${code}）。もう一回ためしてね`;
+      return `⚠️ 音声認識が うまくいかなかったよ（${code}）。もう一度試してね`;
   }
 };
 
@@ -89,7 +89,7 @@ export const useSpeechRecognition = () => {
   const startListening = useCallback(() => {
     if (!recognitionRef.current) {
       // Safari/古いブラウザなど、そもそも音声認識が無い
-      showToast('⚠️ このブラウザでは 音声認識が つかえないよ。Chrome で ひらいてね', 'fail');
+      showToast('⚠️ このブラウザでは 音声認識が 使えないよ。Chrome で 開いてね', 'fail');
       logVoiceEvent({ kind: 'chrome', ok: false, code: 'unsupported' });
       return;
     }

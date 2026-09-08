@@ -98,7 +98,7 @@ export const DialogueTrainer: React.FC = () => {
     const result = await assess(cleanText(line.en));
     if (!result) {
       // 聞き取れなかった/通信エラー：無反応だと押せたか分からないので、その場に通知
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
     // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
@@ -264,7 +264,7 @@ export const DialogueTrainer: React.FC = () => {
 
                 {score !== undefined && (
                   <span style={{ fontWeight: 'bold', color: score >= PASS ? 'var(--color-success)' : 'var(--color-error)' }}>
-                    {Math.round(score)}点 {score >= PASS ? '✅' : '（もう一回！）'}
+                    {Math.round(score)}点 {score >= PASS ? '✅' : '（もう一度！）'}
                   </span>
                 )}
               </div>

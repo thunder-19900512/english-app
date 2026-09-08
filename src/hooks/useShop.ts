@@ -68,7 +68,7 @@ export const useShop = () => {
     const cur = readShop(studentId);
     if (cur.owned.includes(item.id)) return false; // 二重購入防止
     const bal = totalPoints - cur.spent - cur.donated;
-    if (bal < item.price) { showToast('ポイントが たりないよ！', 'fail'); return false; }
+    if (bal < item.price) { showToast('ポイントが 足りないよ！', 'fail'); return false; }
     const next: ShopState = { ...cur, spent: cur.spent + item.price, owned: [...cur.owned, item.id] };
     writeShop(studentId, next);
     setShop(next);
@@ -88,17 +88,17 @@ export const useShop = () => {
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
-  // 写真を登録する。登録できるのは1回だけ（あとから入れかえはできない）。
+  // 写真を登録する。登録できるのは1回だけ（あとから入れ替えはできない）。
   // このとき BG_PRICE を消費する。
   const setBackgroundImage = useCallback((url: string): boolean => {
     if (!studentId) return false;
     const cur = readShop(studentId);
-    if (cur.bgImage) { showToast('はいけいの写真は 1まいだけだよ', 'fail'); return false; }
+    if (cur.bgImage) { showToast('背景の写真は 1枚だけだよ', 'fail'); return false; }
     // すでに買っている（＝先生に消してもらった後の登録し直し）なら、もう払わない
     const unlocked = cur.owned.includes(BG_UNLOCK_ID);
     if (!unlocked) {
       const bal = totalPoints - cur.spent - cur.donated;
-      if (bal < BG_PRICE) { showToast('ポイントが たりないよ！', 'fail'); return false; }
+      if (bal < BG_PRICE) { showToast('ポイントが 足りないよ！', 'fail'); return false; }
     }
     const next: ShopState = {
       ...cur,
@@ -109,7 +109,7 @@ export const useShop = () => {
       bgSetAt: Date.now(),
     };
     writeShop(studentId, next); setShop(next);
-    showToast(unlocked ? '🖼️ はいけいを 登録したよ！' : `🖼️ はいけいを 手に入れた！（−${BG_PRICE}P）`, 'points');
+    showToast(unlocked ? '🖼️ 背景を 登録したよ！' : `🖼️ 背景を 手に入れた！（−${BG_PRICE}P）`, 'points');
     return true;
   }, [studentId, totalPoints]);
 
@@ -118,7 +118,7 @@ export const useShop = () => {
     if (!studentId) return;
     const next = { ...readShop(studentId), bgOn: on };
     writeShop(studentId, next); setShop(next);
-    showToast(on ? '🖼️ はいけいを つけたよ' : '🖼️ はいけいを けしたよ', 'success');
+    showToast(on ? '🖼️ 背景を つけたよ' : '🖼️ 背景を けしたよ', 'success');
   }, [studentId]);
 
   // 写真を消す。子どもの画面からは呼ばない（1枚しか登録できない仕様のため）。
@@ -133,7 +133,7 @@ export const useShop = () => {
     if (!studentId || amount <= 0) return false;
     const cur = readShop(studentId);
     const bal = totalPoints - cur.spent - cur.donated;
-    if (bal < amount) { showToast('ポイントが たりないよ！', 'fail'); return false; }
+    if (bal < amount) { showToast('ポイントが 足りないよ！', 'fail'); return false; }
     const next = { ...cur, donated: cur.donated + amount };
     writeShop(studentId, next); setShop(next);
     showToast(`🌳 みんなの木に ${amount}P あげた！`, 'points');

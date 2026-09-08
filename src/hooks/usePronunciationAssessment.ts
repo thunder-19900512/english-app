@@ -117,15 +117,15 @@ const isNearSilent = (chunks: Float32Array[]): boolean => {
 const explainCancel = (details: string): { msg: string; throttled: boolean } => {
   const d = details || '';
   if (/429|4429|Too many|throttl|quota|exceeded/i.test(d)) {
-    return { msg: '⏳ いま みんなが 発音チェックを 使っていて 混んでいます。少し待って もう一回ためしてね', throttled: true };
+    return { msg: '⏳ いま みんなが 発音チェックを 使っていて 混んでいます。少し待って もう一度試してね', throttled: true };
   }
   if (/401|403|Authentication|subscription|key/i.test(d)) {
-    return { msg: '🔑 発音チェックの せっていに もんだいがあるみたい。先生を呼んでね', throttled: false };
+    return { msg: '🔑 発音チェックの 設定に 問題があるみたい。先生を呼んでね', throttled: false };
   }
   if (/1006|network|WebSocket|Unable to contact|connection/i.test(d)) {
-    return { msg: '📶 通信が とぎれたみたい。少し待って もう一回ためしてね', throttled: false };
+    return { msg: '📶 通信が とぎれたみたい。少し待って もう一度試してね', throttled: false };
   }
-  return { msg: '⚠️ 発音チェックが できなかったよ。もう一回ためして、なおらなければ 先生に つたえてね', throttled: false };
+  return { msg: '⚠️ 発音チェックが できなかったよ。もう一度試して、直らなければ 先生に 伝えてね', throttled: false };
 };
 
 // 「キーは設定されているが、Azureが認証を拒否する」状態を覚えておくための印。
@@ -175,7 +175,7 @@ export const usePronunciationAssessment = (
   const markAuthFailed = useCallback(() => {
     try { localStorage.setItem(flag, '1'); } catch { /* noop */ }
     setAuthFailed(true);
-    showToast('🎙️ 発音チェックが いま使えないので、かんたんな聞き取りに きりかえたよ（先生に つたえてね）', 'fail');
+    showToast('🎙️ 発音チェックが いま使えないので、かんたんな聞き取りに きり変えたよ（先生に 伝えてね）', 'fail');
   }, [flag]);
 
   // キーが設定されていても、認証に失敗すると分かっていれば「使えない」＝呼び出し側は
@@ -243,7 +243,7 @@ export const usePronunciationAssessment = (
 
       // 1日の発音チェック上限に達していたら、Azureを呼ばずに止める（課金の安全装置）。
       if (isOverCap('azure')) {
-        setError('今日の発音チェックは上限に達したよ。また明日ためしてね！');
+        setError('今日の発音チェックは上限に達したよ。また明日試してね！');
         return null;
       }
 
@@ -255,7 +255,7 @@ export const usePronunciationAssessment = (
         await ensurePipeline();
       } catch (e) {
         setIsAssessing(false);
-        lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）をたしかめて、先生を呼ぼう！';
+        lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）を確かめて、先生を呼ぼう！';
         setError(lastErrorRef.current);
         logVoiceEvent({ kind: 'mic', ok: false, code: 'denied', detail: String(e) });
         return null;
@@ -372,7 +372,7 @@ export const usePronunciationAssessment = (
                 const silent = isNearSilent(replay || recordedChunksRef.current);
                 logVoiceEvent({ kind: 'azure', ok: false, code: silent ? 'silent' : 'nomatch' });
                 const msg = silent
-                  ? '🎙️ マイクの音がとどいていないみたい。イヤホンマイクのさしこみや、マイクの許可をたしかめて、先生を呼ぼう！'
+                  ? '🎙️ マイクの音が届いていないみたい。イヤホンマイクのさしこみや、マイクの許可を確かめて、先生を呼ぼう！'
                   : '声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね';
                 lastErrorRef.current = msg;
                 setError(msg);

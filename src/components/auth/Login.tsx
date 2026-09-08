@@ -103,7 +103,7 @@ export const Login: React.FC = () => {
     <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem' }}>
       <div className="flex-col flex-center gap-sm">
         <h1 className="text-primary" style={{ fontSize: '3rem' }}>Eigo no Mori 🌳</h1>
-        <p style={{ fontSize: '1.2rem' }}>なまえをタップしてはじめよう！</p>
+        <p style={{ fontSize: '1.2rem' }}>名前をタップして始めよう！</p>
       </div>
 
       {/* 学年の色わけ凡例 */}

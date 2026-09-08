@@ -42,7 +42,7 @@ const testAzureKey = async (key: string, region: string, endpoint?: string): Pro
   }
 };
 
-// 📮 子どもから届いた「こまった／こうしたい」（feedback）。
+// 📮 子どもから届いた「困った／こうしたい」（feedback）。
 // 画面右下の📮ボタンから送られてくる。Mac側の巡回が新着をメールでも知らせる。
 const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => void; onSaveNotifyTo: () => void; notifyMsg: string }> =
   ({ notifyTo, setNotifyTo, onSaveNotifyTo, notifyMsg }) => {
@@ -64,7 +64,7 @@ const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => voi
   return (
     <div className="glass-card" style={{ border: '2px solid #6c5ce7' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h2 style={{ margin: 0 }}>📮 子どもからの声（こまった／こうしたい）</h2>
+        <h2 style={{ margin: 0 }}>📮 子どもからの声（困った／こうしたい）</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button variant="outline" onClick={load} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>更新</Button>
           <Button variant="outline" onClick={() => setShowHandled(v => !v)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
@@ -591,7 +591,7 @@ export const TeacherDashboard: React.FC = () => {
       return;
     }
 
-    setSaveStatus('保存中...');
+    setSaveStatus('保存中…');
     setIsError(false);
 
     const { error } = await persistSettings({ geminiApiKey: cleanedKey });
@@ -620,7 +620,7 @@ export const TeacherDashboard: React.FC = () => {
 
     // ★保存する前に、そのキーが本当に使えるかAzureに聞く。
     //   「保存はできたが、授業では全滅」を防ぐ（2026年7月から実際にこの状態が続いていた）。
-    setAzureSaveStatus('キーをたしかめています...');
+    setAzureSaveStatus('キーを確かめています…');
     setAzureIsError(false);
     const cleanedEndpoint = azureEndpoint.trim();
     const check = await testAzureKey(cleanedKey, cleanedRegion, cleanedEndpoint || undefined);
@@ -630,7 +630,7 @@ export const TeacherDashboard: React.FC = () => {
       return;
     }
 
-    setAzureSaveStatus('保存中...');
+    setAzureSaveStatus('保存中…');
 
     const { error } = await persistSettings({
       azureSpeechKey: cleanedKey,
@@ -749,11 +749,11 @@ export const TeacherDashboard: React.FC = () => {
         {adjMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{adjMsg}</span>}
       </div>
 
-      {/* 背景写真のリセット（1人1枚・入れかえ不可なので、先生だけが取り消せる） */}
+      {/* 背景写真のリセット（1人1枚・入れ替え不可なので、先生だけが取り消せる） */}
       <div className="glass-card" style={{ border: '2px solid #fd79a8' }}>
         <h2 style={{ margin: '0 0 0.5rem 0' }}>🖼️ 背景写真のリセット</h2>
         <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          子どもが登録できる背景写真は<b>1人1枚・入れかえ不可</b>です。
+          子どもが登録できる背景写真は<b>1人1枚・入れ替え不可</b>です。
           ふさわしくない写真や、まちがえて登録した場合はここで消してください。
           消すと、その子は<b>もう一度（追加のポイントなしで）</b>写真を選べます。
         </p>
@@ -888,7 +888,7 @@ export const TeacherDashboard: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <Button onClick={handleAzureSave} icon={Save}>たしかめて保存</Button>
+            <Button onClick={handleAzureSave} icon={Save}>確かめて保存</Button>
             <Button variant="outline" onClick={async () => {
               if (!window.confirm('発音チェックをオフにします。\n全員の端末で、マイクは「かんたんな聞き取り（ブラウザの音声認識）」に切り替わります。\nあとでキーを入れ直せば、また使えます。')) return;
               const { error } = await persistSettings({ azureSpeechKey: null, azureSpeechEndpoint: null });
@@ -897,11 +897,11 @@ export const TeacherDashboard: React.FC = () => {
               if (!error) { setAzureKey(''); setAzureEndpoint(''); }
             }}>発音チェックをオフにする</Button>
             <Button variant="outline" onClick={async () => {
-              setAzureSaveStatus('いま保存されているキーをためしています...');
+              setAzureSaveStatus('いま保存されているキーを試しています…');
               const r = await testAzureKey(azureKey.trim(), azureRegion.trim(), azureEndpoint.trim() || undefined);
               setAzureIsError(!r.ok);
               setAzureSaveStatus(r.ok ? '✅ いまのキーは 使えます' : `❌ いまのキーは 使えません → ${r.message}`);
-            }}>いまのキーをためす</Button>
+            }}>いまのキーを試す</Button>
             {azureSaveStatus && <span style={{ color: azureIsError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{azureSaveStatus}</span>}
           </div>
         </div>

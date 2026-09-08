@@ -27,12 +27,12 @@ export const FREETALK_UNITS: FreetalkUnit[] = [
   { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'The goal is reached only after the user has BOTH asked you what subject you like AND told you their own favorite subject.', missionJa: 'すきな教科をたずねて、自分のすきな教科も伝えよう！', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
   { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: 'The goal is reached only after the user has asked when your birthday is AND told you their own birthday AND said one thing they want.', missionJa: '誕生日をたずね合って、ほしいものも伝えよう！', greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
   { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'The goal is reached only after the user has asked what you can do AND told you one thing they can do.', missionJa: 'おたがいの「できること」をたずね合おう！', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
-  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'The goal is reached only after the user has introduced what their friend can do well using "He can ..." or "She can ...".', missionJa: '友だちが上手にできることをしょうかいしよう！', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
+  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'The goal is reached only after the user has introduced what their friend can do well using "He can ..." or "She can ...".', missionJa: '友だちが上手にできることを紹介しよう！', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
   { id: 'g5-u5', label: '5年 U5 道案内', situation: '町で道をたずねて案内する', goal: 'You are lost and looking for the station. The goal is reached only after the user gives directions (go straight / turn right / turn left) and you arrive at the station.', missionJa: '駅まで道案内しよう！（まっすぐ・右・左）', greeting: { en: 'Excuse me. Where is the station?', ja: 'すみません、駅はどこ？' } },
   { id: 'g5-u6', label: '5年 U6 レストラン注文', situation: 'レストランで食べ物や飲み物を注文する', goal: 'You are a cashier. The goal is reached only after the user orders food and/or drink, hears the price, and pays or says thank you/goodbye.', missionJa: 'ごはんを注文して、お会計までしよう！', greeting: { en: 'What would you like?', ja: '何にする？' } },
   { id: 'g5-u7', label: '5年 U7 行きたい場所', situation: '行きたい場所とその理由を話す', goal: 'The goal is reached only after the user has said where they want to go AND given a reason (because ...).', missionJa: '行きたい場所と、その理由をつたえよう！', greeting: { en: 'Where do you want to go?', ja: 'どこに行きたい？' } },
-  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'The goal is reached only after the user has told you who their hero is AND why (what the hero can do or is good at).', missionJa: '自分のヒーローと、その理由をしょうかいしよう！', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
-  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'The goal is reached only after the user has told you their name AND one thing they can do.', missionJa: '名前と、できることをしょうかいしよう！', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
+  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'The goal is reached only after the user has told you who their hero is AND why (what the hero can do or is good at).', missionJa: '自分のヒーローと、その理由を紹介しよう！', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
+  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'The goal is reached only after the user has told you their name AND one thing they can do.', missionJa: '名前と、できることを紹介しよう！', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
   { id: 'g6-u2', label: '6年 U2 一日の生活', situation: '毎日の生活（起きる時間など）を聞き合う', goal: 'The goal is reached only after the user has asked about your daily routine AND told you what time they do something (get up / go to bed, etc.).', missionJa: '毎日の生活（起きる時間など）をたずね合おう！', greeting: { en: 'What time do you get up?', ja: '何時に起きる？' } },
   { id: 'g6-u3', label: '6年 U3 週末のこと', situation: '週末にしたことを話す', goal: 'The goal is reached only after the user has told you TWO things they did on the weekend in the past tense (I went / I played ...).', missionJa: '週末にしたことを2つ伝えよう！（過去形）', greeting: { en: 'How was your weekend?', ja: '週末はどうだった？' } },
   { id: 'g6-u4', label: '6年 U4 行きたい国', situation: '行きたい国と見られるものを話す', goal: 'The goal is reached only after the user has said which country they want to visit AND what they can see or do there.', missionJa: '行きたい国と、そこで見られるものを伝えよう！', greeting: { en: 'Where do you want to go?', ja: 'どこの国に行きたい？' } },
@@ -48,18 +48,18 @@ export const FREETALK_UNITS: FreetalkUnit[] = [
 const friendlyAiError = (err: any): string => {
   const raw = String(err?.message || err || '');
   if (/Failed to fetch|NetworkError|ERR_INTERNET|Load failed/i.test(raw)) {
-    return '📶 いま インターネットに つながらないみたい。少し待って もう一度おくってね。（なおらないときは先生を呼ぼう）';
+    return '📶 いま インターネットに つながらないみたい。少し待って もう一度送ってね。（直らないときは先生を呼ぼう）';
   }
   if (/429|quota|RESOURCE_EXHAUSTED|rate/i.test(raw)) {
-    return '⏳ いま みんなが たくさん使っていて 混んでいます。少し待って もう一度おくってね。';
+    return '⏳ いま みんなが たくさん使っていて 混んでいます。少し待って もう一度送ってね。';
   }
   if (/API key|401|403|PERMISSION|invalid/i.test(raw)) {
-    return '🔑 AIのせっていに もんだいがあるみたい。先生を呼んでね。';
+    return '🔑 AIの設定に 問題があるみたい。先生を呼んでね。';
   }
   if (/500|503|internal|unavailable/i.test(raw)) {
-    return '🛠 AIのサーバーが こんでいます。少し待って もう一度ためしてね。';
+    return '🛠 AIのサーバーが 混んでいます。少し待って もう一度試してね。';
   }
-  return '⚠️ うまく おくれませんでした。もう一度ためして、なおらないときは先生を呼んでね。';
+  return '⚠️ うまく 送れませんでした。もう一度試して、直らないときは先生を呼んでね。';
 };
 
 const stripSlots = (s: string) => s.replace(/[{}]/g, '');
@@ -125,7 +125,7 @@ const BENTO_SHOP_CHALLENGE_GOAL =
   'The goal is reached ONLY after the staff has welcomed you, taken at least TWO orders with a price for each, given the CORRECT total, and you have paid.';
 
 const BENTO_SHOP_SIMPLE_LABEL =
-  '🎯 ミッション：お店の人になろう！ メニューをつたえる→注文をうける→値段を言う→合計を伝える→お客さんがはらったらクリア！';
+  '🎯 ミッション：お店の人になろう！ メニューを伝える→注文を受ける→値段を言う→合計を伝える→お客さんがはらったらクリア！';
 const BENTO_SHOP_CHALLENGE_LABEL =
   '🎯 ミッション（チャレンジ）：お客さんが料理の質問（What\'s in it? など）もしてくるよ。答えながら、注文と合計までいけたらクリア！';
 
@@ -239,7 +239,7 @@ export const AIAssistant: React.FC = () => {
   const [eiken, setEiken] = useState<string>(() => loadEiken(studentId));
   const chooseEiken = (id: string) => { setEiken(id); saveEiken(studentId, id); };
 
-  // チームモード（4人1組などで、ターンごとに話す人をえらんでリレー）
+  // チームモード（4人1組などで、ターンごとに話す人を選んでリレー）
   const [isTeam, setIsTeam] = useState(false);
   const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<{ id: string; name: string } | null>(null);
@@ -405,7 +405,7 @@ export const AIAssistant: React.FC = () => {
 
     // トーク中は日本語NG。日本語が含まれていたら送らず（ポイントも消費せず）英語をうながす。
     if (/[぀-ヿ㐀-鿿]/.test(text)) {
-      setMessages(prev => [...prev, { role: 'model', text: 'English, please! 英語で話してみよう。こまったら 💡ヘルプ を見てね。' }]);
+      setMessages(prev => [...prev, { role: 'model', text: 'English, please! 英語で話してみよう。困ったら 💡ヘルプ を見てね。' }]);
       setShowHelp(true);
       speak('In English, please!');
       return;
@@ -527,7 +527,7 @@ export const AIAssistant: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
         <AlertTriangle size={60} color="var(--color-error)" />
-        <h2 className="text-primary">AIのじゅんびができていません</h2>
+        <h2 className="text-primary">AIの準備ができていません</h2>
         <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
         <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
       </div>
@@ -543,7 +543,7 @@ export const AIAssistant: React.FC = () => {
           <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>🤖 AIと英語で話そう！</h2>
         </div>
 
-        {/* チームでやる（メンバーをえらんでリレー会話） */}
+        {/* チームでやる（メンバーを選んでリレー会話） */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ margin: 0 }}>👥 チームでやる</h3>
@@ -578,7 +578,7 @@ export const AIAssistant: React.FC = () => {
           <div>
             <h3 style={{ margin: 0 }}>🎖 英検レベル</h3>
             <p style={{ color: '#666', margin: '0.2rem 0 0 0', fontSize: '0.85rem' }}>
-              いまの自分に近いものをえらんでね。上のレベルほど<b>AIの英語が難しくなり、クリアの条件も増える</b>よ。
+              いまの自分に近いものを選んでね。上のレベルほど<b>AIの英語が難しくなり、クリアの条件も増える</b>よ。
             </p>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -618,7 +618,7 @@ export const AIAssistant: React.FC = () => {
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}>
           <h3 style={{ margin: 0, color: '#b45309' }}>🍱 World Bento お店屋さん（店員の練習）</h3>
           <p style={{ color: '#7a5a00', margin: 0, fontSize: '0.9rem' }}>
-            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューをつたえて、値段と合計を言おう。
+            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューを伝えて、値段と合計を言おう。
           </p>
           <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
             <button className="hover-scale" onClick={() => startShop('simple')}
@@ -633,9 +633,9 @@ export const AIAssistant: React.FC = () => {
         </div>
         </>)}
 
-        {/* 教科書のUnitから場面をえらぶ */}
+        {/* 教科書のUnitから場面を選ぶ */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
-          <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面をえらぶ</h3>
+          <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面を選ぶ</h3>
           <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>そのUnitの表現を使って、AIと会話の練習ができるよ。</p>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
             {FREETALK_UNITS.filter(u => !isArchived(u.id)).map(u => (
@@ -658,9 +658,9 @@ export const AIAssistant: React.FC = () => {
             style={{ width: '100%', minHeight: '70px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
           />
           <Button size="lg" onClick={() => startFreetalk({ situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
-            この場面ではじめる！
+            この場面で始める！
           </Button>
-          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしではじめる</Button>
+          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしで始める</Button>
         </div>
       </div>
     );
@@ -710,7 +710,7 @@ export const AIAssistant: React.FC = () => {
         <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '0.6rem 0.9rem', marginBottom: '0.5rem' }}>
           {!currentSpeaker ? (
             <>
-              <div style={{ fontSize: '0.9rem', color: '#4338ca', fontWeight: 'bold', marginBottom: '0.4rem' }}>📣 作戦タイム：「なんて言う？」を相談しよう（日本語OK）→ 話す人をえらぶ👇</div>
+              <div style={{ fontSize: '0.9rem', color: '#4338ca', fontWeight: 'bold', marginBottom: '0.4rem' }}>📣 作戦タイム：「なんて言う？」を相談しよう（日本語OK）→ 話す人を選ぶ👇</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {teamMembers.map(m => {
                   const isLast = m.id === lastSpeakerId;
@@ -729,7 +729,7 @@ export const AIAssistant: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4338ca' }}>🎤 いま話す人：{currentSpeaker.name} さん</span>
               <span style={{ fontSize: '0.85rem', color: '#6366f1' }}>マイクで話して、文を確認してから送ってね</span>
-              <Button variant="outline" onClick={() => setCurrentSpeaker(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', marginLeft: 'auto' }}>えらび直す</Button>
+              <Button variant="outline" onClick={() => setCurrentSpeaker(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', marginLeft: 'auto' }}>選び直す</Button>
             </div>
           )}
         </div>
@@ -769,7 +769,7 @@ export const AIAssistant: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ fontSize: '2rem' }}>🤖</div>
             <div className="glass-card" style={{ padding: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>考え中...</span>
+              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>考え中…</span>
             </div>
           </div>
         )}

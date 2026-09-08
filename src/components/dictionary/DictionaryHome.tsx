@@ -58,7 +58,7 @@ export const DictionaryHome: React.FC = () => {
         <span style={{ fontSize: '1.8rem' }}>🧪</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#b45309' }}>単語実力テスト</div>
-          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>ならった単語からランダム10問・一発勝負！けっかはグラフに記録されるよ</div>
+          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>習った単語からランダム10問・一発勝負！結果はグラフに記録されるよ</div>
         </div>
         <span style={{ fontSize: '1.3rem', color: '#b45309' }}>›</span>
       </div>

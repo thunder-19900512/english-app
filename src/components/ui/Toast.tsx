@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 // 画面固定トースト：スクロール位置に関係なく「今見ている画面」の下部に必ず出る通知。
-// ポイント獲得・クリア・失敗（もう一回）を、その場で気づけるようにする。
+// ポイント獲得・クリア・失敗（もう一度）を、その場で気づけるようにする。
 // 使い方: showToast('🎉 ＋10ポイント！', 'points')
 export type ToastType = 'success' | 'fail' | 'points';
 

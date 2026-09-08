@@ -113,7 +113,7 @@ export const StoryMode: React.FC = () => {
     const result = await assess(targetSentence);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -504,7 +504,7 @@ ${SAFETY_INSTRUCTION}`;
     return (
       <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
         <AlertTriangle size={60} color="var(--color-error)" />
-        <h2 className="text-primary">AIのじゅんびができていません</h2>
+        <h2 className="text-primary">AIの準備ができていません</h2>
         <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
         <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
       </div>
@@ -566,7 +566,7 @@ ${SAFETY_INSTRUCTION}`;
       {gameState === 'generating' && (
         <div className="flex-col flex-center gap-md" style={{ flex: 1 }}>
           <Sparkles className="animate-pulse" size={60} color="var(--color-accent)" />
-          <h2 className="text-primary">AIがおはなしを作っています...</h2>
+          <h2 className="text-primary">AIがおはなしを作っています…</h2>
           <p>あなたの習った単語を使っているよ！</p>
         </div>
       )}
@@ -665,7 +665,7 @@ ${SAFETY_INSTRUCTION}`;
                         color: readScore >= READ_PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
                       }}
                     >
-                      音読スコア: {Math.round(readScore)} 点 {readScore >= READ_PASS_SCORE ? '✅' : '（もう一回！）'}
+                      音読スコア: {Math.round(readScore)} 点 {readScore >= READ_PASS_SCORE ? '✅' : '（もう一度！）'}
                     </div>
                   )}
 

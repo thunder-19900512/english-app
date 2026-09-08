@@ -75,16 +75,16 @@ export const Shop: React.FC = () => {
     if (!supabase || !studentId) return;
     // 大きすぎる写真はそもそも受け取らない（読み込みで固まるのを防ぐ）
     if (file.size > BG_MAX_INPUT_MB * 1024 * 1024) {
-      setUploadMsg(`この写真は大きすぎるよ（${BG_MAX_INPUT_MB}MBまで）。ちがう写真をえらんでね`);
+      setUploadMsg(`この写真は大きすぎるよ（${BG_MAX_INPUT_MB}MBまで）。ちがう写真を選んでね`);
       setTimeout(() => setUploadMsg(''), 6000); return;
     }
-    if (shop.bgImage) return; // すでに1枚もっている（入れかえはできない）
-    if (!bgUnlocked && balance < BG_PRICE) { setUploadMsg(`ポイントが たりないよ！（${BG_PRICE}P ひつよう）`); setTimeout(() => setUploadMsg(''), 5000); return; }
+    if (shop.bgImage) return; // すでに1枚持っている（入れ替えはできない）
+    if (!bgUnlocked && balance < BG_PRICE) { setUploadMsg(`ポイントが 足りないよ！（${BG_PRICE}P 必要）`); setTimeout(() => setUploadMsg(''), 5000); return; }
     if (!window.confirm(
-      (bgUnlocked ? 'この写真を はいけいにするよ。（ポイントは かからないよ）\n\n'
-                  : `この写真を はいけいにすると ${BG_PRICE}P つかうよ。\n\n`)
-      + '★ 登録できるのは 1まいだけ。あとから 写真を かえることは できません。\n'
-      + '（つけたり けしたりは、いつでも 無料でできるよ）\n\n'
+      (bgUnlocked ? 'この写真を 背景にするよ。（ポイントは かからないよ）\n\n'
+                  : `この写真を 背景にすると ${BG_PRICE}P つかうよ。\n\n`)
+      + '★ 登録できるのは 1枚だけ。あとから 写真を 変えることは できません。\n'
+      + '（つけたり 消したりは、いつでも 無料でできるよ）\n\n'
       + 'この写真で いい？')) return;
     setUploading(true); setUploadMsg('');
     try {
@@ -94,9 +94,9 @@ export const Shop: React.FC = () => {
       if (error) throw error;
       const { data } = supabase.storage.from('backgrounds').getPublicUrl(path);
       const ok = setBackgroundImage(`${data.publicUrl}?t=${Date.now()}`);
-      setUploadMsg(ok ? 'はいけいを かえたよ！🎉' : 'ポイントが たりなかった…');
+      setUploadMsg(ok ? '背景を 変えたよ！🎉' : 'ポイントが 足りなかった…');
     } catch (e) {
-      setUploadMsg('アップロードできなかった…もう一回ためしてね');
+      setUploadMsg('アップロードできなかった…もう一度試してね');
     } finally {
       setUploading(false);
       setTimeout(() => setUploadMsg(''), 5000);
@@ -144,13 +144,13 @@ export const Shop: React.FC = () => {
       {/* 残高 */}
       <div className="glass-card" style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(253, 203, 110, 0.15)', border: '2px solid var(--color-accent)' }}>
         <div style={{ fontSize: '2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={28} /> いま つかえる：{balance.toLocaleString()}P
+          <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={28} /> いま 使える：{balance.toLocaleString()}P
         </div>
       </div>
 
       {/* タブ */}
       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-        {([['title', '🏅 称号'], ['theme', '🎨 きせかえ'], ['bg', '🖼️ はいけい']] as const).map(([v, label]) => (
+        {([['title', '🏅 称号'], ['theme', '🎨 きせかえ'], ['bg', '🖼️ 背景']] as const).map(([v, label]) => (
           <button key={v} onClick={() => setTab(v)}
             style={{ padding: '0.5rem 1.2rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold',
               background: tab === v ? 'var(--color-primary)' : 'white', color: tab === v ? 'white' : 'var(--color-primary)' }}>
@@ -161,7 +161,7 @@ export const Shop: React.FC = () => {
 
       {tab === 'title' && (
         <div className="flex-col gap-md">
-          <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>つけると、なまえのよこに ひょうじされるよ！</p>
+          <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>つけると、名前の横に 表示されるよ！</p>
           {TITLES.map(t => (
             <ItemCard key={t.id} item={t} equipped={shop.equippedTitle === t.id}
               onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
@@ -192,19 +192,19 @@ export const Shop: React.FC = () => {
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
           {!bgUnlocked ? (
             <>
-              <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で はいけいを 手に入れる</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>⭐ {BG_PRICE}P で 背景を 手に入れる</div>
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
-                すきな写真を 1まい えらぶと、アプリのはいけいに なるよ。<br />
-                買ったあとは、<b>つけたり けしたり いつでも 無料</b>。<br />
-                <b style={{ color: '#c0392b' }}>★ 登録できるのは 1まいだけ。あとから かえられないよ。</b><br />
-                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真をえらぼう！</span>
+                すきな写真を 1枚 えらぶと、アプリの背景に なるよ。<br />
+                買ったあとは、<b>つけたり 消したり いつでも 無料</b>。<br />
+                <b style={{ color: '#c0392b' }}>★ 登録できるのは 1枚だけ。あとから 変えられないよ。</b><br />
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真を選ぼう！</span>
               </p>
             </>
           ) : (
             <>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-success)' }}>✅ はいけい（もっているよ）</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-success)' }}>✅ 背景（持っているよ）</div>
               <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                つけたり けしたりは <b>いつでも 無料</b>。写真は この1まいだよ。
+                つけたり 消したりは <b>いつでも 無料</b>。写真は この1枚だよ。
               </p>
             </>
           )}
@@ -227,14 +227,14 @@ export const Shop: React.FC = () => {
                 variant={!shop.bgOn ? 'primary' : 'outline'}
                 style={{ minWidth: '130px' }}
               >
-                {!shop.bgOn ? '✅ けしている' : '🚫 けす'}
+                {!shop.bgOn ? '✅ 消している' : '🚫 けす'}
               </Button>
             </div>
           )}
 
           {!shop.bgImage && (
             <Button onClick={() => fileRef.current?.click()} disabled={uploading || (!bgUnlocked && balance < BG_PRICE)}>
-              {uploading ? 'アップロード中…' : bgUnlocked ? '📷 写真をえらぶ（無料）' : `📷 写真をえらぶ（${BG_PRICE}P）`}
+              {uploading ? 'アップロード中…' : bgUnlocked ? '📷 写真を選ぶ（無料）' : `📷 写真を選ぶ（${BG_PRICE}P）`}
             </Button>
           )}
 
@@ -247,22 +247,22 @@ export const Shop: React.FC = () => {
           {shop.bgImage && (
             <>
               <div style={{ position: 'relative' }}>
-                <img src={shop.bgImage} alt="はいけい"
+                <img src={shop.bgImage} alt="背景"
                   style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '12px', opacity: shop.bgOn ? 1 : 0.4 }} />
                 {!shop.bgOn && (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#475569' }}>
-                    いま けしているよ
+                    いま 消しているよ
                   </div>
                 )}
               </div>
               <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                写真は かえられないよ。こまったときは 先生に つたえてね
+                写真は 変えられないよ。困ったときは 先生に 伝えてね
               </div>
             </>
           )}
 
           <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1まい・入れかえ不可）
+            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1枚・入れ替え不可）
           </div>
         </div>
       )}

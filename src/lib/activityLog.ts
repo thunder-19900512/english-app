@@ -1,7 +1,7 @@
 // 「さっき何をやったか」の記録。
 //
 // ふりかえりを書くときに、その子が直近で取り組んだ活動を思い出せるように出す。
-// （「今日なにしたっけ？」で手が止まる子が多いので、書き出しの足场にする）
+// （「今日なにしたっけ？」で手が止まる子が多いので、書き出しの足場にする）
 //
 // 端末のlocalStorageだけに持つ。Supabaseには送らない：
 //   - ふりかえりは書いた端末で書くので、端末に持っていれば足りる
@@ -90,7 +90,7 @@ export const labelForHash = (hash: string, dict: Record<string, string> = {}): s
     case 'tree': return '🌳 みんなの町';
     case 'shop': return '🎁 ショップ';
     case 'mictest': return '🎙️ マイクテスト';
-    case 'progress': return '🗺️ じぶんの記録';
+    case 'progress': return '🗺️ 自分の記録';
     case 'skilltest': return '📝 単語テスト';
     default: return null;   // ホーム・ふりかえり等は「取り組んだこと」ではないので記録しない
   }
