@@ -148,13 +148,10 @@ export const ReflectionForm: React.FC = () => {
         )}
 
         <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
-          かんそうをかこう！
+          感想を書こう！
         </h2>
         <p style={{ fontSize: '1.15rem', color: '#334155', marginBottom: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
           今日よかったこと、難しかったこと、身についたと感じることを書き記そう！
-        </p>
-        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '0.5rem', textAlign: 'center' }}>
-          （ここがよかった・難しかった・こんな風に学びたい...など）
         </p>
         <p style={{ fontSize: '1rem', color: qualifies ? '#b45309' : '#94a3b8', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>
           {qualifies
