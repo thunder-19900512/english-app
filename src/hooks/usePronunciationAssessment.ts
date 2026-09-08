@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { isOverCap, incUsage } from '../lib/apiUsage';
 import { logVoiceEvent, azureCode } from '../lib/voiceLog';
+import { showToast } from '../components/ui/Toast';
 
 export interface WordScore {
   word: string;
@@ -127,6 +128,17 @@ const explainCancel = (details: string): { msg: string; throttled: boolean } => 
   return { msg: '⚠️ 発音チェックが できなかったよ。もう一回ためして、なおらなければ 先生に つたえてね', throttled: false };
 };
 
+// 「キーは設定されているが、Azureが認証を拒否する」状態を覚えておくための印。
+// これが無いと、毎回1人ずつ失敗し続けるだけで、Web Speechへの切り替えも起きない
+// （実際に2026年7月から、設定はあるのに全滅、という状態が続いていた）。
+// 設定（キー/リージョン/エンドポイント）が変わると印は自動的に無効になる。
+const authFlagKey = (key: string, region: string, endpoint: string) => {
+  let h = 5381;
+  const s = `${key}|${region}|${endpoint}`;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return `azureAuthFailed_${h}`;
+};
+
 export const usePronunciationAssessment = (
   key: string | null,
   region: string | null,
@@ -151,7 +163,24 @@ export const usePronunciationAssessment = (
   // 録音再生用に、流し込んだのと同じ 16kHz PCM を溜めておく。
   const recordedChunksRef = useRef<Float32Array[]>([]);
 
-  const isAvailable = !!(key && (region || endpoint));
+  // 認証に失敗した設定かどうか（失敗が分かっている間は「使えない」として扱う）
+  const flag = authFlagKey(key || '', region || '', endpoint || '');
+  const [authFailed, setAuthFailed] = useState<boolean>(() => {
+    try { return localStorage.getItem(flag) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { setAuthFailed(localStorage.getItem(flag) === '1'); } catch { /* noop */ }
+  }, [flag]);
+
+  const markAuthFailed = useCallback(() => {
+    try { localStorage.setItem(flag, '1'); } catch { /* noop */ }
+    setAuthFailed(true);
+    showToast('🎙️ 発音チェックが いま使えないので、かんたんな聞き取りに きりかえたよ（先生に つたえてね）', 'fail');
+  }, [flag]);
+
+  // キーが設定されていても、認証に失敗すると分かっていれば「使えない」＝呼び出し側は
+  // Web Speech（ブラウザの聞き取り）に自動で切り替わる。
+  const isAvailable = !!(key && (region || endpoint)) && !authFailed;
 
   // マイク＋WebAudio のパイプラインを一度だけ用意する（クリック起点で呼ぶ）。
   const ensurePipeline = useCallback(async () => {
@@ -321,7 +350,10 @@ export const usePronunciationAssessment = (
                 console.error('Azure canceled:', cancel.errorDetails);
                 const { msg, throttled } = explainCancel(cancel.errorDetails || '');
                 const chunks = replay || recordedChunksRef.current;
-                logVoiceEvent({ kind: 'azure', ok: false, code: azureCode(cancel.errorDetails || '') + (replay ? '-retry' : ''), detail: cancel.errorDetails || '' });
+                const code = azureCode(cancel.errorDetails || '');
+                logVoiceEvent({ kind: 'azure', ok: false, code: code + (replay ? '-retry' : ''), detail: cancel.errorDetails || '' });
+                // キーや設定が原因（401/403）なら、以後この設定ではAzureを使わない
+                if (code === 'auth') markAuthFailed();
                 if (throttled && allowRetry && chunks.length > 0) {
                   // 混雑：同じ録音で1回だけ自動リトライ（子どもは待つだけ）
                   const keep = chunks.slice();
@@ -363,7 +395,7 @@ export const usePronunciationAssessment = (
 
       return runOnce(null, true);
     },
-    [key, region, endpoint, ensurePipeline]
+    [key, region, endpoint, ensurePipeline, markAuthFailed]
   );
 
   // 直近の失敗理由（トースト用）。assessがnullを返した直後に呼ぶ。

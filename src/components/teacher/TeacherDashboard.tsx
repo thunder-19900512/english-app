@@ -802,6 +802,13 @@ export const TeacherDashboard: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <Button onClick={handleAzureSave} icon={Save}>たしかめて保存</Button>
             <Button variant="outline" onClick={async () => {
+              if (!window.confirm('発音チェックをオフにします。\n全員の端末で、マイクは「かんたんな聞き取り（ブラウザの音声認識）」に切り替わります。\nあとでキーを入れ直せば、また使えます。')) return;
+              const { error } = await persistSettings({ azureSpeechKey: null, azureSpeechEndpoint: null });
+              setAzureIsError(!!error);
+              setAzureSaveStatus(error ? '通信エラー' : '発音チェックをオフにしました（全端末で かんたんな聞き取りに切り替わります）');
+              if (!error) { setAzureKey(''); setAzureEndpoint(''); }
+            }}>発音チェックをオフにする</Button>
+            <Button variant="outline" onClick={async () => {
               setAzureSaveStatus('いま保存されているキーをためしています...');
               const r = await testAzureKey(azureKey.trim(), azureRegion.trim(), azureEndpoint.trim() || undefined);
               setAzureIsError(!r.ok);
