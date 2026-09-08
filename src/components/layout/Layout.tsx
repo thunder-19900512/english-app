@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Home, LogOut, Star, Coins } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
 import { GlobalLockScreen } from '../ui/GlobalLockScreen';
+import { recordActivity, labelForHash } from '../../lib/activityLog';
+import { stages } from '../../data/stages';
+import { FeedbackButton } from '../ui/FeedbackButton';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +18,17 @@ export const Layout: React.FC = () => {
 
   // Basic mock auth check (to be replaced with real context later)
   const studentId = localStorage.getItem('studentId');
+
+  // 「さっき何をやったか」をここ1か所で記録する（ふりかえり画面で思い出す材料にする）。
+  // 画面ごとにコードを足さなくて済むよう、URLから活動名を作っている。
+  const location = useLocation();
+  useEffect(() => {
+    if (!studentId) return;
+    const dict: Record<string, string> = {};
+    stages.forEach(st => { dict[`stage_${st.id}`] = st.title; });
+    const label = labelForHash(location.pathname + location.search, dict);
+    if (label) recordActivity(label);
+  }, [location.pathname, location.search, studentId]);
 
   // 装備中テーマ・背景画像を画面全体に適用する
   useEffect(() => {
@@ -102,6 +116,9 @@ export const Layout: React.FC = () => {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </main>
+
+      {/* 画面の右下から、いつでも「こまった／こうしたい」を送れる */}
+      {studentId && <FeedbackButton />}
     </div>
   );
 };

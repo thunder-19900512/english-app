@@ -42,6 +42,79 @@ const testAzureKey = async (key: string, region: string, endpoint?: string): Pro
   }
 };
 
+// 📮 子どもから届いた「こまった／こうしたい」（feedback）。
+// 画面右下の📮ボタンから送られてくる。Mac側の巡回が新着をメールでも知らせる。
+const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => void; onSaveNotifyTo: () => void; notifyMsg: string }> =
+  ({ notifyTo, setNotifyTo, onSaveNotifyTo, notifyMsg }) => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [showHandled, setShowHandled] = useState(false);
+  const load = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from('feedback').select('*').order('ts', { ascending: false }).limit(200);
+    setRows(data || []);
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line
+  const toggleHandled = async (row: any) => {
+    if (!supabase) return;
+    await supabase.from('feedback').update({ handled: !row.handled }).eq('id', row.id);
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, handled: !r.handled } : r));
+  };
+  const visible = rows.filter(r => showHandled || !r.handled);
+  const openCount = rows.filter(r => !r.handled).length;
+  return (
+    <div className="glass-card" style={{ border: '2px solid #6c5ce7' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <h2 style={{ margin: 0 }}>📮 子どもからの声（こまった／こうしたい）</h2>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button variant="outline" onClick={load} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>更新</Button>
+          <Button variant="outline" onClick={() => setShowHandled(v => !v)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+            {showHandled ? '未対応だけ' : '対応済みも見る'}
+          </Button>
+        </div>
+      </div>
+      <p style={{ color: '#666', fontSize: '0.9rem', margin: '0.5rem 0 1rem' }}>
+        子どもの画面の右下にある📮から届きます。未対応 <b style={{ color: openCount ? '#b91c1c' : 'var(--color-success)' }}>{openCount}件</b>。
+      </p>
+
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+        <span style={{ fontSize: '0.9rem', color: '#475569' }}>新着のお知らせ先：</span>
+        <input value={notifyTo} onChange={e => setNotifyTo(e.target.value)} placeholder="thunder.ymd@gmail.com"
+          style={{ flex: 1, minWidth: '220px', padding: '0.5rem 0.7rem', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '0.9rem' }} />
+        <Button onClick={onSaveNotifyTo} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>保存</Button>
+        {notifyMsg && <span style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>{notifyMsg}</span>}
+      </div>
+
+      {visible.length === 0 ? (
+        <div style={{ color: '#94a3b8' }}>{rows.length === 0 ? 'まだ届いていません' : '未対応のものはありません'}</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          {visible.map(r => (
+            <div key={r.id} style={{
+              background: r.handled ? '#f8fafc' : 'white', borderRadius: '10px', padding: '0.8rem 1rem',
+              borderLeft: `4px solid ${r.kind === 'bug' ? '#e17055' : '#00b894'}`, opacity: r.handled ? 0.6 : 1,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: '#64748b' }}>
+                <span>
+                  <b style={{ color: r.kind === 'bug' ? '#c0392b' : '#0f9d58' }}>{r.kind === 'bug' ? '🐛 うまく動かない' : '💡 こうしたい'}</b>
+                  {' '}／ {r.student_name || '?'}
+                </span>
+                <span>{new Date(r.ts).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div style={{ margin: '0.4rem 0', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>{r.message}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'monospace' }}>{(r.screen || '').replace(/^#/, '')}</span>
+                <Button variant="outline" onClick={() => toggleHandled(r)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem' }}>
+                  {r.handled ? '未対応にもどす' : '対応済みにする'}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // 🎙️ 音声の成功／失敗ログ（voice_logs）。「マイクが認識されない」がどの経路・どんな理由かを数字で見る。
 const VoiceLogCard: React.FC<{ students: any[] }> = ({ students }) => {
   const [rows, setRows] = useState<any[]>([]);
@@ -206,6 +279,8 @@ export const TeacherDashboard: React.FC = () => {
   // ポイント手動加算（消失時の補填用）。同期がmaxマージのため加算のみ対応。
   const [adjStudentId, setAdjStudentId] = useState('');
   const [bgStudentId, setBgStudentId] = useState('');
+  const [notifyTo, setNotifyTo] = useState('');
+  const [notifyMsg, setNotifyMsg] = useState('');
   const [bgMsg, setBgMsg] = useState('');
   const [adjAmount, setAdjAmount] = useState('');
   const [adjMsg, setAdjMsg] = useState('');
@@ -253,6 +328,9 @@ export const TeacherDashboard: React.FC = () => {
       }
       if (data.dictionary_progress.azureSpeechKey) {
         setAzureKey(data.dictionary_progress.azureSpeechKey);
+      }
+      if (data.dictionary_progress.feedbackNotifyTo !== undefined) {
+        setNotifyTo(data.dictionary_progress.feedbackNotifyTo || '');
       }
       if (data.dictionary_progress.azureSpeechEndpoint) {
         setAzureEndpoint(data.dictionary_progress.azureSpeechEndpoint);
@@ -377,6 +455,13 @@ export const TeacherDashboard: React.FC = () => {
     setTimeout(() => setBgMsg(''), 6000);
   };
 
+  // 📮 新着フィードバックのお知らせ先メールアドレスを保存
+  const handleSaveNotifyTo = async () => {
+    const { error } = await persistSettings({ feedbackNotifyTo: notifyTo.trim() || null });
+    setNotifyMsg(error ? '通信エラー' : '保存しました');
+    setTimeout(() => setNotifyMsg(''), 4000);
+  };
+
   const handleAdjustPoints = async () => {
     if (!supabase) return;
     const amount = parseInt(adjAmount, 10);
@@ -449,7 +534,8 @@ export const TeacherDashboard: React.FC = () => {
         <div style={{ fontSize: '0.8rem', color: '#0891b2', fontWeight: 'bold', marginBottom: '0.3rem' }}>スタッフから（子どもに見えます）</div>
         <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
           {STAMPS.map(st => (
-            <button key={st} onClick={() => setDraft({ ...draft, stamp: draft.stamp === st ? '' : st })}
+            // スタンプを押したら、そのままコメントを打てるように入力欄へフォーカスを移す
+            <button key={st} onClick={() => { setDraft({ ...draft, stamp: draft.stamp === st ? '' : st }); fbInputRefs.current[key]?.focus(); }}
               style={{ fontSize: '1.2rem', padding: '0.1rem 0.4rem', borderRadius: '8px', cursor: 'pointer', background: draft.stamp === st ? '#cffafe' : 'white', border: `2px solid ${draft.stamp === st ? '#0891b2' : '#e2e8f0'}` }}>
               {st}
             </button>
@@ -686,6 +772,8 @@ export const TeacherDashboard: React.FC = () => {
         </div>
         {bgMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{bgMsg}</span>}
       </div>
+
+      <FeedbackCard notifyTo={notifyTo} setNotifyTo={setNotifyTo} onSaveNotifyTo={handleSaveNotifyTo} notifyMsg={notifyMsg} />
 
       <VoiceLogCard students={students} />
 
