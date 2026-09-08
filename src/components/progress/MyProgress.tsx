@@ -11,7 +11,7 @@ import { usePronunciationHistory, type ScoreMode } from '../../hooks/usePronunci
 
 const MODE_STYLE: Record<ScoreMode, { color: string; label: string }> = {
   battle: { color: '#ff6b6b', label: 'モンスターバトル' },
-  story: { color: '#d946ef', label: 'おはなし音読' },
+  story: { color: '#d946ef', label: 'お話音読' },
   textbook: { color: '#00b894', label: '教科書ボーナス' },
   dialogue: { color: '#0984e3', label: 'ダイアログ' },
   test: { color: '#f59e0b', label: '単語テスト' },
@@ -187,7 +187,7 @@ export const MyProgress: React.FC = () => {
         {history.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
             まだ発音の記録がないよ。<br/>
-            モンスターバトル・おはなし音読・教科書のボーナスでマイクを使うと、ここに点数の記録がたまっていくよ！
+            モンスターバトル・お話音読・教科書のボーナスでマイクを使うと、ここに点数の記録がたまっていくよ！
           </div>
         ) : (
           <>

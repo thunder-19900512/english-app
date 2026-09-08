@@ -86,7 +86,7 @@ export const labelForHash = (hash: string, dict: Record<string, string> = {}): s
       return `🗣️ ダイアログ${g ? `（${g}年）` : ''}`;
     }
     case 'ai': return '🤖 AI英会話';
-    case 'story': return '📖 おはなしづくり';
+    case 'story': return '📖 お話づくり';
     case 'tree': return '🌳 みんなの町';
     case 'shop': return '🎁 ショップ';
     case 'mictest': return '🎙️ マイクテスト';

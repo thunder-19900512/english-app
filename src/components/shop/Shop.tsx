@@ -50,7 +50,7 @@ export const Shop: React.FC = () => {
   const navigate = useNavigate();
   const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn } = useShop();
   const [tab, setTab] = useState<Tab>('title');
-  // きせかえの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
+  // 着せ替えの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
   useEffect(() => {
     const root = document.documentElement;
@@ -150,7 +150,7 @@ export const Shop: React.FC = () => {
 
       {/* タブ */}
       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-        {([['title', '🏅 称号'], ['theme', '🎨 きせかえ'], ['bg', '🖼️ 背景']] as const).map(([v, label]) => (
+        {([['title', '🏅 称号'], ['theme', '🎨 着せ替え'], ['bg', '🖼️ 背景']] as const).map(([v, label]) => (
           <button key={v} onClick={() => setTab(v)}
             style={{ padding: '0.5rem 1.2rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold',
               background: tab === v ? 'var(--color-primary)' : 'white', color: tab === v ? 'white' : 'var(--color-primary)' }}>

@@ -58,7 +58,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   // 申告した英検レベル（AI英会話の難易度。端末をまたいでも残るように同期する）
   const eiken_level = localStorage.getItem(`eiken_${studentId}`) || null;
 
-  // ショップ状態（称号・きせかえ・消費額・寄付額・背景）
+  // ショップ状態（称号・着せ替え・消費額・寄付額・背景）
   const shopStr = localStorage.getItem(`shop_${studentId}`);
   const shop = shopStr ? JSON.parse(shopStr) : null; // 無い＝この端末は未設定
 

@@ -256,7 +256,7 @@ ${SAFETY_INSTRUCTION}`;
       
       // 安全装置：万一不適切な内容が生成されたら、表示せずに作り直しを促す。
       if (isInappropriate(text)) {
-        alert('うまく作れませんでした。もう一度「おはなしをつくる」を押してみてね。');
+        alert('うまく作れませんでした。もう一度「お話をつくる」を押してみてね。');
         setGameState('config');
         return;
       }
@@ -515,13 +515,13 @@ ${SAFETY_INSTRUCTION}`;
     <div className="flex-col" style={{ flex: 1, paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
-        <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIおはなしづくり</h1>
+        <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIお話づくり</h1>
         <div style={{ width: '80px' }}></div>
       </div>
 
       {gameState === 'config' && (
         <div className="glass-card flex-col gap-lg" style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-          <h2 style={{ textAlign: 'center', margin: 0 }}>どんなおはなしをつくる？</h2>
+          <h2 style={{ textAlign: 'center', margin: 0 }}>どんなお話をつくる？</h2>
           
           <div>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>文章の長さ（{sentenceCount}文）</label>
@@ -558,7 +558,7 @@ ${SAFETY_INSTRUCTION}`;
             icon={Sparkles}
             style={{ marginTop: '1rem', background: 'var(--color-accent)', color: 'black' }}
           >
-            おはなしをつくる！
+            お話をつくる！
           </Button>
         </div>
       )}
@@ -566,7 +566,7 @@ ${SAFETY_INSTRUCTION}`;
       {gameState === 'generating' && (
         <div className="flex-col flex-center gap-md" style={{ flex: 1 }}>
           <Sparkles className="animate-pulse" size={60} color="var(--color-accent)" />
-          <h2 className="text-primary">AIがおはなしを作っています…</h2>
+          <h2 className="text-primary">AIがお話を作っています…</h2>
           <p>あなたの習った単語を使っているよ！</p>
         </div>
       )}
@@ -612,7 +612,7 @@ ${SAFETY_INSTRUCTION}`;
           {gameState === 'completed' ? (
             <div className="glass-card flex-col flex-center animate-pop" style={{ padding: '2rem', background: '#f0fdf4', border: '2px solid var(--color-success)' }}>
               <CheckCircle size={60} color="var(--color-success)" />
-              <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! おはなしが完成したよ！</h2>
+              <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! お話が完成したよ！</h2>
               
               {hasReadAloud && (
                 <div className="animate-pop" style={{ background: '#fffbeb', padding: '0.8rem 1.5rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', border: '2px solid #fde68a' }}>
@@ -733,7 +733,7 @@ ${SAFETY_INSTRUCTION}`;
               {japaneseTranslation && (
                 <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255,255,255,0.8)', padding: '1.5rem', borderRadius: '12px', marginTop: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🇯🇵 おはなしの意味</h3>
+                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🇯🇵 お話の意味</h3>
                     <Button variant="outline" onClick={() => setShowTranslation(!showTranslation)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
                       {showTranslation ? 'かくす' : '意味を見る'}
                     </Button>

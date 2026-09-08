@@ -247,7 +247,7 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/story')}
           >
             <Book size={40} color="#d946ef" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>おはなしづくり</h2>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>お話づくり</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>覚えた単語で<br/>物語をつくろう！</p>
           </div>
 
