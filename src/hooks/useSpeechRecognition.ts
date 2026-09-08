@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { showToast } from '../components/ui/Toast';
+import { logVoiceEvent } from '../lib/voiceLog';
 
 // ブラウザの音声認識（Web Speech API＝Chromeの仕組み。Azureとは別）のエラーを、
 // 子どもが次に何をすればいいか分かる言葉にする。
@@ -60,6 +61,7 @@ export const useSpeechRecognition = () => {
       const current = event.resultIndex;
       const resultTranscript = event.results[current][0].transcript;
       setTranscript(resultTranscript.toLowerCase().trim());
+      if (event.results[current].isFinal) logVoiceEvent({ kind: 'chrome', ok: true });
     };
 
     recognition.onerror = (event: any) => {
@@ -68,6 +70,7 @@ export const useSpeechRecognition = () => {
       setIsRecording(false);
       const msg = friendlySpeechError(String(event.error));
       if (msg) showToast(msg, 'fail');
+      if (event.error !== 'aborted') logVoiceEvent({ kind: 'chrome', ok: false, code: String(event.error) });
     };
 
     recognition.onend = () => {
@@ -87,6 +90,7 @@ export const useSpeechRecognition = () => {
     if (!recognitionRef.current) {
       // Safari/古いブラウザなど、そもそも音声認識が無い
       showToast('⚠️ このブラウザでは 音声認識が つかえないよ。Chrome で ひらいてね', 'fail');
+      logVoiceEvent({ kind: 'chrome', ok: false, code: 'unsupported' });
       return;
     }
     try {

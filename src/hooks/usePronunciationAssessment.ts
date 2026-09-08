@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { isOverCap, incUsage } from '../lib/apiUsage';
+import { logVoiceEvent, azureCode } from '../lib/voiceLog';
 
 export interface WordScore {
   word: string;
@@ -221,6 +222,7 @@ export const usePronunciationAssessment = (
         setIsAssessing(false);
         lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）をたしかめて、先生を呼ぼう！';
         setError(lastErrorRef.current);
+        logVoiceEvent({ kind: 'mic', ok: false, code: 'denied', detail: String(e) });
         return null;
       }
 
@@ -296,6 +298,7 @@ export const usePronunciationAssessment = (
                   accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? 0,
                   errorType: w.PronunciationAssessment?.ErrorType ?? 'None',
                 }));
+                logVoiceEvent({ kind: 'azure', ok: true, code: replay ? 'ok-after-retry' : 'ok' });
                 finish({
                   recognizedText: result.text || '',
                   accuracyScore: pa.accuracyScore,
@@ -309,6 +312,7 @@ export const usePronunciationAssessment = (
                 console.error('Azure canceled:', cancel.errorDetails);
                 const { msg, throttled } = explainCancel(cancel.errorDetails || '');
                 const chunks = replay || recordedChunksRef.current;
+                logVoiceEvent({ kind: 'azure', ok: false, code: azureCode(cancel.errorDetails || '') + (replay ? '-retry' : ''), detail: cancel.errorDetails || '' });
                 if (throttled && allowRetry && chunks.length > 0) {
                   // 混雑：同じ録音で1回だけ自動リトライ（子どもは待つだけ）
                   const keep = chunks.slice();
@@ -324,7 +328,8 @@ export const usePronunciationAssessment = (
               } else {
                 // 無音 / 認識できず（NoMatch）：0点として記録せず null を返して再挑戦させる。
                 // さらに録音がほぼ無音なら「マイクが拾えていない」と案内を分ける（P0-3）。
-                const silent = isNearSilent(recordedChunksRef.current);
+                const silent = isNearSilent(replay || recordedChunksRef.current);
+                logVoiceEvent({ kind: 'azure', ok: false, code: silent ? 'silent' : 'nomatch' });
                 const msg = silent
                   ? '🎙️ マイクの音がとどいていないみたい。イヤホンマイクのさしこみや、マイクの許可をたしかめて、先生を呼ぼう！'
                   : '声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね';
@@ -339,6 +344,7 @@ export const usePronunciationAssessment = (
           },
           (err) => {
             const { msg } = explainCancel(String(err));
+            logVoiceEvent({ kind: 'azure', ok: false, code: azureCode(String(err)), detail: String(err) });
             lastErrorRef.current = msg;
             setError(msg);
             finish(null);

@@ -15,6 +15,91 @@ import { KARUIZAWA_QUIZZES } from '../textbook/karuizawaQuizData';
 import { vocabulary } from '../../data/vocabulary';
 import { isArchived } from '../../data/archivedUnits';
 
+// 🎙️ 音声の成功／失敗ログ（voice_logs）。「マイクが認識されない」がどの経路・どんな理由かを数字で見る。
+const VoiceLogCard: React.FC<{ students: any[] }> = ({ students }) => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState('');
+  const load = async () => {
+    if (!supabase) return;
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const { data, error } = await supabase.from('voice_logs').select('*').gte('ts', since).order('ts', { ascending: false }).limit(500);
+    if (error) { setMsg('読み込みエラー'); return; }
+    setRows(data || []); setMsg('');
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line
+  const name = (id: string | null) => students.find(s => s.id === id)?.name || id || '?';
+  const kindLabel: Record<string, string> = { chrome: 'AI英会話の聞き取り(Chrome)', azure: '発音チェック(Azure)', mic: 'マイク取得' };
+  const codeLabel: Record<string, string> = {
+    '429': '混雑(429)', '429-retry': '混雑(429)・再送も失敗', 'ok-after-retry': '成功(再送で)', ok: '成功',
+    'not-allowed': 'マイク許可オフ', 'service-not-allowed': 'マイク許可オフ', network: 'ネットワーク', 'no-speech': '無音',
+    'audio-capture': 'マイク無し', unsupported: '非対応ブラウザ', silent: 'ほぼ無音', nomatch: '聞き取れず', auth: 'キー/設定', canceled: '中止(その他)', denied: '許可されず',
+  };
+  // 集計：経路×理由
+  const agg: Record<string, Record<string, number>> = {};
+  for (const r of rows) { agg[r.kind] = agg[r.kind] || {}; agg[r.kind][r.code] = (agg[r.kind][r.code] || 0) + 1; }
+  const lastHour = rows.filter(r => Date.now() - new Date(r.ts).getTime() < 3600 * 1000);
+  const fails1h = lastHour.filter(r => !r.ok).length;
+  return (
+    <div className="glass-card" style={{ border: '2px solid #0984e3' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <h2 style={{ margin: 0 }}>🎙️ 音声の成功／失敗ログ（7日間）</h2>
+        <Button variant="outline" onClick={load} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>更新</Button>
+      </div>
+      <p style={{ color: '#666', fontSize: '0.9rem', margin: '0.5rem 0 1rem' }}>
+        「マイクが認識されない」がどこで起きているか。<b>混雑(429)</b>が多ければAzureの同時接続上限（無料枠F0＝1）、
+        <b>マイク許可オフ／ネットワーク</b>が多ければ端末・校内ネットワーク側の問題。
+        直近1時間：{lastHour.length}回中 <b style={{ color: fails1h ? '#b91c1c' : 'var(--color-success)' }}>{fails1h}回 失敗</b>
+      </p>
+      {msg && <div style={{ color: '#b91c1c' }}>{msg}</div>}
+      {rows.length === 0 ? (
+        <div style={{ color: '#94a3b8' }}>まだ記録がありません（次にマイクを使うと入ります）</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.8rem', marginBottom: '1rem' }}>
+            {Object.entries(agg).map(([kind, codes]) => {
+              const total = Object.values(codes).reduce((a, b) => a + b, 0);
+              const okN = (codes['ok'] || 0) + (codes['ok-after-retry'] || 0);
+              return (
+                <div key={kind} style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.8rem 1rem' }}>
+                  <div style={{ fontWeight: 'bold' }}>{kindLabel[kind] || kind}</div>
+                  <div style={{ fontSize: '0.9rem', color: '#475569' }}>{total}回・成功 {okN}（{total ? Math.round(okN / total * 100) : 0}%）</div>
+                  <ul style={{ margin: '0.4rem 0 0', paddingLeft: '1.1rem', fontSize: '0.85rem' }}>
+                    {Object.entries(codes).sort((a, b) => b[1] - a[1]).map(([c, n]) => (
+                      <li key={c} style={{ color: c.startsWith('ok') ? 'var(--color-success)' : '#b91c1c' }}>{codeLabel[c] || c}：{n}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+          <details>
+            <summary style={{ cursor: 'pointer', color: '#475569' }}>直近の記録を見る（新しい順・最大40件）</summary>
+            <div style={{ overflowX: 'auto', marginTop: '0.5rem' }}>
+              <table style={{ borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: '600px' }}>
+                <thead><tr style={{ background: '#f1f5f9' }}>
+                  {['時刻', '生徒', '経路', '結果', '画面', '詳細'].map(h => <th key={h} style={{ textAlign: 'left', padding: '0.3rem 0.6rem' }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {rows.slice(0, 40).map(r => (
+                    <tr key={r.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '0.3rem 0.6rem', whiteSpace: 'nowrap' }}>{new Date(r.ts).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                      <td style={{ padding: '0.3rem 0.6rem' }}>{name(r.student_id)}</td>
+                      <td style={{ padding: '0.3rem 0.6rem' }}>{kindLabel[r.kind] || r.kind}</td>
+                      <td style={{ padding: '0.3rem 0.6rem', color: r.ok ? 'var(--color-success)' : '#b91c1c', fontWeight: 'bold' }}>{codeLabel[r.code] || r.code}</td>
+                      <td style={{ padding: '0.3rem 0.6rem', fontFamily: 'monospace' }}>{(r.screen || '').replace(/^#/, '').slice(0, 28)}</td>
+                      <td style={{ padding: '0.3rem 0.6rem', color: '#64748b' }}>{(r.detail || '').slice(0, 60)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </>
+      )}
+    </div>
+  );
+};
+
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
 interface MissionOption { label: string; route: string; videoUrl?: string }
 const MISSION_OPTIONS: MissionOption[] = [
@@ -558,6 +643,8 @@ export const TeacherDashboard: React.FC = () => {
         </div>
         {bgMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{bgMsg}</span>}
       </div>
+
+      <VoiceLogCard students={students} />
 
       {/* クラスの木：グループ分けの切替 */}
       <div className="glass-card" style={{ border: '2px solid #00b894' }}>
