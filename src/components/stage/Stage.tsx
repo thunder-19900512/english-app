@@ -8,6 +8,7 @@ import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
+import { pushToSupabase } from '../../lib/sync';
 import { TypingTrainer } from '../common/TypingTrainer';
 
 const phonicsEmojis: Record<string, string> = {
@@ -376,9 +377,12 @@ export const Stage: React.FC = () => {
 
         setCapMsg('');
         if (phonicsAwardsToday() >= PHONICS_DAILY_CAP) {
-          // 今日のぶんは打ち止め。クリア自体は認める（バッジ・記録）。
+          // 今日のぶんは打ち止め。ポイントは出さないが、クリアの記録は必ず残す。
+          // （ここで何もしないと addPoints が走らず、サーバへの送信も起きない）
           setEarnedPoints(0);
           setCapMsg(`今日のフォニックスのポイントは ここまで（1日${PHONICS_DAILY_CAP}回）。ほかの活動も やってみよう！ あしたまた もらえるよ`);
+          const sid = localStorage.getItem('studentId');
+          if (sid) pushToSupabase(sid);
         } else {
           const pts = await addPoints(`stage_${id}_${mode}`, {
             isPerfect: newCC === TOTAL_QUESTIONS,
@@ -465,18 +469,23 @@ export const Stage: React.FC = () => {
     moveToNextQuestion();
   };
 
+  // バッジを保存する。
+  // ★localStorageに書くだけでなく、その場でSupabaseにも送ること。
+  //   以前は書くだけだったため、サーバに届くのは「ホームに戻ったとき」
+  //   （Home.tsx のpush）まで遅れていた。ホームに寄らずに端末を閉じたり、
+  //   別の端末で開いたりすると記録が無いように見える＝子どもからの
+  //   「一回ホームに戻ってまた入んないと記録ができてない」の正体。
   const saveBadge = (stageId: number) => {
     const studentId = localStorage.getItem('studentId');
-    if (studentId) {
-      const dataStr = localStorage.getItem(`student_${studentId}`);
-      if (dataStr) {
-        const data = JSON.parse(dataStr);
-        if (!data.badges.includes(stageId)) {
-          data.badges.push(stageId);
-          localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
-        }
-      }
-    }
+    if (!studentId) return;
+    const dataStr = localStorage.getItem(`student_${studentId}`);
+    if (!dataStr) return;
+    const data = JSON.parse(dataStr);
+    if (!Array.isArray(data.badges)) data.badges = [];
+    if (data.badges.includes(stageId)) return;
+    data.badges.push(stageId);
+    localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
+    pushToSupabase(studentId);
   };
 
   if (!stage) return <div>Stage not found</div>;

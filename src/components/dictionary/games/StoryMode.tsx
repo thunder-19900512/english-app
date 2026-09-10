@@ -28,13 +28,16 @@ interface StoryFragment {
   filledWith?: string; // wordId
 }
 
+// お話の難しさ。level はそのまま「ポイントの倍率」にも使うので、
+// 上に行くほど1つずつ増える並びを崩さないこと（下の earned / bonus の計算で使う）。
 const DIFFICULTY_LEVELS = [
   { level: 1, label: 'レベル1: 超かんたん (小学1〜3年生)', prompt: 'Extremely simple English for beginners. Use ONLY short SVO (Subject-Verb-Object) or SVC sentences (max 5-6 words). Ensure the sentences connect logically to tell a cohesive, easy-to-understand mini-story.' },
   { level: 2, label: 'レベル2: 英検5級レベル (中1程度)', prompt: 'Eiken Grade 5 level (CEFR A1). Basic beginner English, simple present/past tense, very basic vocabulary.' },
   { level: 3, label: 'レベル3: 英検4級レベル (中2程度)', prompt: 'Eiken Grade 4 level (CEFR A1-A2). Elementary English, basic conjunctions, future tense, basic daily life vocabulary.' },
   { level: 4, label: 'レベル4: 英検3級レベル (中卒程度)', prompt: 'Eiken Grade 3 level (CEFR A2). Pre-intermediate English, present perfect, relative pronouns, standard middle school vocabulary.' },
-  { level: 5, label: 'レベル5: 英検2級レベル (高卒程度)', prompt: 'Eiken Grade 2 level (CEFR B1). Intermediate English, complex sentences, high school level vocabulary, social topics.' },
-  { level: 6, label: 'レベル6: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
+  { level: 5, label: 'レベル5: 英検準2級レベル (高校中級程度)', prompt: 'Eiken Grade Pre-2 level (CEFR A2-B1). Upper-elementary English: a mix of simple and compound sentences, common phrasal verbs, gerunds and infinitives, and everyday social topics (school life, travel, the town, the environment). Keep vocabulary within common high-school-beginner range.' },
+  { level: 6, label: 'レベル6: 英検2級レベル (高卒程度)', prompt: 'Eiken Grade 2 level (CEFR B1). Intermediate English, complex sentences, high school level vocabulary, social topics.' },
+  { level: 7, label: 'レベル7: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
 ];
 
 // 音読の合格ライン（Azure発音判定の総合スコア 0-100）。小学生向けにやさしめ。
