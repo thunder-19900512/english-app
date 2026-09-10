@@ -74,6 +74,12 @@ interface InitOpts {
   histSuffix?: string;
 }
 
+const shortHash = (s: string): string => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+};
+
 // Unit別フリートークを開始するための opts を組み立てる（例文サジェストはダイアログから流用）
 const buildUnitOpts = (u: FreetalkUnit): InitOpts => {
   const d = DIALOGUES.find(x => x.id === u.id);
@@ -257,6 +263,8 @@ export const AIAssistant: React.FC = () => {
       goalLabel: ov.missionJa ? `🎯 ミッション：${ov.missionJa}` : opts.goalLabel,
       // 場面を変えたとき、AIの第一声がゴールと食い違わないように第一声も差し替えられる
       greeting: ov.greetingEn ? { en: ov.greetingEn, ja: ov.greetingJa || '' } : opts.greeting,
+      // 前の場面の会話が残っていると、画面は古い第一声のまま、AIは新しい第一声の続きとして話し始めてしまう
+      histSuffix: ov.greetingEn ? `${opts.histSuffix || 'default'}_${shortHash(ov.greetingEn)}` : opts.histSuffix,
     };
   };
 
