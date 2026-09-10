@@ -198,18 +198,20 @@ const SCENARIOS: Record<string, Scenario> = {
 // 出力フォーマット。英文の本数は申告した英検レベルで変わる（上ほど長く自然に話す）。
 const formatInstruction = (sentences: string) =>
   `OUTPUT FORMAT: Reply with ${sentences}. Then a new line starting with "JA:" and the natural Japanese translation. ` +
-  'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line).';
+  'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line). ' +
+  'If the GOAL text defines a BONUS and the user has just earned it, add the token [BONUS] at the very end instead.';
 
 const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
 
 // AIの返答から英語・日本語訳・クリア判定を取り出す
-const parseReply = (raw: string): { en: string; ja: string; cleared: boolean } => {
+const parseReply = (raw: string): { en: string; ja: string; cleared: boolean; bonus: boolean } => {
   const cleared = /\[CLEAR\]/i.test(raw);
-  let t = raw.replace(/\[CLEAR\]/gi, '').trim();
+  const bonus = /\[BONUS\]/i.test(raw);
+  let t = raw.replace(/\[CLEAR\]|\[BONUS\]/gi, '').trim();
   const parts = t.split(/\n?\s*JA[:：]/i);
   const en = (parts[0] || '').trim();
   const ja = parts.length > 1 ? parts.slice(1).join(' ').trim() : '';
-  return { en, ja, cleared };
+  return { en, ja, cleared, bonus };
 };
 
 export const AIAssistant: React.FC = () => {
@@ -287,6 +289,8 @@ export const AIAssistant: React.FC = () => {
     setTimeout(() => setRecordMsg(''), 4000);
   };
   const awardedRef = useRef(false);
+  const bonusAwardedRef = useRef(false);
+  const [bonusMsg, setBonusMsg] = useState(false);
   const activeOptsRef = useRef<InitOpts | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -312,6 +316,8 @@ export const AIAssistant: React.FC = () => {
     setPendingFreetalk(false);
     setCleared(false);
     awardedRef.current = false;
+    bonusAwardedRef.current = false;
+    setBonusMsg(false);
     setShowHelp(false);
     setCurrentSpeaker(null);
     setLastSpeakerId(null);
@@ -441,7 +447,7 @@ export const AIAssistant: React.FC = () => {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
       const result = await chatSession.sendMessage(text);
       const raw = result.response.text();
-      const { en, ja, cleared: didClear } = parseReply(raw);
+      const { en, ja, cleared: didClear, bonus: didBonus } = parseReply(raw);
       const safeEn = isInappropriate(en) ? REDIRECT_MESSAGE : en;
 
       const updated: ChatMessage[] = [...newMessages, { role: 'model', text: safeEn, ja }];
@@ -455,6 +461,11 @@ export const AIAssistant: React.FC = () => {
         setCleared(true);
         // きびしい条件をクリアした分だけ上乗せ（レベルを盛ってもラクにはならないので自己申告でよい）
         addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+      }
+      if (didBonus && awardedRef.current && !bonusAwardedRef.current) {
+        bonusAwardedRef.current = true;
+        setBonusMsg(true);
+        addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
       }
     } catch (err: any) {
       console.error('AI Send Error:', err);
@@ -749,6 +760,11 @@ export const AIAssistant: React.FC = () => {
         <div className="animate-pop" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid var(--color-success)', borderRadius: '12px', padding: '0.8rem', marginBottom: '0.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <Trophy color="var(--color-accent)" />
           <span style={{ fontWeight: 'bold', color: 'var(--color-success)', fontSize: '1.2rem' }}>ミッションクリア！🎉 よくがんばったね！</span>
+        </div>
+      )}
+      {bonusMsg && (
+        <div className="animate-pop" style={{ background: 'linear-gradient(135deg, #fefce8, #fef9c3)', border: '2px solid var(--color-accent)', borderRadius: '12px', padding: '0.6rem', marginBottom: '0.5rem', textAlign: 'center' }}>
+          <span style={{ fontWeight: 'bold', color: '#a16207', fontSize: '1.1rem' }}>⭐ ボーナス！ おすすめまで言えた！</span>
         </div>
       )}
 
