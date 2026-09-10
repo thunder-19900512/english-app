@@ -256,7 +256,9 @@ export const AIAssistant: React.FC = () => {
     setTeamMembers(prev => prev.some(x => x.id === m.id) ? prev.filter(x => x.id !== m.id) : [...prev, m]);
 
   // 先生がダッシュボードで編集したUnitゴールがあれば上書きする
+  const activeUnitIdRef = useRef<string | null>(null);
   const withGoalOverride = (opts: InitOpts, unitId: string): InitOpts => {
+    activeUnitIdRef.current = unitId;
     const ov = freetalkGoals?.[unitId];
     if (!ov) return opts;
     return {
@@ -443,6 +445,20 @@ export const AIAssistant: React.FC = () => {
     if (isTeam && currentSpeaker) { setLastSpeakerId(currentSpeaker.id); setCurrentSpeaker(null); }
 
     const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}_${eiken}`;
+    // 先生が判定ルール（正規表現）を設定したUnitは、AIの[CLEAR]を待たず子どもの発言で判定する。
+    // 軽量モデルが「2ブロック進んで右」のような一文の中の2条件を取りこぼすことがあるため。
+    const rules = activeUnitIdRef.current ? freetalkGoals?.[activeUnitIdRef.current] : undefined;
+    const saidSoFar = newMessages.filter(m => m.role === 'user').map(m => m.text).join(' ').toLowerCase();
+    const safeTest = (re: string, s: string) => { try { return new RegExp(re, 'i').test(s); } catch { return false; } };
+    if (rules?.clearAll?.length && !awardedRef.current && rules.clearAll.every(re => safeTest(re, saidSoFar))) {
+      awardedRef.current = true;
+      setCleared(true);
+      addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+    } else if (rules?.bonusAny?.length && awardedRef.current && !bonusAwardedRef.current && rules.bonusAny.some(re => safeTest(re, text.toLowerCase()))) {
+      bonusAwardedRef.current = true;
+      setBonusMsg(true);
+      addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
+    }
     try {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
       const result = await chatSession.sendMessage(text);
@@ -456,13 +472,14 @@ export const AIAssistant: React.FC = () => {
       localStorage.setItem(histKey, JSON.stringify(savable));
       speak(safeEn);
 
-      if (didClear && !awardedRef.current) {
+      // ルール判定があるUnitでは、AIのトークンでは加点しない（軽量モデルの誤発火を防ぐ）
+      if (didClear && !awardedRef.current && !rules?.clearAll?.length) {
         awardedRef.current = true;
         setCleared(true);
         // きびしい条件をクリアした分だけ上乗せ（レベルを盛ってもラクにはならないので自己申告でよい）
         addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
       }
-      if (didBonus && awardedRef.current && !bonusAwardedRef.current) {
+      if (didBonus && awardedRef.current && !bonusAwardedRef.current && !rules?.bonusAny?.length) {
         bonusAwardedRef.current = true;
         setBonusMsg(true);
         addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });

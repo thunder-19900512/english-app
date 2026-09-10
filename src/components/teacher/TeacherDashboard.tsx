@@ -261,7 +261,7 @@ export const TeacherDashboard: React.FC = () => {
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
   // AI英会話：Unitゴールの上書き（{id:{goal,missionJa,greetingEn,greetingJa}}）と保存メッセージ
-  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string }>>({});
+  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string; clearAll?: string[]; bonusAny?: string[] }>>({});
   const [goalSaveMsg, setGoalSaveMsg] = useState('');
   // AI英会話：記録された会話ログ
   const [convLogs, setConvLogs] = useState<ConversationLog[] | null>(null);

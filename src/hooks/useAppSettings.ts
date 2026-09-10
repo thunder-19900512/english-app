@@ -23,7 +23,7 @@ export const useAppSettings = () => {
   // マイ単語ついか機能を子どもに見せるか（既定OFF。先生が運用を決めてからONにする）
   const [customVocabEnabled, setCustomVocabEnabled] = useState<boolean>(false);
   // AI英会話の各Unitゴールの上書き（先生がダッシュボードで編集）。{ [unitId]: { goal, missionJa, greetingEn, greetingJa } }
-  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string }>>({});
+  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string; clearAll?: string[]; bonusAny?: string[] }>>({});
   // クラスの木のグループ分け（'cls'=56A対56B / 'grade'=5年対6年）。既定はcls。
   const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
 
