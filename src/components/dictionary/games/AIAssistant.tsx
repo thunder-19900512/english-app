@@ -255,6 +255,8 @@ export const AIAssistant: React.FC = () => {
       ...opts,
       goal: ov.goal || opts.goal,
       goalLabel: ov.missionJa ? `🎯 ミッション：${ov.missionJa}` : opts.goalLabel,
+      // 場面を変えたとき、AIの第一声がゴールと食い違わないように第一声も差し替えられる
+      greeting: ov.greetingEn ? { en: ov.greetingEn, ja: ov.greetingJa || '' } : opts.greeting,
     };
   };
 

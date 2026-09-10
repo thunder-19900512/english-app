@@ -260,8 +260,8 @@ export const TeacherDashboard: React.FC = () => {
   const [showAzureKey, setShowAzureKey] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
-  // AI英会話：Unitゴールの上書き（{id:{goal,missionJa}}）と保存メッセージ
-  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string }>>({});
+  // AI英会話：Unitゴールの上書き（{id:{goal,missionJa,greetingEn,greetingJa}}）と保存メッセージ
+  const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string }>>({});
   const [goalSaveMsg, setGoalSaveMsg] = useState('');
   // AI英会話：記録された会話ログ
   const [convLogs, setConvLogs] = useState<ConversationLog[] | null>(null);
@@ -1024,6 +1024,18 @@ export const TeacherDashboard: React.FC = () => {
                   value={freetalkGoals[u.id]?.goal ?? u.goal}
                   onChange={e => setFreetalkGoals(p => ({ ...p, [u.id]: { ...p[u.id], goal: e.target.value } }))}
                   style={{ display: 'block', width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem', minHeight: '48px' }} />
+              </label>
+              <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '0.4rem' }}>AIの第一声（英語）※ゴールの場面を変えたときに合わせる
+                <input
+                  value={freetalkGoals[u.id]?.greetingEn ?? u.greeting.en}
+                  onChange={e => setFreetalkGoals(p => ({ ...p, [u.id]: { ...p[u.id], greetingEn: e.target.value } }))}
+                  style={{ display: 'block', width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.9rem' }} />
+              </label>
+              <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '0.4rem' }}>AIの第一声（日本語訳）
+                <input
+                  value={freetalkGoals[u.id]?.greetingJa ?? u.greeting.ja}
+                  onChange={e => setFreetalkGoals(p => ({ ...p, [u.id]: { ...p[u.id], greetingJa: e.target.value } }))}
+                  style={{ display: 'block', width: '100%', marginTop: '0.2rem', padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.9rem' }} />
               </label>
             </div>
           ))}
