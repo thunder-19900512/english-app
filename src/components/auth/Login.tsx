@@ -4,6 +4,7 @@ import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 import { supabase } from '../../lib/supabase';
 import { findTitle } from '../../data/shopItems';
+import { GUEST_ID, GUEST_NAME, resetGuestData } from '../../lib/trial';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -161,7 +162,15 @@ export const Login: React.FC = () => {
         ))}
       </div>
 
-      <div className="flex-center" style={{ marginTop: '4rem' }}>
+      <div className="flex-center" style={{ marginTop: '4rem', gap: '1rem', flexWrap: 'wrap' }}>
+        {/* おうちの人・見学の方向け。PIN不要・記録はこの端末だけ・ポイントはたまらない・ロックはかかる */}
+        <button
+          className="btn btn-outline"
+          onClick={() => { resetGuestData(); doLogin(GUEST_ID, GUEST_NAME); }}
+          style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+        >
+          👪 おためし（おうちの人・見学の方）
+        </button>
         <button
           className="btn btn-outline"
           onClick={() => openPinModal('staff')}

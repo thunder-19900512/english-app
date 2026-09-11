@@ -15,7 +15,9 @@ export const useAppSettings = () => {
   const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   // カスタムドメインのエンドポイント（Azure AI Foundry / AI services のリソースはこれが要る）
   const [azureSpeechEndpoint, setAzureSpeechEndpoint] = useState<string | null>(null);
-  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
+  // ロック：none / screen（注目モード）/ reflection（ふりかえりだけ使える）。
+  // 旧設定の isScreenLocked（真偽）も読める。lockMode があればそちらを優先
+  const [lockMode, setLockMode] = useState<'none' | 'screen' | 'reflection'>('none');
   // 今日のミッション（複数対応）。旧データの todayMission（単数）も読めるようにする。
   const [todayMissions, setTodayMissions] = useState<TodayMission[]>([]);
   const [geminiDailyCap, setGeminiDailyCap] = useState<number>(getCap('gemini'));
@@ -36,7 +38,8 @@ export const useAppSettings = () => {
       if (progress.azureSpeechKey !== undefined) setAzureSpeechKey(progress.azureSpeechKey);
       if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.azureSpeechEndpoint !== undefined) setAzureSpeechEndpoint(progress.azureSpeechEndpoint);
-      if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
+      if (progress.lockMode !== undefined) setLockMode(progress.lockMode || 'none');
+      else if (progress.isScreenLocked !== undefined) setLockMode(progress.isScreenLocked ? 'screen' : 'none');
       // 複数ミッション（新形式）を優先。無ければ旧形式（単数）を配列に包んで互換維持
       // ボーナス判定は加点の瞬間に端末側で行うので、受け取ったミッションを控えておく
       if (progress.todayMissions !== undefined) { setTodayMissions(progress.todayMissions || []); saveMissionCache(progress.todayMissions || []); }
@@ -80,5 +83,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint, isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint, lockMode, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode };
 };

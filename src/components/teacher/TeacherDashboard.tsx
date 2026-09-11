@@ -258,7 +258,8 @@ export const TeacherDashboard: React.FC = () => {
   const [azureSaveStatus, setAzureSaveStatus] = useState('');
   const [azureIsError, setAzureIsError] = useState(false);
   const [showAzureKey, setShowAzureKey] = useState(false);
-  const [isScreenLocked, setIsScreenLocked] = useState(false);
+  // ロック：none / screen（注目モード）/ reflection（ふりかえりだけ書ける）
+  const [lockMode, setLockMode] = useState<'none' | 'screen' | 'reflection'>('none');
   const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
   // AI英会話：Unitゴールの上書き（{id:{goal,missionJa,greetingEn,greetingJa}}）と保存メッセージ
   const [freetalkGoals, setFreetalkGoals] = useState<Record<string, { goal?: string; missionJa?: string; greetingEn?: string; greetingJa?: string; clearAll?: string[]; bonusAny?: string[]; hints?: { en: string; ja: string }[] }>>({});
@@ -338,8 +339,10 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.azureSpeechRegion) {
         setAzureRegion(data.dictionary_progress.azureSpeechRegion);
       }
-      if (data.dictionary_progress.isScreenLocked !== undefined) {
-        setIsScreenLocked(data.dictionary_progress.isScreenLocked);
+      if (data.dictionary_progress.lockMode !== undefined) {
+        setLockMode(data.dictionary_progress.lockMode || 'none');
+      } else if (data.dictionary_progress.isScreenLocked !== undefined) {
+        setLockMode(data.dictionary_progress.isScreenLocked ? 'screen' : 'none');
       }
       if (data.dictionary_progress.customVocabEnabled !== undefined) {
         setCustomVocabEnabled(data.dictionary_progress.customVocabEnabled);
@@ -391,7 +394,8 @@ export const TeacherDashboard: React.FC = () => {
           geminiApiKey: geminiKey.trim(),
           azureSpeechKey: azureKey.trim(),
           azureSpeechRegion: azureRegion.trim(),
-          isScreenLocked: isScreenLocked,
+          lockMode: lockMode,
+          isScreenLocked: lockMode === 'screen', // 旧バージョンのアプリ（キャッシュ）向けの互換
           todayMissions: currentMissions,
           todayMission: currentMissions[0] || null, // 旧バージョンのアプリ（キャッシュ）向けの互換
           geminiDailyCap: geminiCap,
@@ -909,34 +913,37 @@ export const TeacherDashboard: React.FC = () => {
         <div className="glass-card">
           <h2>クラス管理機能</h2>
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            全員の画面を強制的に切り替えて、スタッフの指示に注目させることができます。
+            全員の画面を強制的に切り替えます。<b>画面ロック</b>＝何もできない（注目モード）。
+            <b>ふりかえりロック</b>＝「ふりかえりを書く」だけ使える（ほかの画面ではふりかえりへ行くボタンだけ出る）。
+            Test（00）はどちらのロックもかかりません。おためし（99）はかかります。
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
-              <span style={{ fontWeight: 'bold' }}>画面ロック状態</span>
-              <span style={{ color: isScreenLocked ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>
-                {isScreenLocked ? '🔒 ロック中（注目モード）' : '🔓 解除中'}
+              <span style={{ fontWeight: 'bold' }}>ロック状態</span>
+              <span style={{ color: lockMode !== 'none' ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>
+                {lockMode === 'screen' ? '🔒 画面ロック中（注目モード）' : lockMode === 'reflection' ? '✏️ ふりかえりロック中' : '🔓 解除中'}
               </span>
             </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Button 
-                style={{ flex: 1, background: isScreenLocked ? '#ccc' : 'var(--color-error)' }}
-                disabled={isScreenLocked}
-                onClick={async () => {
-                  setIsScreenLocked(true);
-                  await persistSettings({ isScreenLocked: true });
-                }}
+
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Button
+                style={{ flex: 1, background: lockMode === 'screen' ? '#ccc' : 'var(--color-error)' }}
+                disabled={lockMode === 'screen'}
+                onClick={async () => { setLockMode('screen'); await persistSettings({ lockMode: 'screen', isScreenLocked: true }); }}
               >
-                🔒 全員をロックする
+                🔒 画面ロック
               </Button>
-              <Button 
-                style={{ flex: 1, background: !isScreenLocked ? '#ccc' : 'var(--color-success)' }}
-                disabled={!isScreenLocked}
-                onClick={async () => {
-                  setIsScreenLocked(false);
-                  await persistSettings({ isScreenLocked: false });
-                }}
+              <Button
+                style={{ flex: 1, background: lockMode === 'reflection' ? '#ccc' : '#d97706' }}
+                disabled={lockMode === 'reflection'}
+                onClick={async () => { setLockMode('reflection'); await persistSettings({ lockMode: 'reflection', isScreenLocked: false }); }}
+              >
+                ✏️ ふりかえりロック
+              </Button>
+              <Button
+                style={{ flex: 1, background: lockMode === 'none' ? '#ccc' : 'var(--color-success)' }}
+                disabled={lockMode === 'none'}
+                onClick={async () => { setLockMode('none'); await persistSettings({ lockMode: 'none', isScreenLocked: false }); }}
               >
                 🔓 ロックを解除する
               </Button>

@@ -13,7 +13,7 @@ import { FeedbackButton } from '../ui/FeedbackButton';
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const { totalPoints } = usePoints();
-  const { isScreenLocked } = useAppSettings();
+  const { lockMode } = useAppSettings();
   const { shop, balance } = useShop();
 
   // Basic mock auth check (to be replaced with real context later)
@@ -60,7 +60,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container">
-      <GlobalLockScreen isLocked={isScreenLocked} />
+      <GlobalLockScreen mode={lockMode} />
       {studentId && (
         <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

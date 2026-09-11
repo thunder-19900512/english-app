@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 import { showToast } from '../components/ui/Toast';
 import { currentMission, MISSION_MULTIPLIER } from '../lib/missionBonus';
+import { isTrialId } from '../lib/trial';
 
 // ボーナスの重ねがけの上限（ミッション×やりきり等）
 const MAX_MULTIPLIER = 2;
@@ -50,6 +51,17 @@ export const usePoints = () => {
     options: { isPerfect?: boolean, isNewRecord?: boolean, multiplier?: number } = {}
   ) => {
     if (!studentId) return 0;
+
+    // お試しアカウント（Test／おためし）はポイントをためない。
+    // 代わりに「子どもならいくらもらえるか（1回目の点）」を見せる。サーバとのやり取りもしない
+    if (isTrialId(studentId)) {
+      const mission = currentMission();
+      const mul = Math.min((options.multiplier !== undefined ? options.multiplier : 1) * (mission ? MISSION_MULTIPLIER : 1), MAX_MULTIPLIER);
+      let earned = 20 + (options.isPerfect ? 5 : 0) + (options.isNewRecord ? 10 : 0);
+      if (mul !== 1) earned = Math.max(1, Math.round(earned * mul));
+      showToast(`🎉 クリア！ 子どもたちには ＋${earned}ポイント たまります（お試しでは たまりません）`, 'success');
+      return 0;
+    }
 
     // 先に最新データをSupabaseから取り込む。
     // （あとで clearCounts を更新するより前にやらないと、pullがDBの古い値で
@@ -139,6 +151,10 @@ export const usePoints = () => {
   // 回数の上限（1日1回など）は呼び出し側で守ること。points は累計・単調増加のまま。
   const addFixedPoints = useCallback(async (stageKey: string, amount: number): Promise<number> => {
     if (!studentId || amount <= 0) return 0;
+    if (isTrialId(studentId)) {
+      showToast(`🎉 子どもたちには ＋${Math.round(amount)}ポイント たまります（お試しでは たまりません）`, 'success');
+      return 0;
+    }
     let synced = await pullFromSupabase(studentId);
     if (!synced) { await new Promise(r => setTimeout(r, 800)); synced = await pullFromSupabase(studentId); }
     const countsKey = `clearCounts_${studentId}`;

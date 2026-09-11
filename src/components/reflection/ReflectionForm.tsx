@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { ArrowLeft, Star, Send } from 'lucide-react';
 import { useReflections } from '../../hooks/useReflections';
 import { usePoints } from '../../hooks/usePoints';
+import { currentIsTrial } from '../../lib/trial';
 import { recentActivities, RECENT_HOURS } from '../../lib/activityLog';
 
 export const ReflectionForm: React.FC = () => {
@@ -76,7 +77,9 @@ export const ReflectionForm: React.FC = () => {
           </div>
         )}
         {!rolling && earnedPoints === 0 && (
-          <p style={{ fontSize: '1rem', color: '#94a3b8', margin: 0 }}>（ポイントは12時間に1回だよ。記録は のこったよ）</p>
+          <p style={{ fontSize: '1rem', color: '#94a3b8', margin: 0 }}>
+            {currentIsTrial() ? '（お試しでは ポイントは たまりません）' : '（ポイントは12時間に1回だよ。記録は のこったよ）'}
+          </p>
         )}
         <p style={{ fontSize: '1.5rem' }}>えらい！今日もがんばったね！</p>
         <div style={{ display: 'flex', gap: '1rem' }}>

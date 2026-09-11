@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { isGuestId } from './trial';
 
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -34,6 +35,7 @@ const mergeShop = (local: any, db: any): any => {
 
 export const pushToSupabase = async (studentId: string): Promise<void> => {
   if (!supabase) return;
+  if (isGuestId(studentId)) return; // おためし（99）はサーバに記録を残さない
 
   // Capture current state synchronously before debounce
   const name = localStorage.getItem('studentName') || 'ゲスト';
@@ -183,6 +185,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
 
 export const pullFromSupabase = async (studentId: string) => {
   if (!supabase) return false;
+  if (isGuestId(studentId)) return false; // おためし（99）はサーバに無い（端末内の記録だけで動く）
 
   const { data, error } = await supabase
     .from('students')
