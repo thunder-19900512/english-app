@@ -3,6 +3,7 @@ import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 import { showToast } from '../components/ui/Toast';
 import { currentMission, MISSION_MULTIPLIER } from '../lib/missionBonus';
 import { isTrialId } from '../lib/trial';
+import { dictPolicy } from '../lib/dictDepth';
 
 // ボーナスの重ねがけの上限（ミッション×やりきり等）
 const MAX_MULTIPLIER = 2;
@@ -106,7 +107,9 @@ export const usePoints = () => {
     const missionMul = mission ? MISSION_MULTIPLIER : 1;
     // ボーナスが重なっても最大2倍まで。1回のクリアで稼ぎすぎて、
     // 他の活動やショップ・町のバランスが壊れないようにする。
-    const raw = (options.multiplier !== undefined ? options.multiplier : 1) * missionMul;
+    // 辞書は「1つの単元を深める」と得、「単元をたくさん回す」と損になる倍率をかける（dictDepth.ts）
+    const dict = dictPolicy(studentId, stageKey, clearCounts);
+    const raw = (options.multiplier !== undefined ? options.multiplier : 1) * missionMul * dict.multiplier;
     const mul = Math.min(raw, MAX_MULTIPLIER);
     if (mul !== 1 && earned > 0) {
       earned = Math.max(1, Math.round(earned * mul));
@@ -132,7 +135,9 @@ export const usePoints = () => {
     }
 
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
-    if (earned > 0) {
+    if (earned > 0 && dict.note) {
+      showToast(`🎉 クリア！ ＋${earned}ポイント　${dict.note}`, 'points');
+    } else if (earned > 0) {
       showToast(
         mission
           ? `🎯 今日のミッション！ ＋${earned}ポイント（${MISSION_MULTIPLIER}倍ボーナス）`

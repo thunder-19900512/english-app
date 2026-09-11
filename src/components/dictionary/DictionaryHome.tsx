@@ -47,6 +47,9 @@ export const DictionaryHome: React.FC = () => {
         <BookOpen size={64} color="var(--color-primary)" />
         <h1 className="text-primary" style={{ fontSize: '3rem', margin: 0 }}>Picture Dictionary</h1>
         <p style={{ fontSize: '1.2rem', color: '#666' }}>単元を選んで単語を練習しよう！</p>
+        <p style={{ fontSize: '0.95rem', color: '#b45309', fontWeight: 'bold', margin: 0 }}>
+          🔎 1つの単元を いろいろなモードで 深めると ボーナス（今日3つ目からの単元は ポイントが減るよ）
+        </p>
       </div>
 
       {/* 実力テスト（P2-1）：既習カテゴリからランダム出題・一発勝負 */}

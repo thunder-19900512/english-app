@@ -475,10 +475,14 @@ export const TeacherDashboard: React.FC = () => {
       return;
     }
     const { data: row, error: readErr } = await supabase
-      .from('students').select('points, name').eq('id', adjStudentId).single();
+      .from('students').select('points, name, clear_counts').eq('id', adjStudentId).single();
     if (readErr || !row) { setAdjMsg('読み込みエラー'); setTimeout(() => setAdjMsg(''), 4000); return; }
     const newPoints = (row.points || 0) + amount;
-    const { error } = await supabase.from('students').update({ points: newPoints }).eq('id', adjStudentId);
+    // DB側の見張り（クリア記録なしにポイントだけ増えたら差し戻す）を通すため、
+    // 「先生からのボーナス」をクリア回数として一緒に記録する（1回=最大60P）
+    const cc = { ...(row.clear_counts || {}) };
+    cc.teacher_bonus = (cc.teacher_bonus || 0) + Math.ceil(amount / 60);
+    const { error } = await supabase.from('students').update({ points: newPoints, clear_counts: cc }).eq('id', adjStudentId);
     if (error) { setAdjMsg('保存エラー'); }
     else {
       setAdjMsg(`${row.name} に +${amount}P（合計 ${newPoints}P）`);
