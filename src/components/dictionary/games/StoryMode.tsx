@@ -43,6 +43,8 @@ const DIFFICULTY_LEVELS = [
 // 音読の合格ライン（Azure発音判定の総合スコア 0-100）。小学生向けにやさしめ。
 const READ_PASS_SCORE = 60;
 
+const MIN_CHOICES = 4;
+
 export const StoryMode: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
@@ -151,7 +153,8 @@ export const StoryMode: React.FC = () => {
     }
 
     // Pick random words depending on length
-    let wordCount = Math.min(pool.length, Math.max(3, Math.floor(sentenceCount / 2)));
+    // 選択肢は最低4つ（3つだと消去法で当たってしまい、文脈で考えなくなる）
+    let wordCount = Math.min(pool.length, Math.max(MIN_CHOICES, Math.floor(sentenceCount / 2)));
 
     // 似た語（例：飲み物3つ）が並ぶと文脈で答えが一意に決まらないため、
     // できるだけ「別カテゴリから1語ずつ」選ぶ（ラウンドロビン）。
@@ -307,6 +310,23 @@ ${SAFETY_INSTRUCTION}`;
       }
     });
     
+    // 選択肢は「実際に空欄になった単語」に合わせる（AIが単語を使い忘れる／2回使うことがあり、
+    // 空欄の数と選択肢の数がズレていた）。空欄が4つ未満なら、お話に出てこないダミー語を足して
+    // 最低4択にする（3択以下だと消去法で当たってしまう）。
+    const usedIds = new Set(fragments.filter(f => f.type === 'blank').map(f => f.wordId));
+    if (usedIds.size === 0) {
+      alert('うまく作れませんでした。もう一度「お話をつくる」を押してみてね。');
+      setGameState('config');
+      return;
+    }
+    const choices = words.filter(w => usedIds.has(w.id));
+    const usedEn = new Set(choices.map(w => w.english.toLowerCase()));
+    const extras = [...vocabulary]
+      .filter(v => !usedIds.has(v.id) && !usedEn.has(v.english.toLowerCase()))
+      .sort(() => 0.5 - Math.random());
+    while (choices.length < MIN_CHOICES && extras.length) choices.push(extras.pop()!);
+    setTargetWords(choices.sort(() => 0.5 - Math.random()));
+
     setStoryFragments(fragments);
     
     // Auto-select the first blank
@@ -754,7 +774,10 @@ ${SAFETY_INSTRUCTION}`;
               <h3 style={{ marginTop: 0, textAlign: 'center' }}>下から単語を選んでね</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
                 {targetWords.map(word => {
-                  const isUsed = storyFragments.some(f => f.type === 'blank' && f.filledWith === word.id);
+                  // 同じ単語が2つの空欄に出ることがあるので、「その単語の空欄が全部埋まったら」使用済み
+                  const need = storyFragments.filter(f => f.type === 'blank' && f.wordId === word.id).length;
+                  const filled = storyFragments.filter(f => f.type === 'blank' && f.filledWith === word.id).length;
+                  const isUsed = need > 0 ? filled >= need : filled > 0;
                   return (
                     <button
                       key={word.id}
