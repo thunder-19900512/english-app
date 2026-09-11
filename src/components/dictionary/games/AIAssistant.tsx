@@ -269,6 +269,8 @@ export const AIAssistant: React.FC = () => {
       greeting: ov.greetingEn ? { en: ov.greetingEn, ja: ov.greetingJa || '' } : opts.greeting,
       // 前の場面の会話が残っていると、画面は古い第一声のまま、AIは新しい第一声の続きとして話し始めてしまう
       histSuffix: ov.greetingEn ? `${opts.histSuffix || 'default'}_${shortHash(ov.greetingEn)}` : opts.histSuffix,
+      // ヘルプの例文もUnitごとに差し替えられる（既定はダイアログの文＝役が逆になることがある）
+      suggestions: ov.hints?.length ? ov.hints : opts.suggestions,
     };
   };
 
