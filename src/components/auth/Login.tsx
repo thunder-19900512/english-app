@@ -4,6 +4,7 @@ import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 import { supabase } from '../../lib/supabase';
 import { findTitle } from '../../data/shopItems';
+import { RecentUpdates } from './RecentUpdates';
 import { GUEST_ID, GUEST_NAME, resetGuestData } from '../../lib/trial';
 
 export const Login: React.FC = () => {
@@ -106,6 +107,8 @@ export const Login: React.FC = () => {
         <h1 className="text-primary" style={{ fontSize: '3rem' }}>Eigo no Mori 🌳</h1>
         <p style={{ fontSize: '1.2rem' }}>名前をタップして始めよう！</p>
       </div>
+
+      <RecentUpdates />
 
       {/* 学年の色わけ凡例 */}
       <div className="flex-center" style={{ gap: '1.5rem', marginTop: '0.5rem' }}>
