@@ -18,6 +18,11 @@ export const THEMES: ShopItem[] = [
   { id: 'th-mori', emoji: '🌲', name: 'もりテーマ', desc: '緑の画面', price: 250 },
   { id: 'th-yozora', emoji: '🌌', name: 'よぞらテーマ', desc: '夜空のダーク画面', price: 400 },
   { id: 'th-gold', emoji: '👑', name: 'ゴールドテーマ', desc: '金ぴか。えらい。', price: 800 },
+  { id: 'th-fuji', emoji: '💜', name: 'ふじいろテーマ', desc: 'やさしい紫の画面', price: 250 },
+  { id: 'th-ruby', emoji: '💎', name: 'ルビーテーマ', desc: '深い赤の画面', price: 400 },
+  { id: 'th-mikan', emoji: '🍊', name: 'みかんテーマ', desc: 'オレンジの画面', price: 250 },
+  { id: 'th-sora', emoji: '☁️', name: 'そらいろテーマ', desc: '水色の画面', price: 250 },
+  { id: 'th-sumi', emoji: '🖤', name: 'すみテーマ', desc: '黒と白のかっこいい画面', price: 400 },
 ];
 
 // カタログからidで引く（表示や称号絵文字の解決に使う）
