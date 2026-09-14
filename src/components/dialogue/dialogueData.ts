@@ -121,6 +121,25 @@ export const DIALOGUES: Dialogue[] = [
     aiLabel: 'AIと「行きたい場所」を話す',
   },
   {
+    // 話型D：案内のあと、観光客の追加質問にその場で答える（P5 L4〜本番のプラス1）。
+    // 文は配布物「観光客の質問カード」とそろえてある。あなたはガイド(B)。
+    id: 'g5-u5d', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型D・観光客の質問に答える）", targetPhrase: "Is it far? — No, it's near.",
+    lines: [
+      { speaker: 'A', en: 'Excuse me. Is it far?', ja: 'すみません、遠いですか？' },
+      { speaker: 'B', en: "No, it's near. It's about {five} minutes.", ja: 'いいえ、近いですよ。【5】分くらいです。' },
+      { speaker: 'A', en: 'How much is it?', ja: 'いくらですか？' },
+      { speaker: 'B', en: "It's {free}!", ja: '【無料】です！' },
+      { speaker: 'A', en: 'What can I eat there?', ja: 'そこで何が食べられますか？' },
+      { speaker: 'B', en: 'You can eat {bread} there.', ja: 'そこで【パン】が食べられます。' },
+      { speaker: 'A', en: 'Can I take a photo?', ja: '写真をとってもいいですか？' },
+      { speaker: 'B', en: '{Sure}! Have a nice trip!', ja: '【もちろん】！よい旅を！' },
+    ],
+    note: 'あなたはガイド(B)！ {…}は自分のスポットに合わせて変えよう。れい："It\'s about ten minutes." / "It\'s 500 yen." / "You can eat soba there." / "Sorry, no."（ごめんなさい、だめです）。紙の「観光客の質問カード」と同じ文だよ。',
+    relatedCategories: ['道案内＋（プラスアルファ）', '町＋（プラスアルファ）'],
+    aiRoute: '/ai?unit=g5-u5',
+    aiLabel: 'AIのLucyを案内してみる',
+  },
+  {
     id: 'g5-u6', grade: 5, unitName: 'Unit 6: At a restaurant.', targetPhrase: 'What would you like?',
     lines: [
       { speaker: 'A', en: 'What would you like?', ja: '何にする？' },
