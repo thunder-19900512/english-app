@@ -274,7 +274,7 @@ export const MyProgress: React.FC = () => {
                 key={cat}
                 className="glass-card hover-scale"
                 style={{ padding: '1.2rem', background: c.bg, border: `2px solid ${c.border}`, cursor: 'pointer' }}
-                onClick={() => navigate('/dictionary')}
+                onClick={() => navigate(`/dictionary/${encodeURIComponent(cat)}`)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#2d3436' }}>{cat}</span>

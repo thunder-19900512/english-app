@@ -6,11 +6,26 @@ import { logVoiceEvent } from '../lib/voiceLog';
 // 子どもが次に何をすればいいか分かる言葉にする。
 // ※ これまでは onerror がコンソールに出るだけで、画面には何も出なかった。
 //   マイクを押しても何も起きない＝「マイクがきかない」と見えていた原因のひとつ。
+// マイク許可の直し方は端末で違う（パソコンのChromeにはアドレスバーの🔒があるが、
+// iPadではブラウザの中に切り替えが無く「設定」アプリ側で許可する）。子どもの声 2026-09-13。
+export const micPermissionHelp = (): string => {
+  const ua = navigator.userAgent;
+  const isIPad = /iPad|iPhone/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (isIPad) {
+    const app = /CriOS/.test(ua) ? 'Chrome' : 'Safari';
+    return `🔒 マイクの許可が オフになっているよ。iPadの「設定」→「${app}」→「マイク」を オンにしてから、このページを開き直してね`;
+  }
+  if (/Android/.test(ua)) {
+    return '🔒 マイクの許可が オフになっているよ。アドレスバーの左のマーク→「権限」→「マイク」を 許可にして、もう一度試してね';
+  }
+  return '🔒 マイクの許可が オフになっているよ。アドレスバーの左の🔒（または ⚙）→「マイク」→「許可」にして、ページを開き直してね';
+};
+
 export const friendlySpeechError = (code: string): string | null => {
   switch (code) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return '🔒 マイクの許可が オフになっているよ。アドレスバーの🔒→マイク→許可 にして、もう一度試してね';
+      return micPermissionHelp();
     case 'network':
       return '📶 このネットワークでは 音声認識（Chromeの仕組み）が 使えないみたい。先生に 伝えてね';
     case 'no-speech':

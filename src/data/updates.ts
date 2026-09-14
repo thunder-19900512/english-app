@@ -14,6 +14,11 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-14', text: '🖼️ 別のタブレットでログインすると背景の写真が消えてしまうのをなおしたよ。消えた写真も戻したよ', fromVoice: true },
+  { date: '2026-09-14', text: '🎧 辞書の学習モードは、開いてすぐカードが見えるようになったよ', fromVoice: true },
+  { date: '2026-09-14', text: '⌨️ タイピングの👑は「このタブレットでの記録」だと分かる言い方にしたよ', fromVoice: true },
+  { date: '2026-09-14', text: '🗺️ 自分の記録で単元のカードを押すと、その単元の練習に直接行けるようになったよ', fromVoice: true },
+  { date: '2026-09-14', text: '🎙️ マイクの許可がオフのとき、iPadに合った直し方が出るようになったよ', fromVoice: true },
   { date: '2026-09-13', text: '🎨 着せ替えに新しい色（ふじいろ・ルビー・みかん・そらいろ・すみ）が出たよ', fromVoice: true },
   { date: '2026-09-13', text: '📰 この「最近の更新」ができたよ。送った声がどうなったか、ここで分かるよ', fromVoice: true },
   { date: '2026-09-11', text: '📖 お話づくりの選択肢が4つ以上になったよ。空欄と選択肢の数がずれるのもなおしたよ', fromVoice: true },

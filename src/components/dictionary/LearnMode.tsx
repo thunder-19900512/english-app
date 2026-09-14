@@ -93,20 +93,18 @@ export const LearnMode: React.FC = () => {
   }
 
   return (
-    <div className="flex-col flex-center gap-lg" style={{ minHeight: '100%', width: '100%' }}>
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
+    <div className="flex-col flex-center gap-sm" style={{ minHeight: '100%', width: '100%' }}>
+      {/* 開いてすぐカードが見えるように、見出しは「もどる」と同じ1行にまとめる（子どもの声 2026-09-13） */}
+      <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
         <Button variant="outline" onClick={() => navigate(`/dictionary/${category}`)} icon={ArrowLeft}>
           もどる
         </Button>
-      </div>
-
-      <div className="flex-col flex-center gap-sm" style={{ textAlign: 'center' }}>
-        <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>学習モード: {decodedCategory}</h1>
-        <p style={{ fontSize: '1.2rem', color: '#666' }}>カードをタップして、音を<b>最後まで</b>よく聞いてみよう！🎧</p>
-        <div style={{ fontWeight: 'bold', color: 'var(--color-accent)', fontSize: '1.2rem' }}>
+        <h1 className="text-primary" style={{ fontSize: '1.6rem', margin: 0 }}>学習モード: {decodedCategory}</h1>
+        <span style={{ fontWeight: 'bold', color: 'var(--color-accent)', fontSize: '1.1rem', marginLeft: 'auto' }}>
           🎧 聞けた: {heardWords.size} / {words.length}
-        </div>
+        </span>
       </div>
+      <p style={{ fontSize: '1rem', color: '#666', margin: 0 }}>カードをタップして、音を<b>最後まで</b>よく聞いてみよう！🎧</p>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '900px', paddingBottom: '2rem' }}>
         {words.map((word) => {

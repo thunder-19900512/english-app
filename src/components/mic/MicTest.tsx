@@ -1,3 +1,4 @@
+import { micPermissionHelp } from '../../hooks/useSpeechRecognition';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { Button } from '../ui/Button';
@@ -96,7 +97,7 @@ export const MicTest: React.FC = () => {
       tick();
     } catch (e) {
       setPhase('error');
-      setErrMsg('マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒マーク→マイク→許可）を確かめてね。それでもダメなら先生を呼ぼう！');
+      setErrMsg(`マイクを使えませんでした。${micPermissionHelp().replace(/^🔒 /, '')}　それでもダメなら先生を呼ぼう！`);
     }
   };
 

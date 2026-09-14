@@ -1,3 +1,4 @@
+import { micPermissionHelp } from './useSpeechRecognition';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { isOverCap, incUsage } from '../lib/apiUsage';
@@ -255,7 +256,7 @@ export const usePronunciationAssessment = (
         await ensurePipeline();
       } catch (e) {
         setIsAssessing(false);
-        lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）を確かめて、先生を呼ぼう！';
+        lastErrorRef.current = micPermissionHelp();
         setError(lastErrorRef.current);
         logVoiceEvent({ kind: 'mic', ok: false, code: 'denied', detail: String(e) });
         return null;

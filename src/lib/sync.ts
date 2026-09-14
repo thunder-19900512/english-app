@@ -15,17 +15,24 @@ const mergeShop = (local: any, db: any): any => {
     owned: Array.from(new Set([...(d.owned || []), ...(l.owned || [])])),
     equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
     equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
-    // 背景の写真は端末優先（アップロード直後に消されないように）。
-    // ただし先生がリセットした時刻(bgClearedAt)より前に登録した写真は消す。
-    //   ＝ふさわしくない写真を、先生が全端末から確実に取り消せるようにするための仕掛け。
+    // 背景の写真：「持っている側」を採用する。
+    //   以前は「端末にshopがあれば端末優先」だったため、写真を登録していない別のタブレットで
+    //   ログインすると、その端末の空っぽ（bgImage=null）でDBの写真を上書きして消していた
+    //   （2026-09-13「頑張って貯めてつけた背景が消えた」の原因）。
+    //   写真は1人1枚・子どもは消せない仕様なので、「ある」が「ない」に負けることは無い。
+    //   唯一の例外は先生のリセット（bgClearedAt より前に登録した写真は消す）。
     ...(() => {
       const clearedAt = Math.max(l.bgClearedAt || 0, d.bgClearedAt || 0);
-      const img = hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null);
-      const setAt = hasLocal ? (l.bgSetAt ?? 0) : (d.bgSetAt ?? 0);
+      const lHas = !!l.bgImage, dHas = !!d.bgImage;
+      // 両方にあるなら新しく登録したほう、片方ならあるほう
+      const useLocal = lHas && (!dHas || (l.bgSetAt || 0) >= (d.bgSetAt || 0));
+      const src = useLocal ? l : dHas ? d : (hasLocal ? l : d);
+      const img = src.bgImage ?? null;
+      const setAt = src.bgSetAt ?? 0;
       const wiped = !!img && clearedAt > 0 && setAt <= clearedAt;
       return {
         bgImage: wiped ? null : img,
-        bgOn: wiped ? false : (hasLocal ? (l.bgOn ?? !!l.bgImage) : (d.bgOn ?? !!d.bgImage)),
+        bgOn: wiped || !img ? false : (src.bgOn ?? true),
         bgSetAt: wiped ? 0 : setAt,
         bgClearedAt: clearedAt,
       };
