@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { TITLES, THEMES, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
+import { TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 
 type Tab = 'title' | 'theme' | 'bg';
@@ -162,6 +162,19 @@ export const Shop: React.FC = () => {
       {tab === 'title' && (
         <div className="flex-col gap-md">
           <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>つけると、名前の横に 表示されるよ！</p>
+          {/* 今月限定：その月だけ買える。買ったものは月が変わっても持ったまま */}
+          <div style={{ border: '2px dashed var(--color-accent)', borderRadius: '14px', padding: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ fontWeight: 'bold', textAlign: 'center' }}>🗓️ {currentMonth()}月だけの 限定称号</div>
+            {seasonalThisMonth().map(t => (
+              <ItemCard key={t.id} item={t} equipped={shop.equippedTitle === t.id}
+                onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
+            ))}
+            <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>来月は ちがう称号が 出るよ。手に入れたものは ずっと使えるよ</div>
+          </div>
+          {SEASONAL_TITLES.filter(t => t.month !== currentMonth() && owned(t.id)).map(t => (
+            <ItemCard key={t.id} item={{ ...t, desc: `${t.month}月の限定称号（持っているよ）` }} equipped={shop.equippedTitle === t.id}
+              onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
+          ))}
           {TITLES.map(t => (
             <ItemCard key={t.id} item={t} equipped={shop.equippedTitle === t.id}
               onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />

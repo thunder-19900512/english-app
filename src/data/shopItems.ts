@@ -10,7 +10,39 @@ export const TITLES: ShopItem[] = [
   { id: 't-trophy', emoji: '🏆', name: 'レジェンド', desc: 'つよい。', price: 500 },
   { id: 't-star', emoji: '🌟', name: 'スーパースター', desc: 'かがやいている', price: 800 },
   { id: 't-dragon', emoji: '🐉', name: 'ドラゴンマスター', desc: '最高位のあかし', price: 1500 },
+  // かわいい系（子どもの声 2026-09-16）。英語の称号にして、説明に意味を書く＝買うついでに1語覚える
+  { id: 't-rainbow', emoji: '🌈', name: 'Rainbow Friend', desc: 'rainbow＝にじ。にじ色のなかま', price: 100 },
+  { id: 't-clover', emoji: '🍀', name: 'Lucky Clover', desc: 'lucky＝運がいい。しあわせのクローバー', price: 100 },
+  { id: 't-cloud', emoji: '☁️', name: 'Fluffy Cloud', desc: 'fluffy＝ふわふわ。ふわふわの雲', price: 150 },
+  { id: 't-bunny', emoji: '🐰', name: 'Happy Bunny', desc: 'bunny＝うさちゃん。ごきげんうさぎ', price: 150 },
+  { id: 't-moon', emoji: '🌙', name: 'Moon Dreamer', desc: 'dreamer＝夢を見る人。月の夢みる人', price: 200 },
+  { id: 't-twinkle', emoji: '⭐', name: 'Twinkle Star', desc: 'twinkle＝きらきら光る。きらきら星', price: 200 },
+  { id: 't-cookie', emoji: '🍪', name: 'Sweet Cookie', desc: 'sweet＝あまい。あまいクッキー', price: 200 },
+  { id: 't-panda', emoji: '🐼', name: 'Sleepy Panda', desc: 'sleepy＝ねむい。ねむねむパンダ', price: 250 },
+  { id: 't-heart', emoji: '🎀', name: 'Sweet Heart', desc: 'sweetheart＝大切な人', price: 250 },
+  { id: 't-cat', emoji: '🐱', name: 'Little Kitty', desc: 'kitty＝子ねこ。ちいさな子ねこ', price: 300 },
 ];
+
+// 今月限定の称号。その月のあいだだけ買える。買ったら月が変わっても持ったまま・つけられる。
+// month は 1〜12。毎年くり返す（来年の同じ月にまた出る）。
+export interface SeasonalTitle extends ShopItem { month: number; }
+export const SEASONAL_TITLES: SeasonalTitle[] = [
+  { month: 1, id: 's-01', emoji: '🎍', name: 'New Year Hero', desc: 'new year＝新年。お正月のヒーロー', price: 250 },
+  { month: 2, id: 's-02', emoji: '⛄', name: 'Snow Buddy', desc: 'buddy＝なかま。雪だるまのなかま', price: 250 },
+  { month: 3, id: 's-03', emoji: '🌸', name: 'Cherry Blossom', desc: 'cherry blossom＝さくらの花', price: 250 },
+  { month: 4, id: 's-04', emoji: '🌷', name: 'Spring Sprout', desc: 'sprout＝芽。春の新しい芽', price: 250 },
+  { month: 5, id: 's-05', emoji: '🎏', name: 'Carp Streamer', desc: 'carp streamer＝こいのぼり', price: 250 },
+  { month: 6, id: 's-06', emoji: '☔', name: 'Rainy Frog', desc: 'rainy＝雨の。雨がすきなカエル', price: 250 },
+  { month: 7, id: 's-07', emoji: '🎋', name: 'Wish Star', desc: 'wish＝ねがい。七夕のねがい星', price: 250 },
+  { month: 8, id: 's-08', emoji: '🍉', name: 'Summer Splash', desc: 'splash＝パシャッ。夏の水しぶき', price: 250 },
+  { month: 9, id: 's-09', emoji: '🎑', name: 'Moon Bunny', desc: 'moon＝月。お月見うさぎ', price: 250 },
+  { month: 10, id: 's-10', emoji: '🎃', name: 'Pumpkin Ghost', desc: 'pumpkin＝かぼちゃ。ハロウィンのおばけ', price: 250 },
+  { month: 11, id: 's-11', emoji: '🍁', name: 'Maple Leaf', desc: 'maple leaf＝もみじの葉', price: 250 },
+  { month: 12, id: 's-12', emoji: '🎄', name: 'Snowy Santa', desc: 'snowy＝雪の。雪の日のサンタ', price: 250 },
+];
+
+export const currentMonth = () => new Date().getMonth() + 1;
+export const seasonalThisMonth = () => SEASONAL_TITLES.filter(t => t.month === currentMonth());
 
 export const THEMES: ShopItem[] = [
   { id: 'th-sakura', emoji: '🌸', name: 'さくらテーマ', desc: 'ピンクの画面', price: 250 },
@@ -26,7 +58,8 @@ export const THEMES: ShopItem[] = [
 ];
 
 // カタログからidで引く（表示や称号絵文字の解決に使う）
-export const findTitle = (id: string | null | undefined) => TITLES.find(t => t.id === id) || null;
+export const findTitle = (id: string | null | undefined) =>
+  TITLES.find(t => t.id === id) || SEASONAL_TITLES.find(t => t.id === id) || null;
 export const findTheme = (id: string | null | undefined) => THEMES.find(t => t.id === id) || null;
 
 // 背景画像を使えるようにするポイント（最初の1回だけ）。
