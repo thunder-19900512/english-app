@@ -283,7 +283,7 @@ export const ClassTree: React.FC = () => {
           )}
 
           <div className="flex-center">
-            <Button variant="outline" onClick={load} icon={RefreshCw}>最新にする</Button>
+            <Button variant="outline" onClick={load} icon={RefreshCw}>画面を 新しくする（ポイントは へらないよ）</Button>
           </div>
         </>
       )}

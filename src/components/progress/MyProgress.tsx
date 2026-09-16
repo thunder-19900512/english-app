@@ -23,6 +23,7 @@ const SKILLS: { key: keyof DictCategoryProgress; label: string; emoji: string; p
   { key: 'wordsearch', label: '言葉さがし', emoji: '🔍', path: 'game/wordsearch' },
   { key: 'spelling', label: 'タイピング', emoji: '⌨️', path: 'game/spelling' },
   { key: 'voice', label: '発音', emoji: '🎤', path: 'game/voice' },
+  { key: 'qa', label: 'Q&A', emoji: '❓', path: 'game/qa' },   // 子どもの声 2026-09-15
 ];
 
 // 進捗リング（％を円グラフで表示）

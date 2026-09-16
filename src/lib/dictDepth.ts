@@ -7,8 +7,12 @@
 // 方針（2つを掛け合わせる。ほかの倍率とまとめて上限2倍）：
 //   深めボーナス … 同じ単元で、すでに別のモードをクリア済みなら上乗せ
 //                   （1モード済み ×1.25、2モード以上済み ×1.5）
-//   広げすぎ逓減 … 今日はじめて触る単元が3つ目なら半分、4つ目以降は1/4
+//   広げすぎ逓減 … 今日はじめて触る単元が3つ目は4分の3、4つ目以降は半分
 //                   （1日2単元までは満額。翌日はリセット）
+//
+// 伝え方（2026-09-16）：「ポイントが減る」と書いたら子どもから猛反発が来た（「最悪」「やりたくなくなる」）。
+// 罰として宣告するのではなく、①先に「今日あと何単元が満点か」を見せる ②減ったときは
+// 「深めるほうが大きい」という次の一手として伝える。数字も 0.5/0.25 → 0.75/0.5 にゆるめた。
 
 export interface DictKey { mode: string; cat: string }
 
@@ -48,6 +52,12 @@ export interface DictPolicy {
  * 辞書の活動キーに対する倍率を返す。辞書以外は 1。
  * clearCounts は「このクリアを数える前」のものを渡す。
  */
+/** 今日あと何単元まで満額か（辞書トップの案内用）。0なら「深めるとお得」の段階 */
+export const fullPointCatsLeft = (studentId: string | null): number => {
+  if (!studentId) return 2;
+  return Math.max(0, 2 - todaysCats(studentId).length);
+};
+
 export const dictPolicy = (studentId: string, key: string, clearCounts: Record<string, number>): DictPolicy => {
   const dk = parseDictKey(key);
   if (!dk) return { multiplier: 1, note: null };
@@ -65,11 +75,11 @@ export const dictPolicy = (studentId: string, key: string, clearCounts: Record<s
   const cats = todaysCats(studentId);
   const isNewToday = !cats.includes(dk.cat);
   const nth = isNewToday ? cats.length + 1 : 0;   // 0＝今日すでに触っている単元
-  const breadthMul = nth >= 4 ? 0.25 : nth === 3 ? 0.5 : 1;
+  const breadthMul = nth >= 4 ? 0.5 : nth === 3 ? 0.75 : 1;
   rememberCat(studentId, dk.cat);
 
   let note: string | null = null;
-  if (breadthMul < 1) note = `🍽 今日${nth}つ目の単元なのでポイントは${nth === 3 ? '半分' : '4分の1'}。1つの単元を いろいろなモードで 深めると ボーナス！`;
+  if (breadthMul < 1) note = `今日は ${nth}つの単元に ちょうせんしたね！ ここからは 同じ単元を べつのモードで やるほうが 大きいよ（さいだい ×1.5）`;
   else if (depthMul > 1) note = `🔎 深めボーナス ×${depthMul}！ 同じ単元を ${depth}モード クリア済み`;
 
   return { multiplier: depthMul * breadthMul, note };

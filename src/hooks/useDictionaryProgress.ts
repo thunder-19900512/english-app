@@ -7,6 +7,7 @@ export interface DictCategoryProgress {
   spelling: boolean;
   voice: boolean;
   wordsearch: boolean;
+  qa?: boolean;          // Q&A（子どもの声 2026-09-15）
   wordsearch_best_time?: number;
 }
 

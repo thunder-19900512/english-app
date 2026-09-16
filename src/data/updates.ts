@@ -14,6 +14,9 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-16', text: '❓ Q&Aも単元のモードに入ったよ。ぜんぶそろえると「マスター！」になるよ', fromVoice: true },
+  { date: '2026-09-16', text: '🎤 モンスターバトルは、今日の発音チェックの残りに合わせた体数で始まるよ（とちゅうで切れないように）', fromVoice: true },
+  { date: '2026-09-16', text: '🏅 称号も「おためし」で 名前の横の見え方を たしかめられるようになったよ', fromVoice: true },
   { date: '2026-09-16', text: '🔁 日をあけてやる練習は またポイントが入るようになったよ（1週間ぶりならもっと！）', fromVoice: true },
   { date: '2026-09-16', text: '🌙 発音チェックが今日ぶん終わったときの お知らせを、分かりやすい言い方にしたよ', fromVoice: true },
   { date: '2026-09-16', text: '🌈 ショップに英語のかわいい称号が10こ ふえたよ。毎月「今月だけの限定称号」も出るよ', fromVoice: true },

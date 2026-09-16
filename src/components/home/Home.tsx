@@ -59,12 +59,13 @@ export const Home: React.FC = () => {
   const allCleared = coreStageIds.every(sid => earnedBadges.includes(sid));
 
   // 各モードとクリア印の絵文字（単元一覧に表示）
-  const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice'; emoji: string }[] = [
+  const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice' | 'qa'; emoji: string }[] = [
     { key: 'learn', emoji: '📖' },
     { key: 'wordsearch', emoji: '🔍' },
     { key: 'practice', emoji: '🎯' },
     { key: 'spelling', emoji: '⌨️' },
     { key: 'voice', emoji: '🎤' },
+    { key: 'qa', emoji: '❓' },
   ];
 
   return (

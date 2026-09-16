@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
+import { findTitle, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 
 type Tab = 'title' | 'theme' | 'bg';
@@ -52,6 +52,7 @@ export const Shop: React.FC = () => {
   const [tab, setTab] = useState<Tab>('title');
   // 着せ替えの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string | null>(null);   // 称号のおためし（子どもの声 2026-09-15）
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = previewTheme ?? (shop.equippedTheme || '');
@@ -162,22 +163,36 @@ export const Shop: React.FC = () => {
       {tab === 'title' && (
         <div className="flex-col gap-md">
           <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>つけると、名前の横に 表示されるよ！</p>
+          {/* おためし中の見え方（ホームの見出しと同じ形） */}
+          <div style={{ textAlign: 'center', padding: '0.6rem', borderRadius: '12px', background: 'rgba(253, 203, 110, 0.18)', fontWeight: 'bold' }}>
+            こんにちは、{localStorage.getItem('studentName') || 'ゲスト'}
+            {findTitle(previewTitle || shop.equippedTitle)?.emoji || ''}さん！
+            <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'normal' }}>
+              {previewTitle ? `${findTitle(previewTitle)?.name} を おためし中` : 'いまの 見え方'}
+            </div>
+          </div>
           {/* 今月限定：その月だけ買える。買ったものは月が変わっても持ったまま */}
           <div style={{ border: '2px dashed var(--color-accent)', borderRadius: '14px', padding: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <div style={{ fontWeight: 'bold', textAlign: 'center' }}>🗓️ {currentMonth()}月だけの 限定称号</div>
             {seasonalThisMonth().map(t => (
               <ItemCard key={t.id} item={t} equipped={shop.equippedTitle === t.id}
-                onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
+                previewing={previewTitle === t.id}
+                onPreview={() => setPreviewTitle(prev => prev === t.id ? null : t.id)}
+                onEquip={() => { setPreviewTitle(null); equipTitle(t.id); }} onUnequip={() => equipTitle(null)} />
             ))}
             <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>来月は ちがう称号が 出るよ。手に入れたものは ずっと使えるよ</div>
           </div>
           {SEASONAL_TITLES.filter(t => t.month !== currentMonth() && owned(t.id)).map(t => (
             <ItemCard key={t.id} item={{ ...t, desc: `${t.month}月の限定称号（持っているよ）` }} equipped={shop.equippedTitle === t.id}
-              onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
+              previewing={previewTitle === t.id}
+              onPreview={() => setPreviewTitle(prev => prev === t.id ? null : t.id)}
+              onEquip={() => { setPreviewTitle(null); equipTitle(t.id); }} onUnequip={() => equipTitle(null)} />
           ))}
           {TITLES.map(t => (
             <ItemCard key={t.id} item={t} equipped={shop.equippedTitle === t.id}
-              onEquip={() => equipTitle(t.id)} onUnequip={() => equipTitle(null)} />
+              previewing={previewTitle === t.id}
+              onPreview={() => setPreviewTitle(prev => prev === t.id ? null : t.id)}
+              onEquip={() => { setPreviewTitle(null); equipTitle(t.id); }} onUnequip={() => equipTitle(null)} />
           ))}
         </div>
       )}
