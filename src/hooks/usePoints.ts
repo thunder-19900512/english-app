@@ -83,7 +83,23 @@ export const usePoints = () => {
     const clearCounts = countsStr ? JSON.parse(countsStr) : {};
 
     // Determine current clear count for this stage
-    const currentCount = clearCounts[stageKey] || 0;
+    //
+    // ★「久しぶりの復習」はまた点が入る（子どもの声 2026-09-16
+    //   「ピクチャーディクショナリーよりふりかえりの方が稼げる」）。
+    //   逓減は連打を防ぐための仕組みだが、一度やり切った単元は永久に0Pのままで、
+    //   毎日書けば3〜8P入るふりかえりより軽い、という逆転が起きていた。
+    //   最後にクリアしてから1週間あくごとに、逓減を1段階もどす（時間をおいた復習は
+    //   学習として価値があるうえ、その場で連打しても回復しない＝荒稼ぎにはならない）。
+    const atKey = `clearAt_${studentId}`;
+    const clearAt = JSON.parse(localStorage.getItem(atKey) || '{}');
+    const rawCount = clearCounts[stageKey] || 0;
+    const last = clearAt[stageKey] || 0;
+    const weeks = last ? Math.floor((Date.now() - last) / (7 * 24 * 3600 * 1000)) : 0;
+    const currentCount = Math.max(0, rawCount - weeks * 2);   // 1週間あくごとに2段階もどす
+    const revisited = weeks > 0 && rawCount > 0;
+    // 日をまたいだ練習は、逓減しきっていても0Pにはしない（毎日の練習が無意味にならないように）。
+    // 同じ日の連打には効かない＝荒稼ぎにはならない。
+    const newDay = !!last && new Date(last).toDateString() !== new Date().toDateString();
 
     // Calculate base points（繰り返すほど減り、最終的には0ポイントに＝荒稼ぎ防止）
     let earned = 0;
@@ -93,6 +109,8 @@ export const usePoints = () => {
     else if (currentCount === 3) earned = 2;   // 4回目
     else if (currentCount === 4) earned = 1;   // 5回目
     else earned = 0;                           // 6回目以降は0ポイント
+
+    if (earned === 0 && newDay) earned = 1;
 
     // ボーナスは最初の2回まで（連打で荒稼ぎできないように）
     if (currentCount <= 1) {
@@ -115,9 +133,11 @@ export const usePoints = () => {
       earned = Math.max(1, Math.round(earned * mul));
     }
 
-    // Update clear counts
-    clearCounts[stageKey] = currentCount + 1;
+    // Update clear counts（記録としては積み上げ、回復は日付で表す）
+    clearCounts[stageKey] = rawCount + 1;
     localStorage.setItem(countsKey, JSON.stringify(clearCounts));
+    clearAt[stageKey] = Date.now();
+    localStorage.setItem(atKey, JSON.stringify(clearAt));
 
     // Update total points
     const currentPoints = getPoints();
@@ -135,7 +155,9 @@ export const usePoints = () => {
     }
 
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
-    if (earned > 0 && dict.note) {
+    if (earned > 0 && revisited && currentCount === 0) {
+      showToast(`🔁 久しぶりの復習！ ＋${earned}ポイント（また1回目から数えるよ）`, 'points');
+    } else if (earned > 0 && dict.note) {
       showToast(`🎉 クリア！ ＋${earned}ポイント　${dict.note}`, 'points');
     } else if (earned > 0) {
       showToast(

@@ -341,13 +341,13 @@ export const VoiceBattle: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               fontWeight: 'bold',
-              color: 'var(--color-error)',
+              color: azureError.startsWith('🌙') ? 'var(--color-primary)' : 'var(--color-error)',
               maxWidth: '500px',
               textAlign: 'center',
               wordBreak: 'break-word'
             }}
           >
-            ⚠️ Azureエラー: {azureError}
+            {azureError.startsWith('🌙') ? azureError : `⚠️ Azureエラー: ${azureError}`}
           </div>
         )}
       </div>

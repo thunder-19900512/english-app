@@ -140,6 +140,13 @@ const authFlagKey = (key: string, region: string, endpoint: string) => {
   return `azureAuthFailed_${h}`;
 };
 
+// 上限のお知らせ（故障ではない）。VoiceBattle側はこの文で始まるときだけ、
+// 「⚠️ Azureエラー」ではなく「お知らせ」として出す。
+export const CAP_NOTICE =
+  '🌙 今日ぶんの 発音チェックは 終わり！ こわれてないよ。'
+  + 'みんなで たくさん使ったので、また明日 使えるようになるよ。'
+  + '今日は「聞く」「書く」「タイピング」で 練習しよう！';
+
 export const usePronunciationAssessment = (
   key: string | null,
   region: string | null,
@@ -244,7 +251,9 @@ export const usePronunciationAssessment = (
 
       // 1日の発音チェック上限に達していたら、Azureを呼ばずに止める（課金の安全装置）。
       if (isOverCap('azure')) {
-        setError('今日の発音チェックは上限に達したよ。また明日試してね！');
+        // 「⚠️Azureエラー」と並べると子どもには意味が伝わらない（子どもの声 2026-09-16）。
+        // 故障ではなく「今日ぶんを使い切った」ことと、代わりにできることを伝える。
+        setError(CAP_NOTICE);
         return null;
       }
 

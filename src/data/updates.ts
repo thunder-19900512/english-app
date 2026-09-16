@@ -14,6 +14,8 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-16', text: '🔁 日をあけてやる練習は またポイントが入るようになったよ（1週間ぶりならもっと！）', fromVoice: true },
+  { date: '2026-09-16', text: '🌙 発音チェックが今日ぶん終わったときの お知らせを、分かりやすい言い方にしたよ', fromVoice: true },
   { date: '2026-09-16', text: '🌈 ショップに英語のかわいい称号が10こ ふえたよ。毎月「今月だけの限定称号」も出るよ', fromVoice: true },
   { date: '2026-09-14', text: '🖼️ 別のタブレットでログインすると背景の写真が消えてしまうのをなおしたよ。消えた写真も戻したよ', fromVoice: true },
   { date: '2026-09-14', text: '🎧 辞書の学習モードは、開いてすぐカードが見えるようになったよ', fromVoice: true },
