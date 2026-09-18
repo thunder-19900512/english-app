@@ -15,6 +15,9 @@ export const ReflectionForm: React.FC = () => {
   const { addFixedPoints } = usePoints();
   
   const [stars, setStars] = useState(0);
+  // ⭐を選ばずに「送る」を押したときの案内（子どもの声 2026-09-18
+  // 「50字以上書いたのに、送るボタンが半透明で送れない」＝⭐を選んでいなかった）
+  const [needStars, setNeedStars] = useState(false);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
@@ -36,7 +39,11 @@ export const ReflectionForm: React.FC = () => {
   const canEarnPoints = !lastReflectionDate || (new Date().getTime() - lastReflectionDate.getTime() >= HALF_DAY_MS);
 
   const handleSubmit = async () => {
-    if (stars === 0) return; // Require at least 1 star
+    if (stars === 0) {   // ⭐は必須。だまって押せなくするのではなく、理由を見せる
+      setNeedStars(true);
+      document.getElementById('reflection-stars')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     saveReflection(stars, comment);
     
     if (canEarnPoints) {
@@ -115,7 +122,11 @@ export const ReflectionForm: React.FC = () => {
           今日の手ごたえはどうだった？
         </h2>
         
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div id="reflection-stars" style={{
+          display: 'flex', gap: '1rem', marginBottom: needStars ? '0.5rem' : '2rem',
+          padding: needStars ? '0.4rem 0.8rem' : 0, borderRadius: '14px',
+          outline: needStars ? '3px solid var(--color-error)' : 'none',
+        }}>
           {[1, 2, 3, 4, 5].map((num) => (
             <Star 
               key={num}
@@ -123,11 +134,17 @@ export const ReflectionForm: React.FC = () => {
               fill={num <= stars ? "var(--color-accent)" : "transparent"}
               color={num <= stars ? "var(--color-accent)" : "#ccc"}
               style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-              onClick={() => setStars(num)}
+              onClick={() => { setStars(num); setNeedStars(false); }}
               className="hover-scale"
             />
           ))}
         </div>
+
+        {needStars && (
+          <p style={{ color: 'var(--color-error)', fontWeight: 'bold', margin: '0 0 1.5rem' }}>
+            ⭐ 上の星を えらんでから 送ってね
+          </p>
+        )}
 
         {recent.length > 0 && (
           <div style={{
@@ -181,16 +198,17 @@ export const ReflectionForm: React.FC = () => {
         <Button 
           onClick={handleSubmit} 
           icon={Send}
-          disabled={stars === 0}
           style={{ 
             marginTop: '2rem', 
             padding: '1rem 3rem', 
             fontSize: '1.5rem',
-            opacity: stars === 0 ? 0.5 : 1
           }}
         >
           {!canEarnPoints ? '送って記録する' : qualifies ? '送ってサイコロを振る！🎲' : '送ってポイントをもらう！'}
         </Button>
+        {stars === 0 && (
+          <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '0.6rem' }}>送る前に ⭐を えらんでね</p>
+        )}
       </div>
     </div>
   );

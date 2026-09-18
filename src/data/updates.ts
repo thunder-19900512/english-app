@@ -14,6 +14,7 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-18', text: '📝 ふりかえりで⭐を選び忘れたとき、送るボタンが うすくなるだけだったのを「⭐を選んでね」と出るようにしたよ', fromVoice: true },
   { date: '2026-09-16', text: '❓ Q&Aも単元のモードに入ったよ。ぜんぶそろえると「マスター！」になるよ', fromVoice: true },
   { date: '2026-09-16', text: '🎤 モンスターバトルは、今日の発音チェックの残りに合わせた体数で始まるよ（とちゅうで切れないように）', fromVoice: true },
   { date: '2026-09-16', text: '🏅 称号も「おためし」で 名前の横の見え方を たしかめられるようになったよ', fromVoice: true },
