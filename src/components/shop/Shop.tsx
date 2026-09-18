@@ -5,6 +5,8 @@ import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
 import { findTitle, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
+import { ensureSpendAllowed } from '../../lib/spendPin';
+import { SpendLockedNotice } from '../ui/SpendGate';
 
 type Tab = 'title' | 'theme' | 'bg';
 
@@ -66,8 +68,10 @@ export const Shop: React.FC = () => {
 
   const owned = (id: string) => shop.owned.includes(id);
 
-  const handleBuy = (item: ShopItem) => {
-    if (window.confirm(`「${item.name}」を ${item.price}P で かいますか？`)) buy(item);
+  const handleBuy = async (item: ShopItem) => {
+    if (!window.confirm(`「${item.name}」を ${item.price}P で かいますか？`)) return;
+    if (!(await ensureSpendAllowed())) return;   // 合言葉（なりすまし対策）
+    buy(item);
   };
 
   const bgUnlocked = shop.owned.includes(BG_UNLOCK_ID);
@@ -87,6 +91,7 @@ export const Shop: React.FC = () => {
       + '★ 登録できるのは 1枚だけ。あとから 写真を 変えることは できません。\n'
       + '（つけたり 消したりは、いつでも 無料でできるよ）\n\n'
       + 'この写真で いい？')) return;
+    if (!bgUnlocked && !(await ensureSpendAllowed())) return;   // ポイントを使うときだけ合言葉
     setUploading(true); setUploadMsg('');
     try {
       const blob = await compressImage(file);
@@ -141,6 +146,8 @@ export const Shop: React.FC = () => {
         <Button variant="outline" onClick={() => navigate('/home')} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ margin: 0, flex: 1, textAlign: 'center', marginRight: '80px' }}>🎁 ごほうびショップ</h2>
       </div>
+
+      <SpendLockedNotice />
 
       {/* 残高 */}
       <div className="glass-card" style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(253, 203, 110, 0.15)', border: '2px solid var(--color-accent)' }}>

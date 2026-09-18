@@ -1,3 +1,4 @@
+import { SpendPinCard } from './SpendPinCard';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
@@ -287,6 +288,7 @@ export const TeacherDashboard: React.FC = () => {
   const [adjMsg, setAdjMsg] = useState('');
   // クラスの木のグループ分け（56A対56B / 5年対6年）
   const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
+  const [spendMode, setSpendMode] = useState<'locked' | 'setup' | 'open'>('locked');
   const [treeMsg, setTreeMsg] = useState('');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
@@ -350,6 +352,10 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.freetalkGoals !== undefined) {
         setFreetalkGoals(data.dictionary_progress.freetalkGoals || {});
       }
+      {
+        const sm = data.dictionary_progress.spendMode;
+        setSpendMode(sm === 'setup' || sm === 'open' ? sm : 'locked');
+      }
       if (data.dictionary_progress.treeMode !== undefined) {
         setTreeMode(data.dictionary_progress.treeMode || 'cls');
       }
@@ -385,12 +391,17 @@ export const TeacherDashboard: React.FC = () => {
   // Saves the full settings object so individual saves/toggles never wipe other fields.
   const persistSettings = async (overrides: Record<string, any> = {}) => {
     if (!supabase) return { error: new Error('no supabase') };
+    // ★DBの今の設定に重ねて保存する。以前はこの画面が知っている項目だけで丸ごと上書きしていたので、
+    //   ここに書き忘れた設定（通知先・Azureエンドポイント・合言葉の受付など）が、
+    //   別の設定を保存したとたんに消えていた。
+    const { data: curRow } = await supabase.from('students').select('dictionary_progress').eq('id', 'app_settings_v1').maybeSingle();
     return supabase
       .from('students')
       .upsert({
         id: 'app_settings_v1',
         name: 'System Settings',
         dictionary_progress: {
+          ...((curRow?.dictionary_progress as Record<string, any>) || {}),
           geminiApiKey: geminiKey.trim(),
           azureSpeechKey: azureKey.trim(),
           azureSpeechRegion: azureRegion.trim(),
@@ -954,6 +965,9 @@ export const TeacherDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <SpendPinCard students={students} mode={spendMode}
+          onChangeMode={async m => { setSpendMode(m); await persistSettings({ spendMode: m }); }} />
 
         <div className="glass-card">
           <h2>🧪 マイ単語ついか機能（準備中）</h2>

@@ -9,6 +9,7 @@ import { GlobalLockScreen } from '../ui/GlobalLockScreen';
 import { recordActivity, labelForHash } from '../../lib/activityLog';
 import { stages } from '../../data/stages';
 import { FeedbackButton } from '../ui/FeedbackButton';
+import { SpendGate } from '../ui/SpendGate';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container">
+      <SpendGate />
       <GlobalLockScreen mode={lockMode} />
       {studentId && (
         <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>

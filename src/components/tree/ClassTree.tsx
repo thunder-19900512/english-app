@@ -1,3 +1,5 @@
+import { ensureSpendAllowed } from '../../lib/spendPin';
+import { SpendLockedNotice } from '../ui/SpendGate';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -105,7 +107,9 @@ export const ClassTree: React.FC = () => {
 
   /** 木/森に寄付する（町がひらく前） */
   const handleDonate = async (amount: number) => {
-    if (busy || !donate(amount)) return;
+    if (busy) return;
+    if (!(await ensureSpendAllowed())) return;   // 合言葉（なりすまし対策 2026-09-19）
+    if (!donate(amount)) return;
     const key = `treeGain_${new Date().toDateString()}`;
     const gained = parseInt(localStorage.getItem(key) || '0', 10) + amount;
     localStorage.setItem(key, String(gained));
@@ -119,6 +123,7 @@ export const ClassTree: React.FC = () => {
     if (busy || !supabase || !myTeam) return;
     const give = Math.min(amount, balance, Math.max(0, b.cost - (town.funds[b.id] || 0)));
     if (give <= 0) return;
+    if (!(await ensureSpendAllowed())) return;   // 合言葉（なりすまし対策 2026-09-19）
     if (!donate(give)) return;
 
     setBusy(true);
@@ -156,6 +161,8 @@ export const ClassTree: React.FC = () => {
           {townOpened ? '🏘️ みんなの町' : '🌳 みんなの森'}
         </h2>
       </div>
+
+      <SpendLockedNotice />
       <p style={{ textAlign: 'center', color: '#666', margin: 0 }}>
         ポイントを入れると、森が育って やがて町ができるよ。みんなで大きくしよう🌱
       </p>

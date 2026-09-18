@@ -14,6 +14,7 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-19', text: '🔑 ポイントを使うときの「合言葉」を次の授業でつけるよ。自分のポイントを だれかに使われないようにするためだよ', fromVoice: true },
   { date: '2026-09-18', text: '📝 ふりかえりで⭐を選び忘れたとき、送るボタンが うすくなるだけだったのを「⭐を選んでね」と出るようにしたよ', fromVoice: true },
   { date: '2026-09-16', text: '❓ Q&Aも単元のモードに入ったよ。ぜんぶそろえると「マスター！」になるよ', fromVoice: true },
   { date: '2026-09-16', text: '🎤 モンスターバトルは、今日の発音チェックの残りに合わせた体数で始まるよ（とちゅうで切れないように）', fromVoice: true },
