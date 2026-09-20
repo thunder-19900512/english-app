@@ -92,11 +92,13 @@ const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => voi
           {visible.map(r => (
             <div key={r.id} style={{
               background: r.handled ? '#f8fafc' : 'white', borderRadius: '10px', padding: '0.8rem 1rem',
-              borderLeft: `4px solid ${r.kind === 'bug' ? '#e17055' : '#00b894'}`, opacity: r.handled ? 0.6 : 1,
+              borderLeft: `4px solid ${r.kind === 'bug' ? '#e17055' : r.kind === 'question' ? '#6366f1' : '#00b894'}`, opacity: r.handled ? 0.6 : 1,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: '#64748b' }}>
                 <span>
-                  <b style={{ color: r.kind === 'bug' ? '#c0392b' : '#0f9d58' }}>{r.kind === 'bug' ? '🐛 うまく動かない' : '💡 こうしたい'}</b>
+                  <b style={{ color: r.kind === 'bug' ? '#c0392b' : r.kind === 'question' ? '#4338ca' : '#0f9d58' }}>
+                    {r.kind === 'bug' ? '🐛 うまく動かない' : r.kind === 'question' ? '❓ これなぁに？' : '💡 こうしたい'}
+                  </b>
                   {' '}／ {r.student_name || '?'}
                 </span>
                 <span>{new Date(r.ts).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>

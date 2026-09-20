@@ -26,7 +26,13 @@ export const parseDictKey = (key: string): DictKey | null => {
 };
 
 const dayKey = (studentId: string) => `dictDay_${studentId}`;
-const today = () => new Date().toISOString().slice(0, 10);
+// 「今日」はこの端末の日付で数える。
+// ※ 以前は toISOString（世界標準時）だったので、日本の朝9時まで前の日のままだった。
+//    子どもの声「次の日になっても『今日ぶんは終わり』のまま」（2026-09-20）の原因。
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /** 今日すでに（加点つきで）触った単元。日付が変わっていれば空 */
 const todaysCats = (studentId: string): string[] => {

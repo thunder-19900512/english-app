@@ -35,6 +35,9 @@ export const Layout: React.FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = shop.equippedTheme || '';
+    // グラデーションのテーマ（背景写真をつけているときは写真が勝つ）
+    const gradientTheme = !!shop.equippedTheme && getComputedStyle(root).getPropertyValue('--theme-gradient').trim() !== '';
+    document.body.classList.toggle('has-theme-gradient', gradientTheme && !(shop.bgImage && shop.bgOn));
     if (shop.bgImage && shop.bgOn) {
       // 白の半透明オーバーレイで文字の可読性を確保
       document.body.style.backgroundImage =

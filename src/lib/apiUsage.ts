@@ -6,7 +6,13 @@ export type ApiType = 'gemini' | 'azure';
 // 先生が未設定のときに使う、無難なデフォルト上限（端末ごと・1日あたり）。
 export const DEFAULT_CAP: Record<ApiType, number> = { gemini: 50, azure: 80 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+// 「今日」はこの端末の日付で数える。
+// ※ 以前は toISOString（世界標準時）だったので、日本の朝9時まで前の日のままだった。
+//    子どもの声「次の日になっても『今日ぶんは終わり』のまま」（2026-09-20）の原因。
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 // 上限を保存（先生ダッシュボードからの設定をミラーする）。
 export const setCap = (type: ApiType, cap: number) => {

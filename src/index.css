@@ -406,6 +406,37 @@ h3 { letter-spacing: -0.01em; }
   --color-secondary: #d4a017; --color-accent: #ffd700;
   --color-bg-primary: #fffdf0;
 }
+:root[data-theme='th-yuyake'] {
+  --color-primary: #e2592c; --color-primary-hover: #c64a20;
+  --color-secondary: #f59e0b; --color-accent: #fbb6b0;
+  --color-bg-primary: #fff3ea;
+  --theme-gradient: linear-gradient(160deg, #ffd9a8 0%, #ffb3a7 50%, #f7b7d2 100%);
+}
+:root[data-theme='th-umizora'] {
+  --color-primary: #2563eb; --color-primary-hover: #1d4ed8;
+  --color-secondary: #60a5fa; --color-accent: #a5b4fc;
+  --color-bg-primary: #eef4ff;
+  --theme-gradient: linear-gradient(160deg, #cfe9ff 0%, #a9c7ff 55%, #b7aaf0 100%);
+}
+:root[data-theme='th-mint'] {
+  --color-primary: #0f9d78; --color-primary-hover: #0c8465;
+  --color-secondary: #6ee7b7; --color-accent: #a7f3d0;
+  --color-bg-primary: #effdf7;
+  --theme-gradient: linear-gradient(160deg, #d8f8c8 0%, #b8f2dd 50%, #bfe9ff 100%);
+}
+:root[data-theme='th-yume'] {
+  --color-primary: #8b5cf6; --color-primary-hover: #7c3aed;
+  --color-secondary: #c4b5fd; --color-accent: #f9a8d4;
+  --color-bg-primary: #f8f2ff;
+  --theme-gradient: linear-gradient(160deg, #d8c7ff 0%, #f3bcdf 55%, #bfe6ff 100%);
+}
+
+/* グラデーションのテーマは、背景の絵として敷く（背景写真をつけている子は写真が優先） */
+body.has-theme-gradient {
+  background-image: var(--theme-gradient) !important;
+  background-attachment: fixed;
+}
+
 :root[data-theme='th-fuji'] {
   --color-primary: #8e6bbf; --color-primary-hover: #7a58ab;
   --color-secondary: #b39ddb; --color-accent: #d7c4f2;

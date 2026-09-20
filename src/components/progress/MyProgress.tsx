@@ -266,7 +266,11 @@ export const MyProgress: React.FC = () => {
 
       {/* Picture Dictionary 単元ごとの現在地 */}
       <div>
-        <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-primary)' }}>📍 Picture Dictionary 単元ごとの現在地</h3>
+        <h3 style={{ margin: '0 0 0.3rem 0', color: 'var(--color-primary)' }}>📍 Picture Dictionary 単元ごとの現在地</h3>
+        <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
+          9月16日から <b>❓Q&amp;A</b> も 仲間に入ったよ（ぜんぶで {SKILLS.length}つ）。
+          そのため「マスター！」だった単元が「がんばり中」に もどって見えることがあるよ。記録は 消えていないよ
+        </p>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
           {catStats.map(({ cat, done, p }) => {
             const c = colorFor(done);

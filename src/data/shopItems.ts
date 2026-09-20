@@ -55,6 +55,11 @@ export const THEMES: ShopItem[] = [
   { id: 'th-mikan', emoji: '🍊', name: 'みかんテーマ', desc: 'オレンジの画面', price: 250 },
   { id: 'th-sora', emoji: '☁️', name: 'そらいろテーマ', desc: '水色の画面', price: 250 },
   { id: 'th-sumi', emoji: '🖤', name: 'すみテーマ', desc: '黒と白のかっこいい画面', price: 400 },
+  // グラデーション（子どもの声 2026-09-20）。背景の色が すこしずつ 変わる
+  { id: 'th-yuyake', emoji: '🌇', name: 'ゆうやけグラデ', desc: 'オレンジ→ピンクの空', price: 500 },
+  { id: 'th-umizora', emoji: '🌅', name: 'うみぞらグラデ', desc: '水色→青むらさきの空', price: 500 },
+  { id: 'th-mint', emoji: '🍈', name: 'ミントグラデ', desc: '黄緑→水色のさわやか', price: 500 },
+  { id: 'th-yume', emoji: '🦄', name: 'ゆめいろグラデ', desc: 'むらさき→ピンク→水色', price: 600 },
 ];
 
 // カタログからidで引く（表示や称号絵文字の解決に使う）
