@@ -10,13 +10,11 @@ import { showToast } from './Toast';
 const KINDS = [
   { id: 'bug', emoji: '🐛', label: 'うまく動かない', hint: '（れい）マイクを押しても なにも おきない' },
   { id: 'idea', emoji: '💡', label: 'こうしたい', hint: '（れい）◯◯のゲームが あったら たのしい' },
-  // 「これなぁに？」（子どもの声 2026-09-20）。分からないまま進まないで、その場で聞ける
-  { id: 'question', emoji: '❓', label: 'これなぁに？', hint: '（れい）この画面は なにをするところ？' },
 ] as const;
 
 export const FeedbackButton: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<'bug' | 'idea' | 'question'>('bug');
+  const [kind, setKind] = useState<'bug' | 'idea'>('bug');
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -75,7 +73,7 @@ export const FeedbackButton: React.FC = () => {
         {KINDS.map(k => (
           <button key={k.id} onClick={() => setKind(k.id)}
             style={{
-              flex: 1, padding: '0.5rem 0.3rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold',
+              flex: 1, padding: '0.5rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold',
               border: `2px solid ${kind === k.id ? 'var(--color-primary)' : '#e2e8f0'}`,
               background: kind === k.id ? 'var(--color-primary)' : 'white',
               color: kind === k.id ? 'white' : '#475569',
