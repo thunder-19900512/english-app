@@ -75,7 +75,7 @@ export const ReflectionForm: React.FC = () => {
         )}
         {!rolling && dice !== null && (
           <div className="animate-pop" style={{ fontSize: '1.4rem', color: '#7a5a00', fontWeight: 'bold', background: 'rgba(253,203,110,0.3)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.5rem 1.2rem' }}>
-            🎲 {['⚀','⚁','⚂','⚃','⚄','⚅'][dice - 1]} {dice} が出た！
+            🎲 {['⚀','⚁','⚂','⚃','⚄','⚅'][dice - 1]} {dice} が出た！ → {dice} ＋ 2 ＝ {dice + 2}ポイント
           </div>
         )}
         {!rolling && earnedPoints !== null && earnedPoints > 0 && (
@@ -175,7 +175,7 @@ export const ReflectionForm: React.FC = () => {
         </p>
         <p style={{ fontSize: '1rem', color: qualifies ? '#b45309' : '#94a3b8', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>
           {qualifies
-            ? `🎲 ${DICE_CHARS}字以上！ 送るとサイコロで 3〜8ポイント`
+            ? `🎲 ${DICE_CHARS}字以上！ 送るとサイコロで 3〜8ポイント（出た目＋2）`
             : `${DICE_CHARS}字以上書くと、サイコロで ポイントが決まるよ（いま ${countChars(comment)}字）`}
         </p>
 

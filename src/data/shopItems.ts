@@ -41,6 +41,19 @@ export const SEASONAL_TITLES: SeasonalTitle[] = [
   { month: 12, id: 's-12', emoji: '🎄', name: 'Snowy Santa', desc: 'snowy＝雪の。雪の日のサンタ', price: 250 },
 ];
 
+// 名前のわく色（子どもの声 2026-09-22「共有のホーム画面の自分の名前の枠の色を変えたい」）。
+// ログイン画面（名前をえらぶ画面）で、自分のタイルのふちの色が変わる。
+export interface FrameItem extends ShopItem { color: string; }
+export const FRAMES: FrameItem[] = [
+  { id: 'fr-pink', emoji: '🩷', name: 'ピンクのわく', desc: '名前のふちが ピンクに', price: 200, color: '#ec4899' },
+  { id: 'fr-gold', emoji: '💛', name: 'ゴールドのわく', desc: '名前のふちが 金色に', price: 300, color: '#f59e0b' },
+  { id: 'fr-mint', emoji: '💚', name: 'ミントのわく', desc: '名前のふちが 黄緑に', price: 200, color: '#10b981' },
+  { id: 'fr-sky', emoji: '💙', name: 'そらのわく', desc: '名前のふちが 水色に', price: 200, color: '#38bdf8' },
+  { id: 'fr-purple', emoji: '💜', name: 'むらさきのわく', desc: '名前のふちが むらさきに', price: 200, color: '#8b5cf6' },
+  { id: 'fr-rainbow', emoji: '🌈', name: 'にじのわく', desc: '名前のふちが にじ色に', price: 600, color: 'rainbow' },
+];
+export const findFrame = (id: string | null | undefined) => FRAMES.find(f => f.id === id) || null;
+
 export const currentMonth = () => new Date().getMonth() + 1;
 export const seasonalThisMonth = () => SEASONAL_TITLES.filter(t => t.month === currentMonth());
 

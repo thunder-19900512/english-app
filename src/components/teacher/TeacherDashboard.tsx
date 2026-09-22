@@ -291,6 +291,9 @@ export const TeacherDashboard: React.FC = () => {
   // クラスの木のグループ分け（56A対56B / 5年対6年）
   const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
   const [spendMode, setSpendMode] = useState<'locked' | 'setup' | 'open'>('locked');
+  const [salePercent, setSalePercent] = useState(0);
+  const [saleLabel, setSaleLabel] = useState('');
+  const [saleMsg, setSaleMsg] = useState('');
   const [treeMsg, setTreeMsg] = useState('');
   const [missionRoute, setMissionRoute] = useState('');
   const [missionStatus, setMissionStatus] = useState('');
@@ -354,6 +357,8 @@ export const TeacherDashboard: React.FC = () => {
       if (data.dictionary_progress.freetalkGoals !== undefined) {
         setFreetalkGoals(data.dictionary_progress.freetalkGoals || {});
       }
+      if (data.dictionary_progress.salePercent !== undefined) setSalePercent(Number(data.dictionary_progress.salePercent) || 0);
+      if (data.dictionary_progress.saleLabel !== undefined) setSaleLabel(data.dictionary_progress.saleLabel || '');
       {
         const sm = data.dictionary_progress.spendMode;
         setSpendMode(sm === 'setup' || sm === 'open' ? sm : 'locked');
@@ -966,6 +971,38 @@ export const TeacherDashboard: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+
+        <div className="glass-card">
+          <h2>🎉 セールの日（ショップの値引き）</h2>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            子どもの声「◯◯の日は50%オフがいい」から。称号・着せ替え・名前のわく・背景が、この割合で安く買えます。
+            <b>0%＝ふだん</b>。貯めたポイントの価値が下がりすぎないよう、期間を決めて使ってください。
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {[0, 20, 30, 50].map(p => (
+              <button key={p} onClick={async () => {
+                setSalePercent(p);
+                const { error } = await persistSettings({ salePercent: p });
+                setSaleMsg(error ? '通信エラー' : p === 0 ? 'セールを終わりにしました' : `${p}%オフにしました`);
+                setTimeout(() => setSaleMsg(''), 5000);
+              }}
+                style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold',
+                  border: '2px solid var(--color-primary)',
+                  background: salePercent === p ? 'var(--color-primary)' : 'white',
+                  color: salePercent === p ? 'white' : 'var(--color-primary)' }}>
+                {p === 0 ? 'ふだん' : `${p}%オフ`}
+              </button>
+            ))}
+            <input value={saleLabel} onChange={e => setSaleLabel(e.target.value)} placeholder="名前（例：がんばったね の日）"
+              style={{ flex: 1, minWidth: '220px', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+            <Button variant="outline" onClick={async () => {
+              const { error } = await persistSettings({ saleLabel: saleLabel.trim() });
+              setSaleMsg(error ? '通信エラー' : '名前を保存しました');
+              setTimeout(() => setSaleMsg(''), 5000);
+            }}>名前を保存</Button>
+          </div>
+          {saleMsg && <div style={{ marginTop: '0.5rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>{saleMsg}</div>}
         </div>
 
         <SpendPinCard students={students} mode={spendMode}

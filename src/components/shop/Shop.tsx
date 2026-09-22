@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { findTitle, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
+import { findTitle, FRAMES, findFrame, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 import { ensureSpendAllowed } from '../../lib/spendPin';
 import { SpendLockedNotice } from '../ui/SpendGate';
+import { useAppSettings } from '../../hooks/useAppSettings';
 
-type Tab = 'title' | 'theme' | 'bg';
+type Tab = 'title' | 'theme' | 'frame' | 'bg';
 
 // 読み込んだ写真を、指定の大きさ・品質でJPEGにする
 const toJpeg = (img: HTMLImageElement, max: number, quality: number): Promise<Blob> =>
@@ -50,7 +51,8 @@ const compressImage = async (file: File): Promise<Blob> => {
 
 export const Shop: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, balance, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn } = useShop();
+  const { shop, balance, buy, equipTitle, equipTheme, equipFrame, setBackgroundImage, setBackgroundOn } = useShop();
+  const { salePercent, saleLabel } = useAppSettings();
   const [tab, setTab] = useState<Tab>('title');
   // 着せ替えの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
@@ -69,9 +71,10 @@ export const Shop: React.FC = () => {
   const owned = (id: string) => shop.owned.includes(id);
 
   const handleBuy = async (item: ShopItem) => {
-    if (!window.confirm(`「${item.name}」を ${item.price}P で かいますか？`)) return;
+    const price = Math.max(1, Math.round(item.price * (100 - salePercent) / 100));
+    if (!window.confirm(`「${item.name}」を ${price}P で かいますか？`)) return;
     if (!(await ensureSpendAllowed())) return;   // 合言葉（なりすまし対策）
-    buy(item);
+    buy({ ...item, price });                      // セール中はその値段で買える
   };
 
   const bgUnlocked = shop.owned.includes(BG_UNLOCK_ID);
@@ -109,10 +112,14 @@ export const Shop: React.FC = () => {
     }
   };
 
+  // セールの日（先生がスタッフ画面で決める。子どもの声 2026-09-21「◯◯の日は50%オフ」）
+  const priceOf = (p: number) => Math.max(1, Math.round(p * (100 - salePercent) / 100));
+
   const ItemCard: React.FC<{ item: ShopItem; equipped: boolean; onEquip: () => void; onUnequip: () => void; onPreview?: () => void; previewing?: boolean }> =
     ({ item, equipped, onEquip, onUnequip, onPreview, previewing }) => {
       const has = owned(item.id);
-      const canBuy = balance >= item.price;
+      const price = priceOf(item.price);
+      const canBuy = balance >= price;
       return (
         <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', alignItems: 'center', gap: '1rem', border: equipped ? '2px solid var(--color-success)' : previewing ? '2px dashed var(--color-primary)' : '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '2.4rem' }}>{item.emoji}</div>
@@ -129,7 +136,8 @@ export const Shop: React.FC = () => {
             <button onClick={() => handleBuy(item)} disabled={!canBuy}
               style={{ padding: '0.6rem 1rem', borderRadius: '999px', border: 'none', cursor: canBuy ? 'pointer' : 'default', fontWeight: 'bold', whiteSpace: 'nowrap',
                 background: canBuy ? 'var(--color-accent)' : '#e2e8f0', color: canBuy ? '#000' : '#94a3b8' }}>
-              ⭐{item.price}
+              {salePercent > 0 && <span style={{ textDecoration: 'line-through', opacity: 0.6, marginRight: '0.3rem', fontSize: '0.8rem' }}>{item.price}</span>}
+              ⭐{price}
             </button>
           ) : equipped ? (
             <Button variant="outline" onClick={onUnequip} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>はずす</Button>
@@ -149,6 +157,12 @@ export const Shop: React.FC = () => {
 
       <SpendLockedNotice />
 
+      {salePercent > 0 && (
+        <div style={{ background: '#fee2e2', border: '2px solid #ef4444', borderRadius: '14px', padding: '0.8rem 1rem', textAlign: 'center', fontWeight: 'bold', color: '#b91c1c' }}>
+          🎉 今日は セールの日！ ぜんぶ {salePercent}%オフ{saleLabel ? `（${saleLabel}）` : ''}
+        </div>
+      )}
+
       {/* 残高 */}
       <div className="glass-card" style={{ padding: '1.2rem', textAlign: 'center', background: 'rgba(253, 203, 110, 0.15)', border: '2px solid var(--color-accent)' }}>
         <div style={{ fontSize: '2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -158,7 +172,7 @@ export const Shop: React.FC = () => {
 
       {/* タブ */}
       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-        {([['title', '🏅 称号'], ['theme', '🎨 着せ替え'], ['bg', '🖼️ 背景']] as const).map(([v, label]) => (
+        {([['title', '🏅 称号'], ['theme', '🎨 着せ替え'], ['frame', '🖼 名前のわく'], ['bg', '🖼️ 背景']] as const).map(([v, label]) => (
           <button key={v} onClick={() => setTab(v)}
             style={{ padding: '0.5rem 1.2rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold',
               background: tab === v ? 'var(--color-primary)' : 'white', color: tab === v ? 'white' : 'var(--color-primary)' }}>
@@ -219,6 +233,31 @@ export const Shop: React.FC = () => {
               previewing={previewTheme === t.id}
               onPreview={() => setPreviewTheme(prev => prev === t.id ? null : t.id)}
               onEquip={() => { setPreviewTheme(null); equipTheme(t.id); }} onUnequip={() => equipTheme(null)} />
+          ))}
+        </div>
+      )}
+
+      {tab === 'frame' && (
+        <div className="flex-col gap-md">
+          <p style={{ textAlign: 'center', color: '#666', margin: 0, fontSize: '0.9rem' }}>
+            名前をえらぶ画面（みんなで使う画面）で、自分のタイルの ふちの色が 変わるよ
+          </p>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{
+              display: 'inline-block', padding: '0.6rem 1.4rem', borderRadius: '10px', fontWeight: 'bold', color: 'white',
+              background: 'var(--color-primary)',
+              border: '4px solid transparent',
+              ...(findFrame(shop.equippedFrame)?.color === 'rainbow'
+                ? { borderImage: 'linear-gradient(90deg,#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa) 1' }
+                : findFrame(shop.equippedFrame) ? { borderColor: findFrame(shop.equippedFrame)!.color } : {}),
+            }}>
+              {localStorage.getItem('studentName') || 'ゲスト'}
+            </span>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.3rem' }}>いまの 見え方</div>
+          </div>
+          {FRAMES.map(f => (
+            <ItemCard key={f.id} item={f} equipped={shop.equippedFrame === f.id}
+              onEquip={() => equipFrame(f.id)} onUnequip={() => equipFrame(null)} />
           ))}
         </div>
       )}

@@ -15,6 +15,7 @@ const mergeShop = (local: any, db: any): any => {
     owned: Array.from(new Set([...(d.owned || []), ...(l.owned || [])])),
     equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
     equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
+    equippedFrame: hasLocal ? (l.equippedFrame ?? null) : (d.equippedFrame ?? null),
     // 背景の写真：「持っている側」を採用する。
     //   以前は「端末にshopがあれば端末優先」だったため、写真を登録していない別のタブレットで
     //   ログインすると、その端末の空っぽ（bgImage=null）でDBの写真を上書きして消していた
@@ -89,22 +90,16 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           .single();
 
         if (readErr && readErr.code !== 'PGRST116') {
-          // 読み込み失敗（通信エラー等）：DBを壊さないため、空のコレクションは送らない
-          //   （＝そのカラムはDBの値を維持）。値のあるものだけ更新する。
-          // DBを読めていない＝名簿の名前が分からないので、name は送らない（DBの値を維持）
-          const safe: Record<string, any> = { id: studentId, points, last_access: new Date().toISOString() };
-          if (badges.length) safe.badges = badges;
-          if (Object.keys(clear_counts).length) safe.clear_counts = clear_counts;
-          if (Object.keys(dictionary_progress).length) safe.dictionary_progress = dictionary_progress;
-          if (reflections.length) safe.reflections = reflections;
-          if (pronunciation_history.length) safe.pronunciation_history = pronunciation_history;
-          if (shop) safe.shop = shop; // 空(未設定)なら送らずDBを維持
-          if (eiken_level) safe.eiken_level = eiken_level;
-          const { error } = await supabase!.from('students').upsert(safe, { onConflict: 'id' });
-          if (error) console.error('Failed to sync to Supabase (safe mode)', error);
+          // ★DBを読めなかったときは、何も書かない。
+          //   以前はここで端末の値をそのまま upsert していたので、その端末に無い記録
+          //   （他の端末で取ったクリア）が消えていた（2026-09-23「全部クリアなのに88%」の原因）。
+          //   書かなくても、端末には記録が残っていて次の同期で送られる。
+          console.warn('sync: DBを読めなかったので今回は書き込まない', readErr);
+          localStorage.setItem(`syncPending_${studentId}`, '1');
           resolve();
           return;
         }
+        localStorage.removeItem(`syncPending_${studentId}`);
 
         const db: any = dbRow || {};
 

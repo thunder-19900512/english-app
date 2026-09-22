@@ -30,6 +30,9 @@ export const useAppSettings = () => {
   const [treeMode, setTreeMode] = useState<'cls' | 'grade'>('cls');
   // ポイントを使うときの合言葉の受付（lib/spendPin.ts）。読み込むまでは安全側＝止めておく
   const [spendMode, setSpendMode] = useState<'locked' | 'setup' | 'open'>('locked');
+  // セールの日（ショップの値引き。0＝ふだん）。先生がスタッフ画面で決める
+  const [salePercent, setSalePercent] = useState<number>(0);
+  const [saleLabel, setSaleLabel] = useState<string>('');
 
   useEffect(() => {
     if (!supabase) return;
@@ -53,6 +56,8 @@ export const useAppSettings = () => {
       if (progress.freetalkGoals !== undefined) setFreetalkGoals(progress.freetalkGoals || {});
       if (progress.treeMode !== undefined) setTreeMode(progress.treeMode || 'cls');
       setSpendMode(progress.spendMode === 'setup' || progress.spendMode === 'open' ? progress.spendMode : 'locked');
+      if (progress.salePercent !== undefined) setSalePercent(Math.min(80, Math.max(0, Number(progress.salePercent) || 0)));
+      if (progress.saleLabel !== undefined) setSaleLabel(progress.saleLabel || '');
     };
 
     const fetchSettings = async () => {
@@ -86,5 +91,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint, lockMode, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode, spendMode };
+  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, azureSpeechEndpoint, lockMode, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode, spendMode, salePercent, saleLabel };
 };

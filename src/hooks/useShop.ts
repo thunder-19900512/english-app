@@ -13,13 +13,14 @@ export interface ShopState {
   owned: string[];
   equippedTitle: string | null;
   equippedTheme: string | null;
+  equippedFrame: string | null;   // 名前のわく色（ログイン画面）
   bgImage: string | null;   // 持っている背景写真（1枚だけ。けしても消えない）
   bgOn: boolean;            // いま背景を使っているか（つけ外しは無料）
   bgSetAt: number;          // 写真を登録した時刻。先生のリセットより古ければ消える
   bgClearedAt: number;      // 先生がリセットした時刻（DB側から降ってくる）
 }
 
-const EMPTY: ShopState = { spent: 0, donated: 0, owned: [], equippedTitle: null, equippedTheme: null, bgImage: null, bgOn: false, bgSetAt: 0, bgClearedAt: 0 };
+const EMPTY: ShopState = { spent: 0, donated: 0, owned: [], equippedTitle: null, equippedTheme: null, equippedFrame: null, bgImage: null, bgOn: false, bgSetAt: 0, bgClearedAt: 0 };
 
 const keyFor = (id: string) => `shop_${id}`;
 
@@ -82,6 +83,12 @@ export const useShop = () => {
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
+  const equipFrame = useCallback((id: string | null) => {
+    if (!studentId) return;
+    const next = { ...readShop(studentId), equippedFrame: id };
+    writeShop(studentId, next); setShop(next);
+  }, [studentId]);
+
   const equipTheme = useCallback((id: string | null) => {
     if (!studentId) return;
     const next = { ...readShop(studentId), equippedTheme: id };
@@ -140,5 +147,5 @@ export const useShop = () => {
     return true;
   }, [studentId, totalPoints]);
 
-  return { shop, balance, totalPoints, buy, equipTitle, equipTheme, setBackgroundImage, setBackgroundOn, clearBackground, donate };
+  return { shop, balance, totalPoints, buy, equipTitle, equipTheme, equipFrame, setBackgroundImage, setBackgroundOn, clearBackground, donate };
 };

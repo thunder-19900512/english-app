@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 import { supabase } from '../../lib/supabase';
-import { findTitle } from '../../data/shopItems';
+import { findFrame, findTitle } from '../../data/shopItems';
 import { RecentUpdates } from './RecentUpdates';
 import { GUEST_ID, GUEST_NAME, resetGuestData } from '../../lib/trial';
 
@@ -15,17 +15,23 @@ export const Login: React.FC = () => {
   // 各生徒の装備中称号の絵文字（名前タイルに表示して競争心を後押し）。
   // fetch失敗してもログインは妨げない（絵文字なしで普通に表示）。
   const [titleEmojiById, setTitleEmojiById] = useState<Record<string, string>>({});
+  // 名前のわく色（ショップで買った子だけ。子どもの声 2026-09-22）
+  const [frameById, setFrameById] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!supabase) return;
     (async () => {
       const { data } = await supabase!.from('students').select('id, shop');
       if (!data) return;
       const map: Record<string, string> = {};
+      const frames: Record<string, string> = {};
       data.forEach((r: any) => {
         const emoji = findTitle(r.shop?.equippedTitle)?.emoji;
         if (emoji) map[r.id] = emoji;
+        const fr = findFrame(r.shop?.equippedFrame);
+        if (fr) frames[r.id] = fr.color;
       });
       setTitleEmojiById(map);
+      setFrameById(frames);
     })();
   }, []);
 
@@ -149,7 +155,10 @@ export const Login: React.FC = () => {
               color: 'white',
               boxShadow: 'var(--shadow-sm)',
               transition: 'transform 0.2s, box-shadow 0.2s',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem'
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem',
+              ...(frameById[student.id] === 'rainbow'
+                ? { border: '4px solid transparent', borderImage: 'linear-gradient(90deg,#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa) 1' }
+                : frameById[student.id] ? { border: `4px solid ${frameById[student.id]}` } : {}),
             }}
             onClick={() => handleLogin(student.id, student.name)}
             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
