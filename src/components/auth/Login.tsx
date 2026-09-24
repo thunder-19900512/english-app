@@ -215,14 +215,13 @@ export const Login: React.FC = () => {
             <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>PINを入力してください</p>
             <input
               type="password"
-              inputMode="numeric"
               autoFocus
               value={pinInput}
               onChange={e => { setPinInput(e.target.value); setPinError(false); }}
               onKeyDown={e => { if (e.key === 'Enter') handlePinSubmit(); }}
-              maxLength={4}
+              maxLength={20}
               autoComplete="one-time-code"
-              style={{ fontSize: '2rem', textAlign: 'center', width: '150px', padding: '0.5rem', borderRadius: '8px', border: `2px solid ${pinError ? 'var(--color-error)' : '#ccc'}`, letterSpacing: '0.4rem' }}
+              style={{ fontSize: '1.6rem', textAlign: 'center', width: '260px', maxWidth: '100%', padding: '0.5rem', borderRadius: '8px', border: `2px solid ${pinError ? 'var(--color-error)' : '#ccc'}`, letterSpacing: '0.2rem' }}
             />
             {pinError && <div style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '0.9rem' }}>PINが違います</div>}
             <div style={{ display: 'flex', gap: '0.8rem' }}>

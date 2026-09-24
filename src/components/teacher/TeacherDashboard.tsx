@@ -601,8 +601,8 @@ export const TeacherDashboard: React.FC = () => {
               type="password" 
               value={pin}
               onChange={e => setPin(e.target.value)}
-              style={{ fontSize: '2rem', textAlign: 'center', width: '150px', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
-              maxLength={4}
+              style={{ fontSize: '1.6rem', textAlign: 'center', width: '260px', maxWidth: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #ccc' }}
+              maxLength={20}
               autoComplete="one-time-code"
               name="teacher_pin"
             />
