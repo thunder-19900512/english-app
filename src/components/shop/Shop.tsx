@@ -57,12 +57,14 @@ export const Shop: React.FC = () => {
   // 着せ替えの「おためし」。このページにいる間だけ見た目を変える（買わなくても試せる）。
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState<string | null>(null);   // 称号のおためし（子どもの声 2026-09-15）
+  const [previewFrame, setPreviewFrame] = useState<string | null>(null);   // 名前のわくのおためし
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = previewTheme ?? (shop.equippedTheme || '');
     return () => { root.dataset.theme = shop.equippedTheme || ''; }; // ページを出たら元にもどす
   }, [previewTheme, shop.equippedTheme]);
   useEffect(() => { if (tab !== 'theme') setPreviewTheme(null); }, [tab]);
+  useEffect(() => { if (tab !== 'frame') setPreviewFrame(null); }, [tab]);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -247,17 +249,21 @@ export const Shop: React.FC = () => {
               display: 'inline-block', padding: '0.6rem 1.4rem', borderRadius: '10px', fontWeight: 'bold', color: 'white',
               background: 'var(--color-primary)',
               border: '4px solid transparent',
-              ...(findFrame(shop.equippedFrame)?.color === 'rainbow'
+              ...(findFrame(previewFrame || shop.equippedFrame)?.color === 'rainbow'
                 ? { borderImage: 'linear-gradient(90deg,#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa) 1' }
-                : findFrame(shop.equippedFrame) ? { borderColor: findFrame(shop.equippedFrame)!.color } : {}),
+                : findFrame(previewFrame || shop.equippedFrame) ? { borderColor: findFrame(previewFrame || shop.equippedFrame)!.color } : {}),
             }}>
               {localStorage.getItem('studentName') || 'ゲスト'}
             </span>
-            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.3rem' }}>いまの 見え方</div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.3rem' }}>
+              {previewFrame ? `${findFrame(previewFrame)?.name} を おためし中` : 'いまの 見え方'}
+            </div>
           </div>
           {FRAMES.map(f => (
             <ItemCard key={f.id} item={f} equipped={shop.equippedFrame === f.id}
-              onEquip={() => equipFrame(f.id)} onUnequip={() => equipFrame(null)} />
+              previewing={previewFrame === f.id}
+              onPreview={() => setPreviewFrame(prev => prev === f.id ? null : f.id)}
+              onEquip={() => { setPreviewFrame(null); equipFrame(f.id); }} onUnequip={() => equipFrame(null)} />
           ))}
         </div>
       )}
