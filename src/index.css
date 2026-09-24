@@ -377,7 +377,7 @@ h3 { letter-spacing: -0.01em; }
 }
 
 /* ============================================================
-   ごほうびショップ：きせかえテーマ（data-theme で色相を切替）。
+   ごほうびショップ：着せ替えテーマ（data-theme で色相を切替）。
    yozoraはダーク基調なので背景色/文字色も上書き（可読性は白オーバーレイ等で担保）。
    ============================================================ */
 :root[data-theme='th-sakura'] {
@@ -405,4 +405,60 @@ h3 { letter-spacing: -0.01em; }
   --color-primary: #b8860b; --color-primary-hover: #a3760a;
   --color-secondary: #d4a017; --color-accent: #ffd700;
   --color-bg-primary: #fffdf0;
+}
+:root[data-theme='th-yuyake'] {
+  --color-primary: #e2592c; --color-primary-hover: #c64a20;
+  --color-secondary: #f59e0b; --color-accent: #fbb6b0;
+  --color-bg-primary: #fff3ea;
+  --theme-gradient: linear-gradient(160deg, #ffd9a8 0%, #ffb3a7 50%, #f7b7d2 100%);
+}
+:root[data-theme='th-umizora'] {
+  --color-primary: #2563eb; --color-primary-hover: #1d4ed8;
+  --color-secondary: #60a5fa; --color-accent: #a5b4fc;
+  --color-bg-primary: #eef4ff;
+  --theme-gradient: linear-gradient(160deg, #cfe9ff 0%, #a9c7ff 55%, #b7aaf0 100%);
+}
+:root[data-theme='th-mint'] {
+  --color-primary: #0f9d78; --color-primary-hover: #0c8465;
+  --color-secondary: #6ee7b7; --color-accent: #a7f3d0;
+  --color-bg-primary: #effdf7;
+  --theme-gradient: linear-gradient(160deg, #d8f8c8 0%, #b8f2dd 50%, #bfe9ff 100%);
+}
+:root[data-theme='th-yume'] {
+  --color-primary: #8b5cf6; --color-primary-hover: #7c3aed;
+  --color-secondary: #c4b5fd; --color-accent: #f9a8d4;
+  --color-bg-primary: #f8f2ff;
+  --theme-gradient: linear-gradient(160deg, #d8c7ff 0%, #f3bcdf 55%, #bfe6ff 100%);
+}
+
+/* グラデーションのテーマは、背景の絵として敷く（背景写真をつけている子は写真が優先） */
+body.has-theme-gradient {
+  background-image: var(--theme-gradient) !important;
+  background-attachment: fixed;
+}
+
+:root[data-theme='th-fuji'] {
+  --color-primary: #8e6bbf; --color-primary-hover: #7a58ab;
+  --color-secondary: #b39ddb; --color-accent: #d7c4f2;
+  --color-bg-primary: #f7f2fc;
+}
+:root[data-theme='th-ruby'] {
+  --color-primary: #b0103a; --color-primary-hover: #950c31;
+  --color-secondary: #e0245e; --color-accent: #ff8fab;
+  --color-bg-primary: #fff1f4;
+}
+:root[data-theme='th-mikan'] {
+  --color-primary: #e67e22; --color-primary-hover: #cf6d17;
+  --color-secondary: #f39c12; --color-accent: #ffd08a;
+  --color-bg-primary: #fff6ec;
+}
+:root[data-theme='th-sora'] {
+  --color-primary: #2a9fd6; --color-primary-hover: #218ac0;
+  --color-secondary: #7fd1f5; --color-accent: #bfe9ff;
+  --color-bg-primary: #f0faff;
+}
+:root[data-theme='th-sumi'] {
+  --color-primary: #2d3436; --color-primary-hover: #1e2324;
+  --color-secondary: #636e72; --color-accent: #b2bec3;
+  --color-bg-primary: #f4f5f6;
 }

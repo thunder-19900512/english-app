@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { isGuestId } from './trial';
 
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -14,12 +15,35 @@ const mergeShop = (local: any, db: any): any => {
     owned: Array.from(new Set([...(d.owned || []), ...(l.owned || [])])),
     equippedTitle: hasLocal ? (l.equippedTitle ?? null) : (d.equippedTitle ?? null),
     equippedTheme: hasLocal ? (l.equippedTheme ?? null) : (d.equippedTheme ?? null),
-    bgImage: hasLocal ? (l.bgImage ?? null) : (d.bgImage ?? null),
+    equippedFrame: hasLocal ? (l.equippedFrame ?? null) : (d.equippedFrame ?? null),
+    // 背景の写真：「持っている側」を採用する。
+    //   以前は「端末にshopがあれば端末優先」だったため、写真を登録していない別のタブレットで
+    //   ログインすると、その端末の空っぽ（bgImage=null）でDBの写真を上書きして消していた
+    //   （2026-09-13「頑張って貯めてつけた背景が消えた」の原因）。
+    //   写真は1人1枚・子どもは消せない仕様なので、「ある」が「ない」に負けることは無い。
+    //   唯一の例外は先生のリセット（bgClearedAt より前に登録した写真は消す）。
+    ...(() => {
+      const clearedAt = Math.max(l.bgClearedAt || 0, d.bgClearedAt || 0);
+      const lHas = !!l.bgImage, dHas = !!d.bgImage;
+      // 両方にあるなら新しく登録したほう、片方ならあるほう
+      const useLocal = lHas && (!dHas || (l.bgSetAt || 0) >= (d.bgSetAt || 0));
+      const src = useLocal ? l : dHas ? d : (hasLocal ? l : d);
+      const img = src.bgImage ?? null;
+      const setAt = src.bgSetAt ?? 0;
+      const wiped = !!img && clearedAt > 0 && setAt <= clearedAt;
+      return {
+        bgImage: wiped ? null : img,
+        bgOn: wiped || !img ? false : (src.bgOn ?? true),
+        bgSetAt: wiped ? 0 : setAt,
+        bgClearedAt: clearedAt,
+      };
+    })(),
   };
 };
 
 export const pushToSupabase = async (studentId: string): Promise<void> => {
   if (!supabase) return;
+  if (isGuestId(studentId)) return; // おためし（99）はサーバに記録を残さない
 
   // Capture current state synchronously before debounce
   const name = localStorage.getItem('studentName') || 'ゲスト';
@@ -41,7 +65,10 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
   const pronStr = localStorage.getItem(`pronHistory_${studentId}`);
   const pronunciation_history = pronStr ? JSON.parse(pronStr) : [];
 
-  // ショップ状態（称号・きせかえ・消費額・寄付額・背景）
+  // 申告した英検レベル（AI英会話の難易度。端末をまたいでも残るように同期する）
+  const eiken_level = localStorage.getItem(`eiken_${studentId}`) || null;
+
+  // ショップ状態（称号・着せ替え・消費額・寄付額・背景）
   const shopStr = localStorage.getItem(`shop_${studentId}`);
   const shop = shopStr ? JSON.parse(shopStr) : null; // 無い＝この端末は未設定
 
@@ -63,20 +90,16 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           .single();
 
         if (readErr && readErr.code !== 'PGRST116') {
-          // 読み込み失敗（通信エラー等）：DBを壊さないため、空のコレクションは送らない
-          //   （＝そのカラムはDBの値を維持）。値のあるものだけ更新する。
-          const safe: Record<string, any> = { id: studentId, name, points, last_access: new Date().toISOString() };
-          if (badges.length) safe.badges = badges;
-          if (Object.keys(clear_counts).length) safe.clear_counts = clear_counts;
-          if (Object.keys(dictionary_progress).length) safe.dictionary_progress = dictionary_progress;
-          if (reflections.length) safe.reflections = reflections;
-          if (pronunciation_history.length) safe.pronunciation_history = pronunciation_history;
-          if (shop) safe.shop = shop; // 空(未設定)なら送らずDBを維持
-          const { error } = await supabase!.from('students').upsert(safe, { onConflict: 'id' });
-          if (error) console.error('Failed to sync to Supabase (safe mode)', error);
+          // ★DBを読めなかったときは、何も書かない。
+          //   以前はここで端末の値をそのまま upsert していたので、その端末に無い記録
+          //   （他の端末で取ったクリア）が消えていた（2026-09-23「全部クリアなのに88%」の原因）。
+          //   書かなくても、端末には記録が残っていて次の同期で送られる。
+          console.warn('sync: DBを読めなかったので今回は書き込まない', readErr);
+          localStorage.setItem(`syncPending_${studentId}`, '1');
           resolve();
           return;
         }
+        localStorage.removeItem(`syncPending_${studentId}`);
 
         const db: any = dbRow || {};
 
@@ -136,7 +159,9 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           .from('students')
           .upsert({
             id: studentId,
-            name,
+            // 名前は名簿（Supabase）が正。端末に残った古い名前で上書きしない
+            //   （改名したのに、その子のタブレットが次の同期で元に戻す事故を防ぐ）
+            name: db.name || name,
             points: mergedPoints,
             badges: mergedBadges,
             clear_counts: mergedClearCounts,
@@ -144,6 +169,8 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
             reflections: mergedReflections,
             pronunciation_history: mergedPron,
             shop: mergedShop,
+            // 英検レベル：この端末で申告があればそれ、無ければDBの値を維持
+            eiken_level: eiken_level || db.eiken_level || null,
             last_access: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -160,6 +187,7 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
 
 export const pullFromSupabase = async (studentId: string) => {
   if (!supabase) return false;
+  if (isGuestId(studentId)) return false; // おためし（99）はサーバに無い（端末内の記録だけで動く）
 
   const { data, error } = await supabase
     .from('students')
@@ -176,10 +204,9 @@ export const pullFromSupabase = async (studentId: string) => {
   
   if (data) {
     // Restore to local storage
-    const currentName = localStorage.getItem('studentName') || data.name;
-    if (!localStorage.getItem('studentName') && data.name) {
-      localStorage.setItem('studentName', data.name);
-    }
+    // 名前は名簿（DB）が正。改名したらこの端末の表示もその場で直る
+    const currentName = data.name || localStorage.getItem('studentName') || 'ゲスト';
+    if (data.name) localStorage.setItem('studentName', data.name);
     
     // Merge points (take the max)
     const localPoints = parseInt(localStorage.getItem(`points_${studentId}`) || '0', 10);
@@ -255,6 +282,11 @@ export const pullFromSupabase = async (studentId: string) => {
     const mergedShop = mergeShop(localShop, data.shop);
     localStorage.setItem(`shop_${studentId}`, JSON.stringify(mergedShop));
     window.dispatchEvent(new Event('shopUpdated'));
+
+    // 英検レベル：この端末に無ければDBの申告を取り込む（別の端末で申告した分を引き継ぐ）
+    if (!localStorage.getItem(`eiken_${studentId}`) && data.eiken_level) {
+      localStorage.setItem(`eiken_${studentId}`, data.eiken_level);
+    }
 
     return true;
   }

@@ -1,7 +1,11 @@
+import { micPermissionHelp } from './useSpeechRecognition';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { isOverCap, incUsage } from '../lib/apiUsage';
-import { fetchAzureSpeechToken } from '../lib/aiProxy';
+import { logVoiceEvent, azureCode } from '../lib/voiceLog';
+import { showToast } from '../components/ui/Toast';
+import { fetchAzureSpeechToken, ProxyError } from '../lib/aiProxy';
+import { useAppSettings } from './useAppSettings';
 
 export interface WordScore {
   word: string;
@@ -95,8 +99,8 @@ const downsample = (buffer: Float32Array, inRate: number, outRate: number): Floa
  * Azure の PushStream に流し込む。SDK 任せの fromDefaultMicrophoneInput だと、Chrome で
  * 2回目以降の録音が空（NoMatch）になる不具合があったため、自前で録音を握る方式にしている。
  *
- * The subscription key is used directly in the browser (fromSubscription); it is
- * loaded from app settings (Supabase) and never committed to the repository.
+ * キーはブラウザに置かない。Edge Function（azure-token）から10分有効のトークンを
+ * 毎回もらって接続する。
  */
 // 録音がほぼ無音か（RMSで判定）。マイク不調と「聞き取れなかった」を区別するために使う。
 const isNearSilent = (chunks: Float32Array[]): boolean => {
@@ -111,6 +115,38 @@ const isNearSilent = (chunks: Float32Array[]): boolean => {
   if (n === 0) return true;
   return Math.sqrt(sum / n) < 0.008; // ほぼ無音のしきい値
 };
+
+// Azureからの中止理由を、子ども向けの言葉にする。混雑（429/throttle）は true を返して再試行の対象にする。
+const explainCancel = (details: string): { msg: string; throttled: boolean } => {
+  const d = details || '';
+  if (/429|4429|Too many|throttl|quota|exceeded/i.test(d)) {
+    return { msg: '⏳ いま みんなが 発音チェックを 使っていて 混んでいます。少し待って もう一度試してね', throttled: true };
+  }
+  if (/401|403|Authentication|subscription|key/i.test(d)) {
+    return { msg: '🔑 発音チェックの 設定に 問題があるみたい。先生を呼んでね', throttled: false };
+  }
+  if (/1006|network|WebSocket|Unable to contact|connection/i.test(d)) {
+    return { msg: '📶 通信が とぎれたみたい。少し待って もう一度試してね', throttled: false };
+  }
+  return { msg: '⚠️ 発音チェックが できなかったよ。もう一度試して、直らなければ 先生に 伝えてね', throttled: false };
+};
+
+// 「Azureが認証を拒否する／サーバーにキーが無い」状態を覚えておくための印。
+// これが無いと、毎回1人ずつ失敗し続けるだけで、Web Speechへの切り替えも起きない
+// （実際に2026年7月から、設定はあるのに全滅、という状態が続いていた）。
+// キーはサーバー側で差し替わるので、印は1時間で自動的に切れる。
+const AUTH_FLAG = 'azureAuthFailedAt';
+const AUTH_FLAG_TTL_MS = 60 * 60 * 1000;
+const readAuthFailed = () => {
+  try { return Date.now() - Number(localStorage.getItem(AUTH_FLAG) || 0) < AUTH_FLAG_TTL_MS; } catch { return false; }
+};
+
+// 上限のお知らせ（故障ではない）。VoiceBattle側はこの文で始まるときだけ、
+// 「⚠️ Azureエラー」ではなく「お知らせ」として出す。
+export const CAP_NOTICE =
+  '🌙 今日ぶんの 発音チェックは 終わり！ こわれてないよ。'
+  + 'みんなで たくさん使ったので、また明日 使えるようになるよ。'
+  + '今日は「聞く」「書く」「タイピング」で 練習しよう！';
 
 export const usePronunciationAssessment = () => {
   const [isAssessing, setIsAssessing] = useState(false);
@@ -127,8 +163,19 @@ export const usePronunciationAssessment = () => {
   // 録音再生用に、流し込んだのと同じ 16kHz PCM を溜めておく。
   const recordedChunksRef = useRef<Float32Array[]>([]);
 
-  // キーはサーバー側にあるので、アプリからは常に「使える」扱い。未設定ならassess時にエラーを出す。
-  const isAvailable = true;
+  // 認証に失敗していると分かっている間は「使えない」として扱う
+  const [authFailed, setAuthFailed] = useState<boolean>(readAuthFailed);
+
+  const markAuthFailed = useCallback(() => {
+    try { localStorage.setItem(AUTH_FLAG, String(Date.now())); } catch { /* noop */ }
+    setAuthFailed(true);
+    showToast('🎙️ 発音チェックが いま使えないので、かんたんな聞き取りに きり変えたよ（先生に 伝えてね）', 'fail');
+  }, []);
+
+  // 認証に失敗すると分かっている／先生がオフにしている間は「使えない」＝呼び出し側は
+  // Web Speech（ブラウザの聞き取り）に自動で切り替わる。
+  const { azureDisabled } = useAppSettings();
+  const isAvailable = !authFailed && !azureDisabled;
 
   // マイク＋WebAudio のパイプラインを一度だけ用意する（クリック起点で呼ぶ）。
   const ensurePipeline = useCallback(async () => {
@@ -186,7 +233,9 @@ export const usePronunciationAssessment = () => {
     async (referenceText: string): Promise<PronunciationResult | null> => {
       // 1日の発音チェック上限に達していたら、Azureを呼ばずに止める（課金の安全装置）。
       if (isOverCap('azure')) {
-        setError('今日の発音チェックは上限に達したよ。また明日ためしてね！');
+        // 「⚠️Azureエラー」と並べると子どもには意味が伝わらない（子どもの声 2026-09-16）。
+        // 故障ではなく「今日ぶんを使い切った」ことと、代わりにできることを伝える。
+        setError(CAP_NOTICE);
         return null;
       }
 
@@ -195,30 +244,44 @@ export const usePronunciationAssessment = () => {
       setIsAssessing(true);
 
       // マイクの準備と並行して、Azureの使い捨てトークン（10分有効）をサーバーからもらう。
-      const tokenPromise = fetchAzureSpeechToken().then(
-        (t) => t,
-        (e: Error) => e
-      );
+      const tokenPromise = fetchAzureSpeechToken().catch((e: unknown) => e as Error);
 
       try {
         await ensurePipeline();
       } catch (e) {
         setIsAssessing(false);
-        lastErrorRef.current = '🎙️ マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒→マイク）をたしかめて、先生を呼ぼう！';
+        lastErrorRef.current = micPermissionHelp();
         setError(lastErrorRef.current);
+        logVoiceEvent({ kind: 'mic', ok: false, code: 'denied', detail: String(e) });
         return null;
       }
 
       const auth = await tokenPromise;
       if (auth instanceof Error) {
         setIsAssessing(false);
-        lastErrorRef.current = auth.message;
-        setError(auth.message);
+        const status = auth instanceof ProxyError ? auth.status : 0;
+        // 429＝クラス全体の上限（故障ではない）／502・503＝キーが拒否 or 未設定
+        const msg = status === 429 ? CAP_NOTICE : auth.message;
+        logVoiceEvent({ kind: 'azure', ok: false, code: `token-${status || 'net'}`, detail: auth.message });
+        if (status === 502 || status === 503) markAuthFailed();
+        lastErrorRef.current = msg;
+        setError(msg);
         return null;
       }
 
-      return new Promise((resolve) => {
-        const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(auth.token, auth.region);
+      // 1回の採点処理。live=true ならマイクから流し込む。
+      // replay に録音済みチャンクを渡すと、同じ音声をもう一度Azureに送る（混雑時のリトライ用。
+      // 子どもにもう一度言わせなくて済む）。
+      const runOnce = (replay: Float32Array[] | null, allowRetry: boolean): Promise<PronunciationResult | null> =>
+      new Promise((resolve) => {
+        // エンドポイントが設定されていればそれを優先（カスタムドメインのリソース対応）
+        let speechConfig: SpeechSDK.SpeechConfig;
+        if (auth.endpoint) {
+          speechConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(auth.endpoint));
+          speechConfig.authorizationToken = auth.token;
+        } else {
+          speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(auth.token, auth.region);
+        }
         speechConfig.speechRecognitionLanguage = 'en-US';
         speechConfig.setProperty(
           SpeechSDK.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs,
@@ -242,15 +305,21 @@ export const usePronunciationAssessment = () => {
         );
         paConfig.applyTo(recognizer);
 
-        // ここから processor の音声が pushStream に流れ込む。録音バッファもリセット。
-        recordedChunksRef.current = [];
-        activePushRef.current = pushStream;
+        if (replay) {
+          // 録音済みの音声をそのまま流し込んで閉じる（マイクは使わない）
+          for (const c of replay) pushStream.write(floatTo16BitPCM(c));
+          pushStream.close();
+        } else {
+          // ここから processor の音声が pushStream に流れ込む。録音バッファもリセット。
+          recordedChunksRef.current = [];
+          activePushRef.current = pushStream;
+        }
 
         const finish = (value: PronunciationResult | null) => {
           activePushRef.current = null;
           // 今回マイクから拾った音を WAV にして、再生できるようにする。
-          const chunks = recordedChunksRef.current;
-          recordedChunksRef.current = [];
+          const chunks = replay || recordedChunksRef.current;
+          if (!replay) recordedChunksRef.current = [];
           if (chunks.length > 0) {
             setLastRecordingUrl((prev) => {
               if (prev) URL.revokeObjectURL(prev);
@@ -279,6 +348,7 @@ export const usePronunciationAssessment = () => {
                   accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? 0,
                   errorType: w.PronunciationAssessment?.ErrorType ?? 'None',
                 }));
+                logVoiceEvent({ kind: 'azure', ok: true, code: replay ? 'ok-after-retry' : 'ok' });
                 finish({
                   recognizedText: result.text || '',
                   accuracyScore: pa.accuracyScore,
@@ -289,16 +359,32 @@ export const usePronunciationAssessment = () => {
                 });
               } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
                 const cancel = SpeechSDK.CancellationDetails.fromResult(result);
-                setError(
-                  `${SpeechSDK.CancellationReason[cancel.reason]}: ${cancel.errorDetails || '発音チェックの通信でエラーが起きたよ'}`
-                );
+                console.error('Azure canceled:', cancel.errorDetails);
+                const { msg, throttled } = explainCancel(cancel.errorDetails || '');
+                const chunks = replay || recordedChunksRef.current;
+                const code = azureCode(cancel.errorDetails || '');
+                logVoiceEvent({ kind: 'azure', ok: false, code: code + (replay ? '-retry' : ''), detail: cancel.errorDetails || '' });
+                // キーや設定が原因（401/403）なら、以後この設定ではAzureを使わない
+                if (code === 'auth') markAuthFailed();
+                if (throttled && allowRetry && chunks.length > 0) {
+                  // 混雑：同じ録音で1回だけ自動リトライ（子どもは待つだけ）
+                  const keep = chunks.slice();
+                  activePushRef.current = null;
+                  try { pushStream.close(); } catch { /* noop */ }
+                  recognizer.close();
+                  setTimeout(() => { runOnce(keep, false).then(resolve); }, 1800);
+                  return;
+                }
+                lastErrorRef.current = msg;
+                setError(msg);
                 finish(null);
               } else {
                 // 無音 / 認識できず（NoMatch）：0点として記録せず null を返して再挑戦させる。
                 // さらに録音がほぼ無音なら「マイクが拾えていない」と案内を分ける（P0-3）。
-                const silent = isNearSilent(recordedChunksRef.current);
+                const silent = isNearSilent(replay || recordedChunksRef.current);
+                logVoiceEvent({ kind: 'azure', ok: false, code: silent ? 'silent' : 'nomatch' });
                 const msg = silent
-                  ? '🎙️ マイクの音がとどいていないみたい。イヤホンマイクのさしこみや、マイクの許可をたしかめて、先生を呼ぼう！'
+                  ? '🎙️ マイクの音が届いていないみたい。イヤホンマイクのさしこみや、マイクの許可を確かめて、先生を呼ぼう！'
                   : '声が聞き取れなかったよ。もう一度マイクを押して、ゆっくりはっきり言ってみてね';
                 lastErrorRef.current = msg;
                 setError(msg);
@@ -310,13 +396,18 @@ export const usePronunciationAssessment = () => {
             }
           },
           (err) => {
-            setError(String(err));
+            const { msg } = explainCancel(String(err));
+            logVoiceEvent({ kind: 'azure', ok: false, code: azureCode(String(err)), detail: String(err) });
+            lastErrorRef.current = msg;
+            setError(msg);
             finish(null);
           }
         );
       });
+
+      return runOnce(null, true);
     },
-    [ensurePipeline]
+    [ensurePipeline, markAuthFailed]
   );
 
   // 直近の失敗理由（トースト用）。assessがnullを返した直後に呼ぶ。

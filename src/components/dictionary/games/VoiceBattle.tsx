@@ -6,6 +6,7 @@ import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
+import { remaining } from '../../../lib/apiUsage';
 import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
@@ -62,7 +63,13 @@ export const VoiceBattle: React.FC = () => {
   const [mistakes, setMistakes] = useState(0);
 
   const DEFAULT_TOTAL_QUESTIONS = 10;
-  const TOTAL_QUESTIONS = words.length > 0 ? Math.min(DEFAULT_TOTAL_QUESTIONS, words.length) : DEFAULT_TOTAL_QUESTIONS;
+  // 今日の発音チェックの残りに合わせて体数を決める（子どもの声 2026-09-15
+  // 「最後の一問！って時に上限で終わるのが嫌」）。残りが少ない日は短いバトルにして、
+  // 途中で切れずに最後まで終われるようにする。言い直しのぶんは少し余裕をみる。
+  const azureLeft = React.useMemo(() => remaining('azure'), []);
+  const byBudget = azureLeft === null ? DEFAULT_TOTAL_QUESTIONS : Math.floor(azureLeft * 0.8);
+  const TOTAL_QUESTIONS = Math.max(3, Math.min(DEFAULT_TOTAL_QUESTIONS, words.length || DEFAULT_TOTAL_QUESTIONS, byBudget || DEFAULT_TOTAL_QUESTIONS));
+  const tooFewLeft = azureLeft !== null && azureLeft <= 0;
   const PASS_MARK = Math.max(1, Math.floor(TOTAL_QUESTIONS * 0.8));
 
   useEffect(() => {
@@ -133,7 +140,7 @@ export const VoiceBattle: React.FC = () => {
     const result = await assess(targetWord.english);
     if (!result) {
       // 採点に失敗（聞き取れず/設定ミス/通信エラー）。ノーカウントで、その場に通知して再挑戦を促す。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -330,7 +337,12 @@ export const VoiceBattle: React.FC = () => {
               color: lastScore >= PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
             }}
           >
-            発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一回！）'}
+            発音スコア: {Math.round(lastScore)} 点 {lastScore >= PASS_SCORE ? '✅' : '（もう一度！）'}
+          </div>
+        )}
+        {azureAvailable && tooFewLeft && monsterState === 'idle' && !azureError && (
+          <div className="animate-pop" style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--color-primary)', maxWidth: '500px', textAlign: 'center' }}>
+            🌙 今日ぶんの 発音チェックは 終わり！ また明日 たたかえるよ。今日は「聞く」「書く」で 練習しよう！
           </div>
         )}
         {azureAvailable && azureError && monsterState === 'idle' && (
@@ -339,13 +351,13 @@ export const VoiceBattle: React.FC = () => {
             style={{
               fontSize: '0.95rem',
               fontWeight: 'bold',
-              color: 'var(--color-error)',
+              color: azureError.startsWith('🌙') ? 'var(--color-primary)' : 'var(--color-error)',
               maxWidth: '500px',
               textAlign: 'center',
               wordBreak: 'break-word'
             }}
           >
-            ⚠️ Azureエラー: {azureError}
+            {azureError.startsWith('🌙') ? azureError : `⚠️ Azureエラー: ${azureError}`}
           </div>
         )}
       </div>

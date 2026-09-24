@@ -58,7 +58,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['月'],
   },
   {
-    id: 'g5-u3', grade: 5, unitName: 'Unit 3: What do you have on Monday?', targetPhrase: 'Can you play the piano?',
+    id: 'g5-u3', grade: 5, unitName: 'Unit 3: Can you play dodgeball?', targetPhrase: 'Can you play the piano?',
     lines: [
       { speaker: 'A', en: 'Can you play the piano?', ja: 'ピアノ弾ける？' },
       { speaker: 'B', en: '{Yes, I can.}', ja: '【うん、できるよ。】' },
@@ -68,7 +68,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['動作など（5年）'],
   },
   {
-    id: 'g5-u4', grade: 5, unitName: 'Unit 4: He can bake bread well.', targetPhrase: 'She can play tennis very well.',
+    id: 'g5-u4', grade: 5, unitName: 'Unit 4: Who is this?', targetPhrase: 'She can play tennis very well.',
     lines: [
       { speaker: 'A', en: 'This is my friend, {Ken}.', ja: '友だちの【ケン】だよ。' },
       { speaker: 'B', en: 'What can {he} do?', ja: '【彼】は何ができるの？' },
@@ -77,16 +77,70 @@ export const DIALOGUES: Dialogue[] = [
     ],
     relatedCategories: ['動作など（5年）'],
   },
+  // P5「Town Guide 軽井沢あんない」の床。道案内は3つの話型で段階的に伸ばす。
+  //   A=基本（たずねる→答える）／ B=軽井沢のスポットで目印とできることを足す／
+  //   C=6年U4「行きたい場所」につながる型。仕様書_まちクイズ.md v2 §3。
   {
-    id: 'g5-u5', grade: 5, unitName: 'Unit 5: Where is the post office?', targetPhrase: 'Where is the post office?',
+    id: 'g5-u5', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型A・基本）", targetPhrase: 'Where is the post office?',
     lines: [
-      { speaker: 'A', en: 'Excuse me. Where is the {post office}?', ja: 'すみません、【郵便局】はどこ？' },
-      { speaker: 'B', en: 'Go straight and turn {right}.', ja: 'まっすぐ行って【右】へ。' },
+      { speaker: 'A', en: 'Excuse me. Where is the {post office}?', ja: 'すみません、【郵便局】はどこですか？' },
+      { speaker: 'B', en: 'Go straight and turn {right}.', ja: 'まっすぐ行って【右】に曲がってください。' },
       { speaker: 'A', en: 'Thank you!', ja: 'ありがとう！' },
     ],
+    relatedCategories: ['町', '道案内'],
   },
   {
-    id: 'g5-u6', grade: 5, unitName: 'Unit 6: What would you like?', targetPhrase: 'What would you like?',
+    // 話型B：距離(for ◯ blocks)・角(at the corner)・目印(It's by ◯◯.)と、
+    //   そこでできること（You can …）を足す。配布物「まなぶこと」の5フレーズに対応。
+    // {…}は自分が案内したい軽井沢のスポットに変えてOK。
+    id: 'g5-u5b', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型B・軽井沢のスポット）", targetPhrase: "It's by the forest. You can take a photo there!",
+    lines: [
+      { speaker: 'A', en: 'Excuse me. Where is {Kumoba Pond}?', ja: 'すみません、【雲場池】はどこですか？' },
+      { speaker: 'B', en: "Go straight for {two} blocks. Turn left at the corner. It's by the {forest}.", ja: '【2】ブロックまっすぐ行って、角を左に曲がってください。【森】のそばです。' },
+      { speaker: 'B', en: 'You can {take a photo} there!', ja: 'そこで【写真をとる】ことができますよ！' },
+      { speaker: 'A', en: 'Thank you so much!', ja: '本当にありがとうございます！' },
+    ],
+    note: 'It\'s by ◯◯. ＝「◯◯のそばです」。next to（となり）でもOK。block＝1区画、corner＝角。',
+    relatedCategories: ['町', '道案内', '位置', '道案内＋（プラスアルファ）'],
+    aiRoute: '/ai?unit=g5-u5',
+    aiLabel: 'AIに道案内してみる',
+  },
+  {
+    // 話型C：6年U4「行きたい国・場所」へつながる型。案内する側が提案までする。
+    id: 'g5-u5c', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型C・行きたい場所）", targetPhrase: 'I want to go to ___.',
+    lines: [
+      { speaker: 'A', en: 'Where do you want to go?', ja: 'どこに行きたいですか？' },
+      { speaker: 'B', en: 'I want to go to {Harunire Terrace}.', ja: '【ハルニレテラス】に行きたいです。' },
+      { speaker: 'A', en: 'OK! Go straight. We have a nice {terrace}!', ja: 'いいですね！まっすぐ行ってください。すてきな【テラス】があるんですよ！' },
+      { speaker: 'A', en: 'You can {eat lunch} there.', ja: 'そこで【昼ごはんを食べる】ことができます。' },
+      { speaker: 'B', en: 'Sounds nice!', ja: 'いいですね！' },
+    ],
+    note: 'I want to go to ◯◯. ＝「◯◯に行きたい」。6年U4「行きたい国」でもそのまま使える型。We have a nice ◯◯! ＝「すてきな◯◯があるんです」＝まちの自慢の型。',
+    relatedCategories: ['町', '町＋（プラスアルファ）', '道案内'],
+    aiRoute: '/ai?unit=g6-u4',
+    aiLabel: 'AIと「行きたい場所」を話す',
+  },
+  {
+    // 話型D：案内のあと、観光客の追加質問にその場で答える（P5 L4〜本番のプラス1）。
+    // 文は配布物「観光客の質問カード」とそろえてある。あなたはガイド(B)。
+    id: 'g5-u5d', grade: 5, unitName: "Unit 5: Let's go to the zoo.（話型D・観光客の質問に答える）", targetPhrase: "Is it far? — No, it's near.",
+    lines: [
+      { speaker: 'A', en: 'Excuse me. Is it far?', ja: 'すみません、遠いですか？' },
+      { speaker: 'B', en: "No, it's near. It's about {five} minutes.", ja: 'いいえ、近いですよ。【5】分くらいです。' },
+      { speaker: 'A', en: 'How much is it?', ja: 'いくらですか？' },
+      { speaker: 'B', en: "It's {free}!", ja: '【無料】です！' },
+      { speaker: 'A', en: 'What can I eat there?', ja: 'そこで何が食べられますか？' },
+      { speaker: 'B', en: 'You can eat {bread} there.', ja: 'そこで【パン】が食べられます。' },
+      { speaker: 'A', en: 'Can I take a photo?', ja: '写真をとってもいいですか？' },
+      { speaker: 'B', en: '{Sure}! Have a nice trip!', ja: '【もちろん】！よい旅を！' },
+    ],
+    note: 'あなたはガイド(B)！ {…}は自分のスポットに合わせて変えよう。れい："It\'s about ten minutes." / "It\'s 500 yen." / "You can eat soba there." / "Sorry, no."（ごめんなさい、だめです）。紙の「観光客の質問カード」と同じ文だよ。',
+    relatedCategories: ['道案内＋（プラスアルファ）', '町＋（プラスアルファ）'],
+    aiRoute: '/ai?unit=g5-u5',
+    aiLabel: 'AIのLucyを案内してみる',
+  },
+  {
+    id: 'g5-u6', grade: 5, unitName: 'Unit 6: At a restaurant.', targetPhrase: 'What would you like?',
     lines: [
       { speaker: 'A', en: 'What would you like?', ja: '何にする？' },
       { speaker: 'B', en: "I'd like {a hamburger}.", ja: '【ハンバーガー】をください。' },
@@ -116,7 +170,7 @@ export const DIALOGUES: Dialogue[] = [
     aiRoute: '/ai?shop=simple', aiLabel: 'AIのお客さんと練習する（お店屋さん）',
   },
   {
-    id: 'g5-u7', grade: 5, unitName: 'Unit 7: Welcome to Japan.', targetPhrase: 'Why do you want to go there?',
+    id: 'g5-u7', grade: 5, unitName: 'Unit 7: Welcome to Japan!', targetPhrase: 'Why do you want to go there?',
     lines: [
       { speaker: 'A', en: 'Where do you want to go?', ja: 'どこに行きたい？' },
       { speaker: 'B', en: 'I want to go to {Okinawa}.', ja: '【沖縄】に行きたい。' },
@@ -146,7 +200,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['動作など（6年）'],
   },
   {
-    id: 'g6-u2', grade: 6, unitName: 'Unit 2: How is your school life?', targetPhrase: 'What time do you get up?',
+    id: 'g6-u2', grade: 6, unitName: 'Unit 2: My Daily Schedule', targetPhrase: 'What time do you get up?',
     lines: [
       { speaker: 'A', en: 'What time do you get up?', ja: '何時に起きる？' },
       { speaker: 'B', en: 'I get up at {6:30}.', ja: '【6時半】に起きる。' },
@@ -156,7 +210,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['一日の生活'],
   },
   {
-    id: 'g6-u3', grade: 6, unitName: 'Unit 3: My Summer Vacation', targetPhrase: 'How was your weekend?',
+    id: 'g6-u3', grade: 6, unitName: 'Unit 3: My Weekend', targetPhrase: 'How was your weekend?',
     lines: [
       { speaker: 'A', en: 'How was your weekend?', ja: '週末どうだった？' },
       { speaker: 'B', en: 'It was {fun}. I {played soccer}.', ja: '【楽しかった】。【サッカーした】。' },
@@ -175,7 +229,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['動物'],
   },
   {
-    id: 'g6-u5', grade: 6, unitName: 'Unit 5: We live in a global village.', targetPhrase: 'This sweater is from New Zealand.',
+    id: 'g6-u5', grade: 6, unitName: 'Unit 5: Where is it from?', targetPhrase: 'This sweater is from New Zealand.',
     lines: [
       { speaker: 'A', en: 'Nice {sweater}! Where is it from?', ja: 'いい【セーター】！どこ産？' },
       { speaker: 'B', en: 'This {sweater} is from {New Zealand}.', ja: '【ニュージーランド】産だよ。' },
@@ -184,7 +238,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['衣類'],
   },
   {
-    id: 'g6-u6', grade: 6, unitName: 'Unit 6: Let\'s think about our food.', targetPhrase: 'What do sea turtles eat?',
+    id: 'g6-u6', grade: 6, unitName: 'Unit 6: Save the animals.', targetPhrase: 'What do sea turtles eat?',
     lines: [
       { speaker: 'A', en: '{Sea turtles} are in danger.', ja: '【ウミガメ】が危ない。' },
       { speaker: 'B', en: 'They live in {the sea}.', ja: '【海】に住んでいる。' },
@@ -203,7 +257,7 @@ export const DIALOGUES: Dialogue[] = [
     relatedCategories: ['したこと'],
   },
   {
-    id: 'g6-u8', grade: 6, unitName: 'Unit 8: Future Dreams', targetPhrase: 'I want to be a programmer.',
+    id: 'g6-u8', grade: 6, unitName: 'Unit 8: My Future, My Dream', targetPhrase: 'I want to be a programmer.',
     lines: [
       { speaker: 'A', en: 'What do you want to be?', ja: '将来何になりたい？' },
       { speaker: 'B', en: 'I want to be {a vet}.', ja: '【獣医】になりたい。' },

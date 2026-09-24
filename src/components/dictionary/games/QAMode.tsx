@@ -7,6 +7,7 @@ import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { Button } from "../../ui/Button";
 import { ArrowLeft, Volume2, Star, Trophy, RefreshCw, Mic, Keyboard } from 'lucide-react';
 import { usePoints } from '../../../hooks/usePoints';
+import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 
 const getQuestionForPhrase = (keyPhrase: string, category?: string) => {
   if (category === '教科') return "What subject do you like?";
@@ -62,6 +63,7 @@ export const QAMode: React.FC = () => {
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
   const { addPoints } = usePoints();
+  const { saveProgress } = useDictionaryProgress();
   const vocabulary = useVocabulary();
 
   const words = React.useMemo(() => vocabulary.filter(v => v.category === decodedCategory && v.keyPhrase), [decodedCategory, vocabulary]);
@@ -147,6 +149,7 @@ export const QAMode: React.FC = () => {
           setEarnedPoints(pts);
         };
         savePoints();
+        saveProgress(decodedCategory, { qa: true });   // 単元一覧に❓の印がつく
         setShowCelebration(true);
       } else {
         setShowFailure(true);

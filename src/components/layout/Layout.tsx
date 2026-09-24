@@ -1,26 +1,44 @@
 import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { Home, LogOut, Star } from 'lucide-react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Home, LogOut, Star, Coins } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
 import { GlobalLockScreen } from '../ui/GlobalLockScreen';
+import { recordActivity, labelForHash } from '../../lib/activityLog';
+import { stages } from '../../data/stages';
+import { FeedbackButton } from '../ui/FeedbackButton';
+import { SpendGate } from '../ui/SpendGate';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const { totalPoints } = usePoints();
-  const { isScreenLocked } = useAppSettings();
-  const { shop } = useShop();
+  const { lockMode } = useAppSettings();
+  const { shop, balance } = useShop();
 
   // Basic mock auth check (to be replaced with real context later)
   const studentId = localStorage.getItem('studentId');
+
+  // 「さっき何をやったか」をここ1か所で記録する（ふりかえり画面で思い出す材料にする）。
+  // 画面ごとにコードを足さなくて済むよう、URLから活動名を作っている。
+  const location = useLocation();
+  useEffect(() => {
+    if (!studentId) return;
+    const dict: Record<string, string> = {};
+    stages.forEach(st => { dict[`stage_${st.id}`] = st.title; });
+    const label = labelForHash(location.pathname + location.search, dict);
+    if (label) recordActivity(label);
+  }, [location.pathname, location.search, studentId]);
 
   // 装備中テーマ・背景画像を画面全体に適用する
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = shop.equippedTheme || '';
-    if (shop.bgImage) {
+    // グラデーションのテーマ（背景写真をつけているときは写真が勝つ）
+    const gradientTheme = !!shop.equippedTheme && getComputedStyle(root).getPropertyValue('--theme-gradient').trim() !== '';
+    document.body.classList.toggle('has-theme-gradient', gradientTheme && !(shop.bgImage && shop.bgOn));
+    if (shop.bgImage && shop.bgOn) {
       // 白の半透明オーバーレイで文字の可読性を確保
       document.body.style.backgroundImage =
         `linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)), url("${shop.bgImage}")`;
@@ -34,7 +52,7 @@ export const Layout: React.FC = () => {
       root.dataset.theme = '';
       document.body.style.backgroundImage = '';
     };
-  }, [shop.equippedTheme, shop.bgImage]);
+  }, [shop.equippedTheme, shop.bgImage, shop.bgOn]);
 
   const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
 
@@ -46,7 +64,8 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container">
-      <GlobalLockScreen isLocked={isScreenLocked} />
+      <SpendGate />
+      <GlobalLockScreen mode={lockMode} />
       {studentId && (
         <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -61,9 +80,30 @@ export const Layout: React.FC = () => {
             <h2 className="text-primary" style={{ margin: 0 }}>
               こんにちは、{localStorage.getItem('studentName')}{titleEmoji}さん！
             </h2>
-            <div className="badge" style={{ background: 'var(--color-accent)', color: '#000', fontSize: '1.2rem', padding: '0.2rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Star fill="#fff" stroke="#fff" size={20} />
-              {totalPoints} pts
+            {/* ポイントは2種類ある。ひとつの帯に並べると読み違えるので、
+                「これまでの合計（減らない記録）」と「いま 使える（残高）」を
+                別々のカードにして、ラベルを数字の上に置く。 */}
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <div
+                title="これまでに ためた 全部の ポイント。使っても 減りません。"
+                style={{ background: 'rgba(253, 203, 110, 0.28)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.3rem 0.9rem', minWidth: '108px', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#7a5a00', letterSpacing: '0.02em' }}>これまでの合計</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '1.15rem', fontWeight: 'bold', color: '#000', lineHeight: 1.2 }}>
+                  <Star fill="var(--color-accent)" stroke="var(--color-accent)" size={16} />
+                  {totalPoints.toLocaleString()}<span style={{ fontSize: '0.8rem' }}>P</span>
+                </div>
+              </div>
+              <div
+                title="いま 使える ポイント。合計から、ショップで 使った分と 町に入れた分を 引いた 残りです。"
+                style={{ background: 'rgba(253, 121, 168, 0.16)', border: '2px solid #fd79a8', borderRadius: '14px', padding: '0.3rem 0.9rem', minWidth: '108px', textAlign: 'center' }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#b83280', letterSpacing: '0.02em' }}>いま 使える</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', fontSize: '1.15rem', fontWeight: 'bold', color: '#000', lineHeight: 1.2 }}>
+                  <Coins size={16} color="#fd79a8" />
+                  {balance.toLocaleString()}<span style={{ fontSize: '0.8rem' }}>P</span>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -81,6 +121,9 @@ export const Layout: React.FC = () => {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </main>
+
+      {/* 画面の右下から、いつでも「困った／こうしたい」を送れる */}
+      {studentId && <FeedbackButton />}
     </div>
   );
 };

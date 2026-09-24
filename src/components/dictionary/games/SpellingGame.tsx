@@ -343,11 +343,11 @@ export const SpellingGame: React.FC = () => {
         <div style={{ textAlign: 'center', animation: 'float 3s infinite' }}>
           {bestTime ? (
             <span className="badge" style={{ background: 'var(--color-accent)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-full)', color: '#000', fontWeight: 'bold' }}>
-              👑 最速記録: {bestTime.name}さん {(bestTime.time / 1000).toFixed(1)}秒
+              👑 このタブレットの最速記録: {bestTime.name}さん {(bestTime.time / 1000).toFixed(1)}秒
             </span>
           ) : (
             <span className="badge" style={{ background: '#eee', padding: '0.5rem 1rem', borderRadius: 'var(--radius-full)', color: '#888' }}>
-              👑 最速記録: まだいないよ！最初のチャンピオンになろう！
+              👑 このタブレットでは まだ記録がないよ！一番のりをめざそう！
             </span>
           )}
         </div>

@@ -9,6 +9,7 @@ import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { usePoints } from '../../hooks/usePoints';
 import { showToast } from '../ui/Toast';
 import { DIALOGUES, type Dialogue, type DialogueLine } from './dialogueData';
+import { isArchived } from '../../data/archivedUnits';
 
 // 発音採点に通すため {…} のスロット記号を外した素の文を作る
 const cleanText = (en: string) => en.replace(/[{}]/g, '');
@@ -95,7 +96,7 @@ export const DialogueTrainer: React.FC = () => {
     const result = await assess(cleanText(line.en));
     if (!result) {
       // 聞き取れなかった/通信エラー：無反応だと押せたか分からないので、その場に通知
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
     // 採点は accuracyScore（発音の正確さ）で統一（なめらかさ等で不当に下がるのを防ぐ）
@@ -108,7 +109,8 @@ export const DialogueTrainer: React.FC = () => {
 
   // Unitえらび
   if (!dialogue) {
-    const list = DIALOGUES.filter(d => d.grade === grade);
+    // アーカイブ中の単元は一覧に出さない（URL直指定では今までどおり開ける＝先生が配信できる）
+    const list = DIALOGUES.filter(d => d.grade === grade && !isArchived(d.id));
     return (
       <div className="flex-col gap-lg" style={{ flex: 1, padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -179,7 +181,7 @@ export const DialogueTrainer: React.FC = () => {
       {dialogue.aiRoute && (
         <div className="glass-card" style={{ padding: '0.8rem 1rem', background: 'rgba(245, 158, 11, 0.12)', border: '2px solid #f59e0b' }}>
           <div style={{ fontSize: '0.9rem', color: '#7a5a00', marginBottom: '0.5rem' }}>
-            🍱 れんしゅうしたら、AIのお客さんと本番の練習をしてみよう！
+            🤖 れんしゅうしたら、AIをあいてに本番の練習をしてみよう！
           </div>
           <button
             className="hover-scale"
@@ -260,7 +262,7 @@ export const DialogueTrainer: React.FC = () => {
 
                 {score !== undefined && (
                   <span style={{ fontWeight: 'bold', color: score >= PASS ? 'var(--color-success)' : 'var(--color-error)' }}>
-                    {Math.round(score)}点 {score >= PASS ? '✅' : '（もう一回！）'}
+                    {Math.round(score)}点 {score >= PASS ? '✅' : '（もう一度！）'}
                   </span>
                 )}
               </div>

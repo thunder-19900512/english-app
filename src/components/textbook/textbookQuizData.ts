@@ -1,5 +1,8 @@
 import type { TextbookQuiz } from './TextbookMode';
 
+// 教科書（東京書籍 NEW HORIZON Elementary 令和6年度版）の Listen and Think アニメに
+// ひもづくクイズ。★各Unitは「動画1→動画2→…」の順に1本1問（台本 Textbook_Scripts.md と対応）。
+// 問題文の答えは必ず動画の中に出てくるものだけにする（台本に無いことは聞かない）。
 export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   // ===== Grade 5 =====
   {
@@ -11,24 +14,32 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: '何の教科が好きですか？',
     questions: [
       {
-        question: '新しく来たクラスメイト、ソフィアはどこの国から来た？',
+        question: 'サキとルーカスが自己紹介。ルーカスが「ぼくの友だち」と紹介した子はだれ？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['Daichi', 'Saki', 'Sophia'],
+        correctIndex: 0
+      },
+      {
+        question: '新しいクラスメイトのソフィアは、どこの国から来た？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['America', 'Australia', 'Japan'],
+        options: ['America', 'Australia', 'Canada'],
         correctIndex: 1
       },
       {
-        question: 'ソフィアが好きな教科（subject）は何？',
-        videoRef: '動画2',
+        question: 'ソフィアが「おいしくてヘルシー」と言った食べ物は？',
+        videoRef: '動画3',
         type: 'choice',
-        options: ['Music', 'Math', 'P.E.'],
+        options: ['Curry and rice', 'Beef bowl', 'Crocodile steak'],
         correctIndex: 2
       },
       {
-        question: 'ソフィアが「美味しいしヘルシーだよ」と紹介したオーストラリアの食べ物は？',
-        videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'Crocodile steak'
+        question: 'ダイチの名前を英語で書くとき、正しいつづりは？',
+        videoRef: '動画4',
+        type: 'choice',
+        options: ['D-A-I-C-H-I', 'D-A-I-T-I', 'D-A-I-C-H-Y'],
+        correctIndex: 0
       }
     ]
   },
@@ -41,174 +52,214 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: 'あなたの誕生日はいつですか？',
     questions: [
       {
-        question: 'ルーカス（Lucas）が誕生日にほしいと言っていたものは？',
+        question: 'ソフィアの誕生日パーティーはいつ？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['June 19th', 'May 5th', 'May 15th'],
+        correctIndex: 1
+      },
+      {
+        question: 'ルーカスが誕生日にほしいと言ったものは？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['A new tablet', 'A cool pencil case', 'A rugby ball'],
+        options: ['A cool pencil case', 'A rugby ball', 'A new tablet'],
+        correctIndex: 2
+      },
+      {
+        question: 'ソフィアのお母さんが作ったステーキは、何の肉？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['Beef', 'Crocodile', 'Chicken'],
         correctIndex: 0
       },
       {
-        question: 'みんながソフィアの誕生日にプレゼントしたものは何？',
-        videoRef: '動画2',
-        type: 'typing',
-        correctAnswer: 'rugby sticker'
-      },
-      {
-        question: 'ソフィアのお母さんが作ってくれた美味しいステーキは、何のお肉？',
-        videoRef: '動画3',
+        question: 'ケーキのろうそく（candles）は何本あった？',
+        videoRef: '動画4',
         type: 'choice',
-        options: ['Crocodile', 'Chicken', 'Beef'],
-        correctIndex: 2
+        options: ['Ten', 'Eleven', 'Twelve'],
+        correctIndex: 1
       }
     ]
   },
   {
     id: 'g5-u3',
     grade: 5,
-    unitName: 'Unit 3: What do you have on Monday?',
+    unitName: 'Unit 3: Can you play dodgeball?',
     url: 'https://sw21.tsho.jp/06pk/e/5/3so-01/',
     keyPhrase: 'Can you play the piano?',
     keyPhraseJapanese: 'あなたはピアノを弾くことができますか？',
     questions: [
       {
-        question: '子どもたちが楽しんでいる遊び（スポーツ）は何だった？',
+        question: '子どもたちが楽しんでいたスポーツは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Tennis', 'Dodgeball', 'Soccer'],
-        correctIndex: 1
+        options: ['Soccer', 'Tennis', 'Dodgeball'],
+        correctIndex: 2
       },
       {
-        question: 'リコーダー（recorder）を上手に吹けるか聞かれて、「できない」と答えた人はピアノ（piano）を弾くことはできる？',
-        videoRef: '動画3',
+        question: '"Can you catch this?" と聞かれて、なんと答えた？',
+        videoRef: '動画2',
         type: 'choice',
-        options: ['Yes, I can.', 'No, I can’t.'],
+        options: ['Yes, I can.', 'No, I can\'t.', 'I don\'t know.'],
         correctIndex: 0
       },
       {
-        question: '廊下を走っていたルーカスとダイチに先生は何と言って注意した？',
+        question: 'リコーダーはふけないけど、ひける楽器は？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['The guitar', 'The piano', 'The drums'],
+        correctIndex: 1
+      },
+      {
+        question: '廊下を走ったルーカスとダイチに、先生はなんと言った？',
         videoRef: '動画4',
-        type: 'typing',
-        correctAnswer: 'Don\'t run'
+        type: 'choice',
+        options: ['Be quiet!', 'Sit down!', 'Don\'t run!'],
+        correctIndex: 2
       }
     ]
   },
   {
     id: 'g5-u4',
     grade: 5,
-    unitName: 'Unit 4: He can bake bread well.',
+    unitName: 'Unit 4: Who is this?',
     url: 'https://sw21.tsho.jp/06pk/e/5/4so-01/',
     keyPhrase: 'She can play tennis very well.',
     keyPhraseJapanese: '彼女はとても上手にテニスができます。',
     questions: [
       {
-        question: 'アルバムに写っていたジェシカ（Jessica）が得意なスポーツは何？',
+        question: 'アルバムに写っていたジェシカが得意なスポーツは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Tennis', 'Soccer', 'Basketball'],
+        options: ['Tennis', 'Soccer', 'Rugby'],
         correctIndex: 0
       },
       {
-        question: 'オーストラリアの動物園で抱っこ（hold）できる動物は何？',
+        question: 'オーストラリアの動物園で抱っこ（hold）できる動物は？',
         videoRef: '動画2',
-        type: 'typing',
-        correctAnswer: 'koala'
+        type: 'choice',
+        options: ['A kangaroo', 'A koala', 'A crocodile'],
+        correctIndex: 1
       },
       {
-        question: '「シュークリーム」は英語で何と言う？',
+        question: '「Go, Carlos!」のカルロスの職業は？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['A teacher', 'A doctor', 'A soccer player'],
+        correctIndex: 2
+      },
+      {
+        question: '「シュークリーム」は英語でなんと言う？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['Shoe cream', 'Cream puffs', 'Sweet bread'],
-        correctIndex: 1
+        options: ['Cream puffs', 'Shoe cream', 'Sweet bread'],
+        correctIndex: 0
       }
     ]
   },
   {
     id: 'g5-u5',
     grade: 5,
-    unitName: 'Unit 5: Where is the post office?',
+    unitName: 'Unit 5: Let\'s go to the zoo.',
     url: 'https://sw21.tsho.jp/06pk/e/5/5so-01/',
     keyPhrase: 'Where is the post office?',
     keyPhraseJapanese: '郵便局はどこですか？',
     questions: [
       {
-        question: '郵便局へ行くには、何ブロック（blocks）まっすぐ進めばいい？',
+        question: 'ソフィアが電話で話していた相手はだれ？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['Dad', 'Jessica', 'Mom'],
+        correctIndex: 1
+      },
+      {
+        question: '郵便局まで、何ブロック（blocks）まっすぐ進む？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['One block', 'Two blocks', 'Three blocks'],
-        correctIndex: 1
+        options: ['One block', 'Three blocks', 'Two blocks'],
+        correctIndex: 2
       },
       {
-        question: '動物園の看板の近くにいた動物は何？',
+        question: '動物園の看板のそば（by the sign）にいたのは？',
         videoRef: '動画3',
         type: 'choice',
-        options: ['Dogs', 'Cats', 'Birds'],
-        correctIndex: 1
-      },
-      {
-        question: 'ソフィアが電話で話していた相手は誰？',
-        videoRef: '動画4',
-        type: 'typing',
-        correctAnswer: 'Dad'
+        options: ['A white cat', 'A black cat', 'A dog'],
+        correctIndex: 0
       }
     ]
   },
   {
     id: 'g5-u6',
     grade: 5,
-    unitName: 'Unit 6: What would you like?',
+    unitName: 'Unit 6: At a restaurant.',
     url: 'https://sw21.tsho.jp/06pk/e/5/6so-01/',
     keyPhrase: 'What would you like?',
     keyPhraseJapanese: '何になさいますか？（何を注文しますか？）',
     questions: [
       {
-        question: 'ソフィアがレストランで注文したものは何？',
+        question: 'レストランでソフィアがほしいと言ったものは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Beef bowl', 'Fried noodles', 'Curry and rice'],
+        options: ['Fried noodles', 'Curry and rice', 'A beef bowl'],
+        correctIndex: 2
+      },
+      {
+        question: 'おばあちゃん（Grandma）が注文した飲み物は？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['Orange juice', 'Green tea', 'Water'],
         correctIndex: 0
       },
       {
-        question: 'おばあちゃん（Grandma）が飲み物に注文したのは何？',
-        videoRef: '動画2',
+        question: 'オリバーの焼きそば（fried noodles）の味は？',
+        videoRef: '動画3',
         type: 'choice',
-        options: ['Green tea', 'Orange juice', 'Water'],
+        options: ['Too sweet', 'A little spicy', 'Very salty'],
         correctIndex: 1
       },
       {
-        question: 'オリバー（Oliver）が食べた焼きそば（fried noodles）の味はどうだった？',
-        videoRef: '動画3',
+        question: '1セット（one set）の値段はいくら？',
+        videoRef: '動画4',
         type: 'choice',
-        options: ['Very sweet', 'A little spicy', 'Too salty'],
-        correctIndex: 1
+        options: ['890 yen', '1,080 yen', '980 yen'],
+        correctIndex: 2
       }
     ]
   },
   {
     id: 'g5-u7',
     grade: 5,
-    unitName: 'Unit 7: Welcome to Japan.',
+    unitName: 'Unit 7: Welcome to Japan!',
     url: 'https://sw21.tsho.jp/06pk/e/5/7so-01/',
     keyPhrase: 'Why do you want to go there?',
     keyPhraseJapanese: 'なぜそこに行きたいのですか？',
     questions: [
       {
-        question: '弘前（Hirosaki）で春に見られるお祭りは何？',
+        question: '弘前（Hirosaki）で春に見られるお祭りは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Snow Festival', 'Cherry Blossom Festival', 'Summer Festival'],
+        options: ['Cherry Blossom Festival', 'Snow Festival', 'Fire Festival'],
+        correctIndex: 0
+      },
+      {
+        question: 'サキが行きたいと言った場所は？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['Hokkaido', 'Oze National Park', 'Kyoto'],
         correctIndex: 1
       },
       {
-        question: 'ルーカスが行きたいと言っていた北海道の「豊似湖（Lake Toyoni）」はどんな形をしている？',
+        question: 'ルーカスが行きたい北海道の豊似湖（Lake Toyoni）は、どんな形？',
         videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'heart'
+        type: 'choice',
+        options: ['A star', 'A circle', 'A heart'],
+        correctIndex: 2
       },
       {
-        question: 'ソフィアが白川郷（Shirakawa Village）で食べたいと言っていたものは何？',
+        question: 'ソフィアが白川郷（Shirakawa Village）で食べたいものは？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['Hida Beef', 'Sushi', 'Ramen'],
+        options: ['Hida Beef', 'Crocodile steak', 'Sushi'],
         correctIndex: 0
       }
     ]
@@ -222,28 +273,35 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: 'あなたのヒーローは誰ですか？',
     questions: [
       {
-        question: '熱を出した子どもに、お母さんが渡したもの（medicine）は何？',
+        question: '熱を出した子に、お母さんがわたしたものは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Water', 'Medicine', 'Food'],
+        options: ['Water', 'Medicine', 'Ice cream'],
         correctIndex: 1
       },
       {
-        question: 'ベーカー先生（Ms. Baker）のヒーローは角野栄子さんですが、彼女の職業は何？',
-        videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'writer'
+        question: '「お父さんはヒーロー！」と言った理由は？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['料理が上手だから', '走るのが速いから', 'サッカーで決勝ゴール（winning goal）を決めたから'],
+        correctIndex: 2
       },
       {
-        question: 'ソフィアのヒーローは誰？',
+        question: 'ベーカー先生のヒーロー、角野栄子（Kadono Eiko）さんの職業は？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['A writer', 'A singer', 'A doctor'],
+        correctIndex: 0
+      },
+      {
+        question: 'ソフィアのヒーローはだれ？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['Father', 'Mother', 'Brother'],
+        options: ['Her father', 'Her mother', 'Her teacher'],
         correctIndex: 1
       }
     ]
   },
-  
   // ===== Grade 6 =====
   {
     id: 'g6-u1',
@@ -254,83 +312,107 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: '私はスワヒリ語と英語を話せます。',
     questions: [
       {
-        question: '新しく来たクラスメイトのナディア（Nadia）はどこの国の出身？',
+        question: 'ケニアの友だちからナディアがもらったものは？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['A hat', 'A bag', 'A sweatshirt'],
+        correctIndex: 2
+      },
+      {
+        question: 'ナディアが話せる言語は？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['Kenya', 'Australia', 'America'],
+        options: ['Swahili and English', 'French and English', 'Japanese and English'],
         correctIndex: 0
       },
       {
-        question: 'ナディアの宝物（treasure）は何？',
+        question: 'ナディアの誕生日はいつ？',
         videoRef: '動画3',
         type: 'choice',
-        options: ['A dog', 'A sweatshirt', 'A cricket ball'],
+        options: ['October 30th', 'October 13th', 'September 13th'],
         correctIndex: 1
       },
       {
-        question: 'ナディアの家は何の建物の近く（by the ~）にある？',
+        question: 'ナディアの家はどこの近く？',
         videoRef: '動画4',
-        type: 'typing',
-        correctAnswer: 'library'
+        type: 'choice',
+        options: ['By the station', 'By the park', 'By the library'],
+        correctIndex: 2
       }
     ]
   },
   {
     id: 'g6-u2',
     grade: 6,
-    unitName: 'Unit 2: How is your school life?',
+    unitName: 'Unit 2: My Daily Schedule',
     url: 'https://sw21.tsho.jp/06pk/e/6/2so-01/',
     keyPhrase: 'What time do you get up?',
     keyPhraseJapanese: 'あなたは何時に起きますか？',
     questions: [
       {
-        question: 'ヘルミ（Helmi）がいつも起きる時間は何時？',
+        question: '日本が午後3時のとき、ブラジルは何時？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['3:00 in the morning', '3:00 in the afternoon', '9:00 in the morning'],
+        correctIndex: 0
+      },
+      {
+        question: 'フィンランドのヘルミ（Helmi）が起きる時間は？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['5:30 a.m.', '6:00 a.m.', '7:00 a.m.'],
+        options: ['5 a.m.', '6 a.m.', '7 a.m.'],
         correctIndex: 1
       },
       {
-        question: 'ニュージーランドのサミュエル（Samuel）の学校で、10:30にあるおやつの時間は何と呼ばれている？',
+        question: 'ニュージーランドのサミュエルの学校で、10:30にあるのは？',
         videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'morning tea'
+        type: 'choice',
+        options: ['Lunch', 'Music class', 'Morning tea'],
+        correctIndex: 2
       },
       {
-        question: 'ケニアのダニエル（Daniel）は、何を通って学校まで歩いて行く？',
+        question: 'ケニアのダニエルは、何を通って学校へ歩いて行く？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['The forest', 'The savanna', 'The mountains'],
-        correctIndex: 1
+        options: ['The savanna', 'The forest', 'The beach'],
+        correctIndex: 0
       }
     ]
   },
   {
     id: 'g6-u3',
     grade: 6,
-    unitName: 'Unit 3: My Summer Vacation',
+    unitName: 'Unit 3: My Weekend',
     url: 'https://sw21.tsho.jp/06pk/e/6/3so-01/',
     keyPhrase: 'How was your weekend?',
     keyPhraseJapanese: '週末はどうでしたか？',
     questions: [
       {
-        question: 'サキ（Saki）がインターナショナルパーティーで食べたのはどこの国の料理？',
+        question: 'エマ（Emma）はどこの国から来た？',
+        videoRef: '動画1',
+        type: 'choice',
+        options: ['Sweden', 'Switzerland', 'Spain'],
+        correctIndex: 1
+      },
+      {
+        question: 'サキが週末に食べたのは、どこの国の料理？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['Swiss food', 'Mexican food', 'Italian food'],
+        options: ['Italian food', 'Indian food', 'Swiss food'],
+        correctIndex: 2
+      },
+      {
+        question: 'ソフィアがスタジアムで見た試合は？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['Rugby', 'Soccer', 'Baseball'],
         correctIndex: 0
       },
       {
-        question: 'ソフィアがスタジアムで楽しんだ試合は何のスポーツ？',
-        videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'rugby'
-      },
-      {
-        question: 'ニュージーランドの代表チーム「オールブラックス（All Blacks）」が試合前に踊るユニークなダンスの名前は？',
+        question: 'オールブラックス（All Blacks）が試合前におどるダンスは？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['Samba', 'Haka', 'Flamenco'],
+        options: ['The Samba', 'The Haka', 'The Tango'],
         correctIndex: 1
       }
     ]
@@ -344,23 +426,31 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: '多くのユニークな動物を見ることができます。',
     questions: [
       {
-        question: 'オーストラリアにある世界遺産の大きくて茶色い岩（Ayers Rock）の名前は？',
+        question: 'オーストラリアにある大きな茶色い岩（世界遺産）の名前は？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Uluru', 'Grand Canyon', 'Mt. Everest'],
+        options: ['Fuji', 'Everest', 'Uluru'],
+        correctIndex: 2
+      },
+      {
+        question: 'ダイチが行きたい国は？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['America', 'Vietnam', 'Brazil'],
         correctIndex: 0
       },
       {
-        question: 'ナディア（Nadia）が行きたい国、ベトナムの伝統的なドレスの名前は何？',
+        question: 'ナディアがベトナムで買いたいものは？',
         videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'ao dai'
+        type: 'choice',
+        options: ['A kimono', 'An ao dai', 'A hat'],
+        correctIndex: 1
       },
       {
-        question: '熱帯雨林（rainforest）でたくさんの植物や動物が見られると紹介された国はどこ？',
+        question: '熱帯雨林（rainforest）でめずらしい動植物が見られると紹介された国は？',
         videoRef: '動画4',
         type: 'choice',
-        options: ['America', 'Australia', 'Brazil'],
+        options: ['Australia', 'Kenya', 'Brazil'],
         correctIndex: 2
       }
     ]
@@ -368,60 +458,76 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
   {
     id: 'g6-u5',
     grade: 6,
-    unitName: 'Unit 5: We live in a global village.',
+    unitName: 'Unit 5: Where is it from?',
     url: 'https://sw21.tsho.jp/06pk/e/6/5so-01/',
     keyPhrase: 'This sweater is from New Zealand.',
     keyPhraseJapanese: 'このセーターはニュージーランドから来ました（産です）。',
     questions: [
       {
-        question: 'ソフィアのお父さんへのプレゼントにぴったりだと言っていた帽子とセーターは、どこの国のウール（wool）でできている？',
+        question: 'ソフィアのセーターは、どこの国のウール（wool）？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Australia', 'New Zealand', 'Japan'],
-        correctIndex: 1
-      },
-      {
-        question: 'タコ（octopus）はどこの国から来ていると紹介された？',
-        videoRef: '動画3',
-        type: 'choice',
-        options: ['Morocco', 'Norway', 'Hokkaido'],
+        options: ['New Zealand', 'Australia', 'England'],
         correctIndex: 0
       },
       {
-        question: '週末のピクニックで食べたいと提案されたサンドイッチの名前は？',
+        question: 'ニュージーランドは、地図のどの地域にある？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['Asia', 'Oceania', 'Europe'],
+        correctIndex: 1
+      },
+      {
+        question: 'タコ（octopus）はどこの国から来た？',
         videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'BLT'
+        type: 'choice',
+        options: ['Norway', 'Hokkaido', 'Morocco'],
+        correctIndex: 2
+      },
+      {
+        question: 'ソフィアがお父さん（Dad）に電話で伝えたことは？',
+        videoRef: '動画4',
+        type: 'choice',
+        options: ['次の休みにオーストラリアへ帰る', '日本で友だちができた', '動物園に行く'],
+        correctIndex: 0
       }
     ]
   },
   {
     id: 'g6-u6',
     grade: 6,
-    unitName: 'Unit 6: Let\'s think about our food.',
+    unitName: 'Unit 6: Save the animals.',
     url: 'https://sw21.tsho.jp/06pk/e/6/6so-01/',
     keyPhrase: 'What do sea turtles eat?',
     keyPhraseJapanese: 'ウミガメは何を食べますか？',
     questions: [
       {
-        question: 'ウミガメ（Sea turtles）が間違えて食べてしまうことがある海のゴミは何？',
+        question: 'ウミガメがまちがえて食べてしまうことがあるものは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Plastic bags', 'Glass bottles', 'Paper cups'],
-        correctIndex: 0
-      },
-      {
-        question: 'マイバッグを使うことで、何を減らすことができる？',
-        videoRef: '動画2',
-        type: 'choice',
-        options: ['Water', 'Plastic', 'Food loss'],
+        options: ['Seaweed', 'Plastic bags', 'Small fish'],
         correctIndex: 1
       },
       {
-        question: '使わなくなった服を必要としている人にあげるなど、物を再利用することを何と言う？（英語で）',
+        question: 'SDGsの14番のテーマは？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['Zero Hunger（飢餓をゼロに）', 'Quality Education（質の高い教育）', 'Life Below Water（海の豊かさ）'],
+        correctIndex: 2
+      },
+      {
+        question: 'トラを救うために始められる「4R」に入らないものは？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['Repeat', 'Refuse', 'Reuse'],
+        correctIndex: 0
+      },
+      {
+        question: 'ルーカスのお父さんをほしがっているのは？',
         videoRef: '動画4',
-        type: 'typing',
-        correctAnswer: 'reuse'
+        type: 'choice',
+        options: ['日本の野球チーム', 'ヨーロッパのサッカーチーム', 'アメリカの会社'],
+        correctIndex: 1
       }
     ]
   },
@@ -434,54 +540,70 @@ export const DEFAULT_QUIZZES: TextbookQuiz[] = [
     keyPhraseJapanese: '私の最高の思い出は修学旅行です。',
     questions: [
       {
-        question: '小学校での最高の思い出（best memory）について話している時、修学旅行は英語で何と言う？',
+        question: 'ヘルミの一番の思い出「Japan Day」でしたことは？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['The sports day', 'The school trip', 'The chorus contest'],
-        correctIndex: 1
+        options: ['京都に行った', '運動会をした', '日本食を食べて、ダンスを楽しんだ'],
+        correctIndex: 2
       },
       {
-        question: '日光（Nikko）に行った時の思い出として、猿（monkeys）はどこにいたと言っていた？',
+        question: 'ダニエルが英語を勉強する理由は？',
         videoRef: '動画2',
         type: 'choice',
-        options: ['In the zoo', 'On the roof', 'In the river'],
+        options: ['パイロットになりたいから', '先生になりたいから', '日本に住みたいから'],
+        correctIndex: 0
+      },
+      {
+        question: 'ソフィアの一番の思い出、修学旅行（school trip）で行った場所は？',
+        videoRef: '動画3',
+        type: 'choice',
+        options: ['Nikko', 'Kyoto', 'Tokyo'],
         correctIndex: 1
       },
       {
-        question: '中学校に入ったら入りたい部活（club）として、美術部は何と言う？',
-        videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'art club'
+        question: 'ルーカスの秘密（secret）は？',
+        videoRef: '動画4',
+        type: 'choice',
+        options: ['転校生が来る', '誕生日が明日', 'みんなと同じ中学校に行けない'],
+        correctIndex: 2
       }
     ]
   },
   {
     id: 'g6-u8',
     grade: 6,
-    unitName: 'Unit 8: Future Dreams',
+    unitName: 'Unit 8: My Future, My Dream',
     url: 'https://sw21.tsho.jp/06pk/e/6/8so-01/',
     keyPhrase: 'I want to be a programmer.',
     keyPhraseJapanese: '私はプログラマーになりたいです。',
     questions: [
       {
-        question: 'ダイチ（Daichi）の将来の夢（なりたい職業）は何？',
+        question: '学校祭（school festival）を楽しみたいと言った理由は？',
         videoRef: '動画1',
         type: 'choice',
-        options: ['Teacher', 'Programmer', 'Doctor'],
-        correctIndex: 1
-      },
-      {
-        question: 'ナディア（Nadia）が将来なりたいものは何？',
-        videoRef: '動画2',
-        type: 'choice',
-        options: ['Vet (獣医)', 'Nurse (看護師)', 'Singer (歌手)'],
+        options: ['ダンスが好きだから', '料理が好きだから', '英語が好きだから'],
         correctIndex: 0
       },
       {
-        question: 'ルーカス（Lucas）が将来住みたい国はどこ？',
+        question: '中学校で入りたいと言ったクラブは？',
+        videoRef: '動画2',
+        type: 'choice',
+        options: ['The cooking club', 'The English club', 'The dance team'],
+        correctIndex: 1
+      },
+      {
+        question: '卒業式で先生が送ったメッセージは？',
         videoRef: '動画3',
-        type: 'typing',
-        correctAnswer: 'Japan'
+        type: 'choice',
+        options: ['"Study hard!"', '"Never give up!"', '"Enjoy communication!"'],
+        correctIndex: 2
+      },
+      {
+        question: '最後にルーカスが日本語で言った言葉は？',
+        videoRef: '動画4',
+        type: 'choice',
+        options: ['Arigato', 'Sayonara', 'Konnichiwa'],
+        correctIndex: 0
       }
     ]
   }

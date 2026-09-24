@@ -1,10 +1,13 @@
+import { micPermissionHelp } from '../../hooks/useSpeechRecognition';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Mic, Square, Play } from 'lucide-react';
+import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
+import { friendlySpeechError } from '../../hooks/useSpeechRecognition';
 
 // マイクテスト（P0-3）：「マイクが拾えてない」を子ども自身が確認できる画面。
-// ①音量メーターでこえが届いているかを見る ②録音→自分の声を聞き返す。
+// ①音量メーターで声が届いているかを見る ②録音→自分の声を聞き返す。
 export const MicTest: React.FC = () => {
   const goBack = useSafeBack();
 
@@ -14,6 +17,32 @@ export const MicTest: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordUrl, setRecordUrl] = useState<string | null>(null);
   const [errMsg, setErrMsg] = useState('');
+  // ③④：「マイクは動くのにAI/発音チェックで失敗」を切り分けるため、実際の2つの経路を通す。
+  //   ③ Chromeの音声認識（AI英会話・QAが使う）  ④ Azure発音チェック（ダイアログ・バトル・教科書が使う）
+  const { assess, isAssessing, isAvailable: azureAvailable, getLastError } = usePronunciationAssessment();
+  const [srState, setSrState] = useState<'idle' | 'listening' | 'ok' | 'ng'>('idle');
+  const [srText, setSrText] = useState('');
+  const [paState, setPaState] = useState<'idle' | 'ok' | 'ng'>('idle');
+  const [paText, setPaText] = useState('');
+
+  const runSpeechTest = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { setSrState('ng'); setSrText('このブラウザには 音声認識が ありません。Chrome で 開いてね'); return; }
+    const r = new SR();
+    r.lang = 'en-US'; r.continuous = false; r.interimResults = false; r.maxAlternatives = 1;
+    setSrState('listening'); setSrText('');
+    r.onresult = (e: any) => { setSrState('ok'); setSrText(e.results[0][0].transcript); };
+    r.onerror = (e: any) => { setSrState('ng'); setSrText(friendlySpeechError(String(e.error)) || String(e.error)); };
+    r.onend = () => { setSrState(s => (s === 'listening' ? 'ng' : s)); setSrText(t => t || '声が聞こえなかったよ。もう一度試してね'); };
+    try { r.start(); } catch { setSrState('ng'); setSrText('音声認識を はじめられなかったよ。ページを読みこみ直して もう一度'); }
+  };
+
+  const runAzureTest = async () => {
+    setPaState('idle'); setPaText('');
+    const res = await assess('Hello');
+    if (!res) { setPaState('ng'); setPaText(getLastError() || '発音チェックが できなかったよ'); return; }
+    setPaState('ok'); setPaText(`聞き取り：「${res.recognizedText}」 / 発音スコア ${Math.round(res.accuracyScore)}点`);
+  };
 
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -66,7 +95,7 @@ export const MicTest: React.FC = () => {
       tick();
     } catch (e) {
       setPhase('error');
-      setErrMsg('マイクを使えませんでした。ブラウザのマイク許可（アドレスバーの🔒マーク→マイク→許可）をたしかめてね。それでもダメなら先生を呼ぼう！');
+      setErrMsg(`マイクを使えませんでした。${micPermissionHelp().replace(/^🔒 /, '')}　それでもダメなら先生を呼ぼう！`);
     }
   };
 
@@ -105,10 +134,10 @@ export const MicTest: React.FC = () => {
         <div className="glass-card flex-col flex-center gap-md" style={{ padding: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '4rem' }}>🎙️</div>
           <p style={{ fontSize: '1.2rem', margin: 0 }}>
-            マイクがちゃんと動いているか、たしかめよう！<br />
+            マイクがちゃんと動いているか、確かめよう！<br />
             <span style={{ fontSize: '0.95rem', color: '#666' }}>（イヤホンマイクの人は、先にさしこんでからスタート）</span>
           </p>
-          <Button size="lg" onClick={startTest} icon={Mic}>テストをはじめる</Button>
+          <Button size="lg" onClick={startTest} icon={Mic}>テストを始める</Button>
         </div>
       )}
 
@@ -116,7 +145,7 @@ export const MicTest: React.FC = () => {
         <div className="glass-card" style={{ padding: '2rem', border: '2px solid var(--color-error)', background: '#fef2f2' }}>
           <p style={{ margin: 0, fontSize: '1.1rem', color: '#b91c1c', fontWeight: 'bold' }}>{errMsg}</p>
           <div style={{ marginTop: '1rem' }}>
-            <Button onClick={() => { setPhase('idle'); }}>もう一回ためす</Button>
+            <Button onClick={() => { setPhase('idle'); }}>もう一度試す</Button>
           </div>
         </div>
       )}
@@ -125,7 +154,7 @@ export const MicTest: React.FC = () => {
         <>
           {/* ①音量メーター */}
           <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
-            <h3 style={{ margin: 0 }}>① こえを出してみよう（"Hello!"）</h3>
+            <h3 style={{ margin: 0 }}>① 声を出してみよう（"Hello!"）</h3>
             <div style={{ height: '34px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden' }}>
               <div style={{
                 height: '100%', width: `${Math.round(volume * 100)}%`,
@@ -135,21 +164,21 @@ export const MicTest: React.FC = () => {
             </div>
             <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: loud ? 'var(--color-success)' : '#94a3b8' }}>
               {loud
-                ? '👍 こえが とどいているよ！'
+                ? '👍 声が 届いているよ！'
                 : peak > 0.12
-                  ? 'こえを出すと みどりになるよ'
-                  : '…まだ こえが きこえないよ。マイクにむかって話してみて'}
+                  ? '声を出すと 緑になるよ'
+                  : '…まだ 声が 聞こえないよ。マイクに向かって話してみて'}
             </div>
             {peak <= 0.12 && (
               <p style={{ fontSize: '0.9rem', color: '#94a3b8', margin: 0 }}>
-                こえを出してもメーターが動かないときは、マイクがこわれているかも。先生を呼ぼう！
+                声を出してもメーターが動かないときは、マイクがこわれているかも。先生を呼ぼう！
               </p>
             )}
           </div>
 
           {/* ②録音→聞き返し */}
           <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
-            <h3 style={{ margin: 0 }}>② 録音して、自分のこえを聞いてみよう</h3>
+            <h3 style={{ margin: 0 }}>② 録音して、自分の声を聞いてみよう</h3>
             <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               {!isRecording ? (
                 <Button onClick={startRecording} icon={Mic} style={{ background: 'var(--color-error)', color: 'white' }}>
@@ -162,15 +191,47 @@ export const MicTest: React.FC = () => {
               )}
               {recordUrl && !isRecording && (
                 <Button variant="outline" onClick={() => new Audio(recordUrl).play()} icon={Play}>
-                  自分のこえを聞く
+                  自分の声を聞く
                 </Button>
               )}
             </div>
             {recordUrl && !isRecording && (
               <p style={{ fontSize: '0.95rem', color: '#666', margin: 0 }}>
-                自分のこえが聞こえたら、マイクはバッチリ！発音チェックやAI英会話にすすもう🎉<br />
+                自分の声が聞こえたら、マイクはバッチリ！つぎは ③④で AIとの通信もためそう🎉<br />
                 聞こえなかったら、マイクのさしこみを見なおして先生を呼ぼう。
               </p>
+            )}
+          </div>
+
+          {/* ③ Chromeの音声認識（AI英会話・QAモードが使う経路） */}
+          <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
+            <h3 style={{ margin: 0 }}>③ AI英会話の聞き取りテスト（"Hello" と言ってみよう）</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>AI英会話・QAモードが使う「Chromeの音声認識」を 試すよ。</p>
+            <div>
+              <Button onClick={runSpeechTest} disabled={srState === 'listening'} icon={Mic}>
+                {srState === 'listening' ? '聞いています…' : '試す'}
+              </Button>
+            </div>
+            {srState === 'ok' && <div style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>👍 聞き取れたよ：「{srText}」</div>}
+            {srState === 'ng' && <div style={{ fontWeight: 'bold', color: '#b91c1c' }}>{srText}</div>}
+          </div>
+
+          {/* ④ Azure発音チェック（ダイアログ・バトル・教科書のボーナス課題が使う経路） */}
+          <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', textAlign: 'center' }}>
+            <h3 style={{ margin: 0 }}>④ 発音チェックのテスト（"Hello" と言ってみよう）</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', margin: 0 }}>ダイアログ・モンスターバトル・教科書クイズが使う「発音チェック」を 試すよ。</p>
+            {!azureAvailable ? (
+              <div style={{ color: '#94a3b8' }}>（発音チェックは いま 設定されていないよ）</div>
+            ) : (
+              <>
+                <div>
+                  <Button onClick={runAzureTest} disabled={isAssessing} icon={Mic}>
+                    {isAssessing ? '聞いています…' : '試す'}
+                  </Button>
+                </div>
+                {paState === 'ok' && <div style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>👍 {paText}</div>}
+                {paState === 'ng' && <div style={{ fontWeight: 'bold', color: '#b91c1c' }}>{paText}</div>}
+              </>
             )}
           </div>
         </>

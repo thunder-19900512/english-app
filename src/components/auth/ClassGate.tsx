@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
-// クラス共通の「あいことば」入力画面。
-// この端末で初めて開いたときだけ表示され、正しいあいことばを入れると
+// クラス共通の「合言葉」入力画面。
+// この端末で初めて開いたときだけ表示され、正しい合言葉を入れると
 // Supabaseのログイン状態が端末に保存される（以後この画面はスキップ）。
 //
-// ★重要：あいことば（＝Supabaseアカウントのパスワード）はこのコードには書かない。
+// ★重要：合言葉（＝Supabaseアカウントのパスワード）はこのコードには書かない。
 //   子どもが画面で入力する。ここに書いてよいのは「メールアドレス」だけ（秘密ではない）。
 export const CLASS_ACCOUNT_EMAIL = 'class56@kazakoshi.app';
 
@@ -26,13 +26,13 @@ export const ClassGate: React.FC<{ onAuthed: () => void }> = ({ onAuthed }) => {
         password,
       });
       if (error) {
-        setError('あいことばが ちがうよ。もういちど！');
+        setError('合言葉が 違うよ。もういちど！');
         setWord('');
       } else {
         onAuthed();
       }
     } catch {
-      setError('つうしんに しっぱいしたよ。もういちど ためしてね');
+      setError('通信に 失敗したよ。もういちど 試してね');
     } finally {
       setBusy(false);
     }
@@ -46,7 +46,7 @@ export const ClassGate: React.FC<{ onAuthed: () => void }> = ({ onAuthed }) => {
       <div className="flex-col flex-center gap-sm">
         <div style={{ fontSize: '3rem' }}>🔑</div>
         <h1 className="text-primary" style={{ fontSize: '2.4rem', margin: 0 }}>
-          あいことば を いれてね
+          合言葉 を いれてね
         </h1>
         <p style={{ fontSize: '1.05rem', color: '#555', margin: 0 }}>
           この タブレット（パソコン）で さいしょの 1かい だけ
@@ -90,7 +90,7 @@ export const ClassGate: React.FC<{ onAuthed: () => void }> = ({ onAuthed }) => {
           value={word}
           onChange={(e) => { setWord(e.target.value); setError(''); }}
           placeholder="ここに ローマ字で"
-          aria-label="あいことば"
+          aria-label="合言葉"
           style={{
             fontSize: '1.6rem',
             textAlign: 'center',
@@ -122,7 +122,7 @@ export const ClassGate: React.FC<{ onAuthed: () => void }> = ({ onAuthed }) => {
             opacity: busy || !word.trim() ? 0.6 : 1,
           }}
         >
-          {busy ? 'かくにん中…' : 'はじめる'}
+          {busy ? '確認中…' : '始める'}
         </button>
       </form>
     </div>

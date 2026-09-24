@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, HelpCircle, Mic, Send } from 'lucide-react';
@@ -10,6 +10,7 @@ import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessme
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 import { WORLD_BENTO_QUIZZES } from './worldBentoQuizData';
+import { KARUIZAWA_QUIZZES } from './karuizawaQuizData';
 import { showToast } from '../ui/Toast';
 
 export type QuizQuestion = {
@@ -41,6 +42,9 @@ const normalizeText = (text: string) => {
 
 // ボーナス課題（キーフレーズの音読）の合格ライン。Azure発音判定の総合スコア 0-100。
 const BONUS_PASS_SCORE = 60;
+// ボーナス課題（キーフレーズの音読）まで合格したときの上乗せ倍率。
+// 「3問だけで抜ける」より「最後までやる」ほうが得になるようにする。
+const BONUS_FINISH_MULTIPLIER = 1.5;
 
 export const TextbookMode: React.FC = () => {
   const goBack = useSafeBack();
@@ -68,8 +72,16 @@ export const TextbookMode: React.FC = () => {
   const [watched, setWatched] = useState<Set<string>>(new Set());
   // 正解数（本問だけ・ボーナス除く）。加点を正答率でスケールするために数える。
   const [correctCount, setCorrectCount] = useState(0);
+  // ★正解数は ref にも持つ。
+  //   最終問題の答え合わせのあと 1.5秒後に finishQuiz を呼ぶが、そのときの
+  //   correctCount は「最後の1問を数える前」の古い値になる（setTimeoutが
+  //   古いレンダーの値を掴むため）。その結果、最終問題の正解が加点に
+  //   反映されず、全問正解でも満額にならなかった。refなら常に最新が読める。
+  const correctCountRef = useRef(0);
   // このクイズで実際にポイントが入ったか（正答率が足りないと0点）。完了画面の表示に使う。
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+  // クイズ集を全部クリアしたときの完走ボーナス（出たときだけ完了画面に表示）
+  const [setBonus, setSetBonus] = useState<number | null>(null);
   
   // Choice state
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -112,6 +124,7 @@ export const TextbookMode: React.FC = () => {
     setQuizState('playing');
     setCurrentQuestionIndex(0);
     setCorrectCount(0);
+    correctCountRef.current = 0;
     setEarnedPoints(null);
     setBonusScore(null);
     setBonusEarned(false);
@@ -126,7 +139,7 @@ export const TextbookMode: React.FC = () => {
     // 学年はTOPのカードでえらぶ前提。学年選択画面は廃止し、未指定なら5年を既定にする。
     setGrade(g === '6' ? 6 : 5);
     if (id) {
-      const quiz = DEFAULT_QUIZZES.find(q => q.id === id) || WORLD_BENTO_QUIZZES.find(q => q.id === id);
+      const quiz = DEFAULT_QUIZZES.find(q => q.id === id) || WORLD_BENTO_QUIZZES.find(q => q.id === id) || KARUIZAWA_QUIZZES.find(q => q.id === id);
       if (quiz) handleQuizSelect(quiz);
     }
   }, [searchParams]);
@@ -150,6 +163,7 @@ export const TextbookMode: React.FC = () => {
     const isCorrect = index === currentQ.correctIndex;
     if (isCorrect) {
       setFeedback('correct');
+      correctCountRef.current += 1;
       setCorrectCount(prev => prev + 1); // Weight 1 for choice
     } else {
       setFeedback('incorrect');
@@ -172,6 +186,7 @@ export const TextbookMode: React.FC = () => {
 
     if (isCorrect) {
       setFeedback('correct');
+      correctCountRef.current += 1;
       setCorrectCount(prev => prev + 1); // Weight 3 for typing
     } else {
       setFeedback('incorrect');
@@ -218,7 +233,7 @@ export const TextbookMode: React.FC = () => {
     const result = await assess(selectedQuiz.keyPhrase);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -251,37 +266,75 @@ export const TextbookMode: React.FC = () => {
     }, 1500);
   };
 
+  /** いま開いているクイズ集（?set=… があればそれ、無ければ学年の教科書Unit） */
+  const currentSetQuizzes = (): TextbookQuiz[] => {
+    const sp = searchParams.get('set');
+    if (sp === 'worldbento') return WORLD_BENTO_QUIZZES;
+    if (sp === 'karuizawa') return KARUIZAWA_QUIZZES;
+    return quizzes.filter(q => q.grade === grade);
+  };
+  const currentSetKey = (): string => searchParams.get('set') || `g${grade}`;
+
+  const readClearCounts = (): Record<string, number> => {
+    const id = localStorage.getItem('studentId');
+    try { return JSON.parse(localStorage.getItem(`clearCounts_${id}`) || '{}'); } catch { return {}; }
+  };
+
   const finishQuiz = async () => {
     setQuizState('completed');
+    setSetBonus(null);
     // ポイントは「正答率」でスケールする。適当に押して完了しても点が入らないように、
     // 正答率が半分未満なら加点しない（まっとうに解いた分だけ加点＝チート抑止）。
     // 繰り返すほど加点は逓減する（addPoints内で共通処理。最終的に0）。
     const total = selectedQuiz!.questions.length;
-    const ratio = total > 0 ? correctCount / total : 0;
+    const correct = correctCountRef.current;
+    const ratio = total > 0 ? correct / total : 0;
     if (ratio < 0.5) {
-      setEarnedPoints(0); // ほとんど不正解 → 今回は加点なし（もう一回！）
+      setEarnedPoints(0); // ほとんど不正解 → 今回は加点なし（もう一度！）
       return;
     }
+    // ボーナス課題（キーフレーズの音読）まで合格した子は上乗せ＝「最後までやると得」。
+    // 合格ラインを満たしたときだけなので、押すだけでは増えない。
     const pts = await addPoints(`textbook_quiz_${selectedQuiz!.id}`, {
-      multiplier: ratio,               // 正答率でスケール（全問正解＝満額）
-      isPerfect: correctCount === total,
+      multiplier: ratio * (bonusEarned ? BONUS_FINISH_MULTIPLIER : 1),
+      isPerfect: correct === total,
     });
     setEarnedPoints(pts);
+    await checkSetComplete();
+  };
+
+  /** このクイズ集（学年 or まちクイズ等）を全部クリアしたら、完走ボーナスを1回出す */
+  const checkSetComplete = async () => {
+    const list = currentSetQuizzes();
+    if (list.length === 0) return;
+    const counts = readClearCounts();
+    // いま終えたUnitは、addPointsの書き込みが済んでいるので counts に入っている
+    const done = list.filter(q => (counts[`textbook_quiz_${q.id}`] || 0) > 0).length;
+    if (done < list.length) return;
+    const gained = await addPoints(`textbook_set_${currentSetKey()}`, {});
+    if (gained > 0) {
+      setSetBonus(gained);
+      showToast(`🏁 全部クリア！ 完走ボーナス ＋${gained}ポイント`, 'points');
+    }
   };
 
   // 学年はTOPカードでえらぶ前提なので、ここでは必ず5/6が入っている（保険のガード）
   if (!grade) return null;
 
-  // ?set=worldbento のときは World Bento クイズ（国別）を表示。通常は学年の教科書Unit。
-  const isWorldBento = searchParams.get('set') === 'worldbento';
-  const listQuizzes = isWorldBento ? WORLD_BENTO_QUIZZES : quizzes.filter(q => q.grade === grade);
+  // ?set=worldbento / ?set=karuizawa のときは専用クイズ集を表示。通常は学年の教科書Unit。
+  const setParam = searchParams.get('set');
+  const isWorldBento = setParam === 'worldbento';
+  const isKaruizawa = setParam === 'karuizawa';
+  const listQuizzes = isWorldBento ? WORLD_BENTO_QUIZZES
+    : isKaruizawa ? KARUIZAWA_QUIZZES
+    : quizzes.filter(q => q.grade === grade);
 
   return (
     <div className="flex-col" style={{ flex: 1, padding: '2rem', gap: '1.5rem', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h2 className="text-primary" style={{ margin: 0, fontSize: '1.8rem', flex: 1, textAlign: 'center' }}>
-          {isWorldBento ? '🍱 世界の料理クイズ' : `📖 ${grade}年生の教科書`}
+          {isWorldBento ? '🍱 世界の料理クイズ' : isKaruizawa ? '🏔 軽井沢まちクイズ' : `📖 ${grade}年生の教科書`}
         </h2>
       </div>
 
@@ -290,9 +343,38 @@ export const TextbookMode: React.FC = () => {
           <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(0, 184, 148, 0.1)', border: '2px solid #00b894' }}>
             <p style={{ margin: 0, fontSize: '1.1rem', color: '#2d3436' }}>
               📺 まずUnitの「<strong>動画を見る</strong>」ボタンで動画を見よう。<br/>
-              見終わったら「<strong>クイズに挑戦</strong>」でポイントをもらおう！
+              見終わったら「<strong>クイズに挑戦</strong>」でポイントをもらおう！<br/>
+              <span style={{ fontSize: '0.9rem', color: '#555' }}>問題は動画の順番どおり（1本目の動画→1問目、2本目→2問目…）に出るよ。</span>
             </p>
           </div>
+
+          {/* 完走の進み具合。あと何個かが見えると、途中でやめにくくなる。 */}
+          {(() => {
+            const counts = readClearCounts();
+            const done = listQuizzes.filter(q => (counts[`textbook_quiz_${q.id}`] || 0) > 0).length;
+            const rest = listQuizzes.length - done;
+            const setDone = (counts[`textbook_set_${currentSetKey()}`] || 0) > 0;
+            return (
+              <div className="glass-card" style={{ padding: '1rem 1.5rem', background: 'rgba(253, 203, 110, 0.22)', border: '2px solid var(--color-accent)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '1.5rem' }}>🏁</span>
+                  <span style={{ fontWeight: 'bold', color: '#7a5a00', fontSize: '1.05rem' }}>
+                    {setDone
+                      ? `完走済み！ 全部（${listQuizzes.length}／${listQuizzes.length}）クリアしたよ`
+                      : rest === 0
+                        ? 'あと1回クイズをおえると 完走ボーナス！'
+                        : `完走ボーナスまで あと${rest}Unit（${done}／${listQuizzes.length} クリア）`}
+                  </span>
+                </div>
+                <div style={{ marginTop: '0.5rem', height: '10px', background: 'rgba(255,255,255,0.7)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ width: `${listQuizzes.length ? (done / listQuizzes.length) * 100 : 0}%`, height: '100%', background: 'var(--color-accent)' }} />
+                </div>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#7a5a00' }}>
+                  全部クリアすると 完走ボーナス。音読（ボーナス課題）までやると、そのUnitのポイントが {BONUS_FINISH_MULTIPLIER}倍！
+                </p>
+              </div>
+            );
+          })()}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
             <HelpCircle color="var(--color-primary)" />
@@ -365,7 +447,7 @@ export const TextbookMode: React.FC = () => {
                 {selectedQuiz.unitName}
               </h3>
               <span style={{ display: 'inline-block', background: '#e2e8f0', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginTop: '0.5rem' }}>
-                📺 {currentQuestion.videoRef}
+                📺 {currentQuestion.videoRef}（{currentQuestionIndex + 1}本目の動画の内容だよ）
               </span>
             </div>
             <span style={{ fontWeight: 'bold', color: '#64748b', fontSize: '1.1rem' }}>
@@ -588,7 +670,7 @@ export const TextbookMode: React.FC = () => {
                 onClick={finishQuiz}
                 style={{ width: '100%', marginTop: '0.5rem' }}
               >
-                {bonusEarned ? 'おわってけっかを見る →' : 'スキップしてけっかを見る →'}
+                {bonusEarned ? 'おわって結果を見る →' : 'スキップして結果を見る →'}
               </Button>
             )}
           </div>
@@ -602,7 +684,7 @@ export const TextbookMode: React.FC = () => {
           </div>
 
           <h2 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '2rem' }}>
-            {earnedPoints && earnedPoints > 0 ? 'Unit Clear!' : 'おしい！もう一回！'}
+            {earnedPoints && earnedPoints > 0 ? 'Unit Clear!' : 'おしい！もう一度！'}
           </h2>
 
           <p style={{ fontSize: '1.3rem', margin: 0 }}>
@@ -610,12 +692,19 @@ export const TextbookMode: React.FC = () => {
           </p>
           {earnedPoints !== null && (
             earnedPoints > 0 ? (
-              <p style={{ fontSize: '1.3rem', margin: 0, color: 'var(--color-accent)', fontWeight: 'bold' }}>
-                ＋{earnedPoints} ポイント！✨
-              </p>
+              <>
+                <p style={{ fontSize: '1.3rem', margin: 0, color: 'var(--color-accent)', fontWeight: 'bold' }}>
+                  ＋{earnedPoints} ポイント！✨{bonusEarned && <span style={{ fontSize: '0.95rem' }}>（音読までやりきりボーナス）</span>}
+                </p>
+                {setBonus !== null && setBonus > 0 && (
+                  <p style={{ fontSize: '1.2rem', margin: 0, fontWeight: 'bold', color: '#b45309', background: 'rgba(253,203,110,0.3)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.5rem 1rem' }}>
+                    🏁 全部クリア！ 完走ボーナス ＋{setBonus} ポイント
+                  </p>
+                )}
+              </>
             ) : (
               <p style={{ fontSize: '1.05rem', margin: 0, color: '#94a3b8' }}>
-                半分以上正解すると、ポイントがもらえるよ。動画をもう一回見てチャレンジ！
+                半分以上正解すると、ポイントがもらえるよ。動画をもう一度見てチャレンジ！
               </p>
             )
           )}
@@ -625,7 +714,7 @@ export const TextbookMode: React.FC = () => {
               クイズ一覧にもどる
             </Button>
             <Button onClick={() => handleQuizSelect(selectedQuiz)}>
-              もう一回チャレンジ！
+              もう一度チャレンジ！
             </Button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { MicButton } from '../ui/MicButton';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
+import { pushToSupabase } from '../../lib/sync';
 import { TypingTrainer } from '../common/TypingTrainer';
 
 const phonicsEmojis: Record<string, string> = {
@@ -160,6 +161,13 @@ export const Stage: React.FC = () => {
   const [newRecordMsg, setNewRecordMsg] = useState('');
   const [showCorrectMark, setShowCorrectMark] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+  // フォニックスは「11ステージ×7モード」ぶんの初回20Pがあり、1日で取り放題になっていた。
+  // 今日のミッションのあと、すぐフォニックスに流れるのを防ぐため、1日の加点回数に上限を置く。
+  // 上限のあとも遊べる（バッジ・記録は残る）が、ポイントは翌日まで入らない。
+  const PHONICS_DAILY_CAP = 3;
+  const phonicsKey = () => `phonicsAwards_${localStorage.getItem('studentId')}_${new Date().toISOString().slice(0, 10)}`;
+  const phonicsAwardsToday = () => Number(localStorage.getItem(phonicsKey())) || 0;
+  const [capMsg, setCapMsg] = useState('');
 
   const checkIsCorrect = (input: string, target: string) => {
     const i = input.toLowerCase().trim();
@@ -367,12 +375,27 @@ export const Stage: React.FC = () => {
           }
         }
 
-        const pts = await addPoints(`stage_${id}_${mode}`, {
-          isPerfect: newCC === TOTAL_QUESTIONS,
-          isNewRecord: isNewBest,
-          multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
-        });
-        setEarnedPoints(pts);
+        setCapMsg('');
+        if (phonicsAwardsToday() >= PHONICS_DAILY_CAP) {
+          // 今日のぶんは打ち止め。ポイントは出さないが、クリアの記録は必ず残す。
+          // （ここで何もしないと addPoints が走らず、サーバへの送信も起きない）
+          setEarnedPoints(0);
+          setCapMsg(`今日のフォニックスのポイントは ここまで（1日${PHONICS_DAILY_CAP}回）。ほかの活動も やってみよう！ あしたまた もらえるよ`);
+          const sid = localStorage.getItem('studentId');
+          if (sid) pushToSupabase(sid);
+        } else {
+          const pts = await addPoints(`stage_${id}_${mode}`, {
+            isPerfect: newCC === TOTAL_QUESTIONS,
+            isNewRecord: isNewBest,
+            multiplier: TOTAL_QUESTIONS / DEFAULT_TOTAL_QUESTIONS
+          });
+          setEarnedPoints(pts);
+          if (pts > 0) {
+            const n = phonicsAwardsToday() + 1;
+            localStorage.setItem(phonicsKey(), String(n));
+            if (n >= PHONICS_DAILY_CAP) setCapMsg(`フォニックスのポイントは 今日はこれで${PHONICS_DAILY_CAP}回目（今日はここまで）。ほかの活動も やってみよう！`);
+          }
+        }
 
         setShowCelebration(true);
       } else {
@@ -446,18 +469,23 @@ export const Stage: React.FC = () => {
     moveToNextQuestion();
   };
 
+  // バッジを保存する。
+  // ★localStorageに書くだけでなく、その場でSupabaseにも送ること。
+  //   以前は書くだけだったため、サーバに届くのは「ホームに戻ったとき」
+  //   （Home.tsx のpush）まで遅れていた。ホームに寄らずに端末を閉じたり、
+  //   別の端末で開いたりすると記録が無いように見える＝子どもからの
+  //   「一回ホームに戻ってまた入んないと記録ができてない」の正体。
   const saveBadge = (stageId: number) => {
     const studentId = localStorage.getItem('studentId');
-    if (studentId) {
-      const dataStr = localStorage.getItem(`student_${studentId}`);
-      if (dataStr) {
-        const data = JSON.parse(dataStr);
-        if (!data.badges.includes(stageId)) {
-          data.badges.push(stageId);
-          localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
-        }
-      }
-    }
+    if (!studentId) return;
+    const dataStr = localStorage.getItem(`student_${studentId}`);
+    if (!dataStr) return;
+    const data = JSON.parse(dataStr);
+    if (!Array.isArray(data.badges)) data.badges = [];
+    if (data.badges.includes(stageId)) return;
+    data.badges.push(stageId);
+    localStorage.setItem(`student_${studentId}`, JSON.stringify(data));
+    pushToSupabase(studentId);
   };
 
   if (!stage) return <div>Stage not found</div>;
@@ -474,9 +502,14 @@ export const Stage: React.FC = () => {
         <div className="animate-float">
           <Trophy size={100} color="var(--color-accent)" />
         </div>
-        {earnedPoints !== null && (
+        {earnedPoints !== null && earnedPoints > 0 && (
           <div className="animate-pop" style={{ fontSize: '2rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
             +{earnedPoints} ポイントゲット！✨
+          </div>
+        )}
+        {capMsg && (
+          <div style={{ fontSize: '1.05rem', color: '#7a5a00', background: 'rgba(253,203,110,0.3)', border: '2px solid var(--color-accent)', borderRadius: '14px', padding: '0.6rem 1.2rem', maxWidth: '520px' }}>
+            🌙 {capMsg}
           </div>
         )}
         <p style={{ fontSize: '1.5rem' }}>{TOTAL_QUESTIONS}問中 <strong>{correctCount}</strong>問 正解！</p>

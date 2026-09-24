@@ -9,6 +9,7 @@ import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
+import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -58,12 +59,13 @@ export const Home: React.FC = () => {
   const allCleared = coreStageIds.every(sid => earnedBadges.includes(sid));
 
   // 各モードとクリア印の絵文字（単元一覧に表示）
-  const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice'; emoji: string }[] = [
+  const MODE_BADGES: { key: 'learn' | 'wordsearch' | 'practice' | 'spelling' | 'voice' | 'qa'; emoji: string }[] = [
     { key: 'learn', emoji: '📖' },
     { key: 'wordsearch', emoji: '🔍' },
     { key: 'practice', emoji: '🎯' },
     { key: 'spelling', emoji: '⌨️' },
     { key: 'voice', emoji: '🎤' },
+    { key: 'qa', emoji: '❓' },
   ];
 
   return (
@@ -80,7 +82,7 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/progress')}
           >
             <span style={{ fontSize: '1.4rem' }}>🗺️</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>じぶんの記録</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#000' }}>自分の記録</span>
           </div>
           <div
             className="glass-card animate-pop hover-scale"
@@ -125,8 +127,14 @@ export const Home: React.FC = () => {
             >
               <span style={{ fontSize: '2.5rem' }}>🎯</span>
               <div style={{ flex: 1, minWidth: '180px' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
-                  今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
+                    今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
+                  </span>
+                  {/* ここをやると得だと一目で分かるようにする（誘導のかなめ） */}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', background: 'white', color: '#c0392b', borderRadius: '999px', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>
+                    ⭐ ポイント {MISSION_MULTIPLIER}倍
+                  </span>
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
               </div>
@@ -197,13 +205,15 @@ export const Home: React.FC = () => {
                 6年生
               </button>
             </div>
-            <button
-              className="hover-scale"
-              onClick={(e) => { e.stopPropagation(); navigate('/textbook?set=worldbento'); }}
-              style={{ marginTop: '0.5rem', fontSize: '0.95rem', fontWeight: 'bold', background: '#fff', color: '#00b894', border: '2px solid #00b894', padding: '0.4rem 1rem', borderRadius: '999px', cursor: 'pointer' }}
-            >
-              🍱 世界の料理クイズ
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <button
+                className="hover-scale"
+                onClick={(e) => { e.stopPropagation(); navigate('/textbook?set=karuizawa'); }}
+                style={{ fontSize: '0.95rem', fontWeight: 'bold', background: '#fff', color: '#0984e3', border: '2px solid #0984e3', padding: '0.4rem 1rem', borderRadius: '999px', cursor: 'pointer' }}
+              >
+                🏔 軽井沢まちクイズ
+              </button>
+            </div>
           </div>
 
           <div
@@ -238,7 +248,7 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/story')}
           >
             <Book size={40} color="#d946ef" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>おはなしづくり</h2>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>お話づくり</h2>
             <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>覚えた単語で<br/>物語をつくろう！</p>
           </div>
 
@@ -258,8 +268,8 @@ export const Home: React.FC = () => {
             onClick={() => navigate('/tree')}
           >
             <span style={{ fontSize: '2.4rem', marginBottom: '0.3rem' }}>🌳</span>
-            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>みんなの木</h2>
-            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>ポイントをあげて<br/>チームの木を育てよう！</p>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#000' }}>みんなの町</h2>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#666', textAlign: 'center' }}>森を育てて<br/>町をつくろう！</p>
           </div>
         </div>
       )}
@@ -357,7 +367,7 @@ export const Home: React.FC = () => {
             <div className="modal-overlay" onClick={() => setExpandedCategory(null)}>
               <div className="modal-content animate-pop" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={() => setExpandedCategory(null)}>✕</button>
-                <h2 className="text-primary" style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.8rem' }}>【{expandedCategory}】のモードをえらぶ</h2>
+                <h2 className="text-primary" style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.8rem' }}>【{expandedCategory}】のモードを選ぶ</h2>
                 
                 <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', width: '100%' }}>
                   <div

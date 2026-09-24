@@ -1,3 +1,4 @@
+import { fullPointCatsLeft } from '../../lib/dictDepth';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVocabulary, addCustomWord } from '../../hooks/useVocabulary';
@@ -8,6 +9,7 @@ import { ArrowLeft, BookOpen, Plus } from 'lucide-react';
 const inputStyle: React.CSSProperties = { display: 'block', width: '100%', marginTop: '0.3rem', padding: '0.5rem', fontSize: '1rem', borderRadius: '8px', border: '2px solid #e2e8f0', boxSizing: 'border-box' };
 
 export const DictionaryHome: React.FC = () => {
+  const leftToday = fullPointCatsLeft(localStorage.getItem('studentId'));
   const navigate = useNavigate();
   const vocabulary = useVocabulary();
   const { customVocabEnabled } = useAppSettings(); // OFFの間は子どもに見せない
@@ -47,6 +49,14 @@ export const DictionaryHome: React.FC = () => {
         <BookOpen size={64} color="var(--color-primary)" />
         <h1 className="text-primary" style={{ fontSize: '3rem', margin: 0 }}>Picture Dictionary</h1>
         <p style={{ fontSize: '1.2rem', color: '#666' }}>単元を選んで単語を練習しよう！</p>
+        <p style={{ fontSize: '0.95rem', color: '#b45309', fontWeight: 'bold', margin: 0 }}>
+          🔎 同じ単元を いろいろなモードで やると 深めボーナス（×1.25 → ×1.5）
+        </p>
+        <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+          {leftToday > 0
+            ? `今日は あと ${leftToday}単元 まんてんポイントで 始められるよ`
+            : '今日 新しく始める単元より、ここまでにやった単元を 深めるほうが 大きいよ'}
+        </p>
       </div>
 
       {/* 実力テスト（P2-1）：既習カテゴリからランダム出題・一発勝負 */}
@@ -58,7 +68,7 @@ export const DictionaryHome: React.FC = () => {
         <span style={{ fontSize: '1.8rem' }}>🧪</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#b45309' }}>単語実力テスト</div>
-          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>ならった単語からランダム10問・一発勝負！けっかはグラフに記録されるよ</div>
+          <div style={{ fontSize: '0.85rem', color: '#92700a' }}>習った単語からランダム10問・一発勝負！結果はグラフに記録されるよ</div>
         </div>
         <span style={{ fontSize: '1.3rem', color: '#b45309' }}>›</span>
       </div>

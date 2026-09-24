@@ -26,17 +26,22 @@ interface StoryFragment {
   filledWith?: string; // wordId
 }
 
+// お話の難しさ。level はそのまま「ポイントの倍率」にも使うので、
+// 上に行くほど1つずつ増える並びを崩さないこと（下の earned / bonus の計算で使う）。
 const DIFFICULTY_LEVELS = [
   { level: 1, label: 'レベル1: 超かんたん (小学1〜3年生)', prompt: 'Extremely simple English for beginners. Use ONLY short SVO (Subject-Verb-Object) or SVC sentences (max 5-6 words). Ensure the sentences connect logically to tell a cohesive, easy-to-understand mini-story.' },
   { level: 2, label: 'レベル2: 英検5級レベル (中1程度)', prompt: 'Eiken Grade 5 level (CEFR A1). Basic beginner English, simple present/past tense, very basic vocabulary.' },
   { level: 3, label: 'レベル3: 英検4級レベル (中2程度)', prompt: 'Eiken Grade 4 level (CEFR A1-A2). Elementary English, basic conjunctions, future tense, basic daily life vocabulary.' },
   { level: 4, label: 'レベル4: 英検3級レベル (中卒程度)', prompt: 'Eiken Grade 3 level (CEFR A2). Pre-intermediate English, present perfect, relative pronouns, standard middle school vocabulary.' },
-  { level: 5, label: 'レベル5: 英検2級レベル (高卒程度)', prompt: 'Eiken Grade 2 level (CEFR B1). Intermediate English, complex sentences, high school level vocabulary, social topics.' },
-  { level: 6, label: 'レベル6: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
+  { level: 5, label: 'レベル5: 英検準2級レベル (高校中級程度)', prompt: 'Eiken Grade Pre-2 level (CEFR A2-B1). Upper-elementary English: a mix of simple and compound sentences, common phrasal verbs, gerunds and infinitives, and everyday social topics (school life, travel, the town, the environment). Keep vocabulary within common high-school-beginner range.' },
+  { level: 6, label: 'レベル6: 英検2級レベル (高卒程度)', prompt: 'Eiken Grade 2 level (CEFR B1). Intermediate English, complex sentences, high school level vocabulary, social topics.' },
+  { level: 7, label: 'レベル7: 英検1級レベル (大学上級程度)', prompt: 'Eiken Grade 1 level (CEFR C1). Highly advanced English, sophisticated vocabulary, complex grammar, academic or abstract concepts.' },
 ];
 
 // 音読の合格ライン（Azure発音判定の総合スコア 0-100）。小学生向けにやさしめ。
 const READ_PASS_SCORE = 60;
+
+const MIN_CHOICES = 4;
 
 export const StoryMode: React.FC = () => {
   const goBack = useSafeBack();
@@ -109,7 +114,7 @@ export const StoryMode: React.FC = () => {
     const result = await assess(targetSentence);
     if (!result) {
       // 聞き取れなかった/通信エラー：ノーカウントで再挑戦。その場に通知する。
-      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一回ゆっくり言ってみてね', 'fail');
+      showToast(getLastError() || '🎙️ 声が聞こえなかったよ。もう一度ゆっくり言ってみてね', 'fail');
       return;
     }
 
@@ -144,7 +149,8 @@ export const StoryMode: React.FC = () => {
     }
 
     // Pick random words depending on length
-    let wordCount = Math.min(pool.length, Math.max(3, Math.floor(sentenceCount / 2)));
+    // 選択肢は最低4つ（3つだと消去法で当たってしまい、文脈で考えなくなる）
+    let wordCount = Math.min(pool.length, Math.max(MIN_CHOICES, Math.floor(sentenceCount / 2)));
 
     // 似た語（例：飲み物3つ）が並ぶと文脈で答えが一意に決まらないため、
     // できるだけ「別カテゴリから1語ずつ」選ぶ（ラウンドロビン）。
@@ -219,7 +225,7 @@ ${SAFETY_INSTRUCTION}`;
 
       // 安全装置：万一不適切な内容が生成されたら、表示せずに作り直しを促す。
       if (isInappropriate(text)) {
-        alert('うまく作れませんでした。もう一度「おはなしをつくる」を押してみてね。');
+        alert('うまく作れませんでした。もう一度「お話をつくる」を押してみてね。');
         setGameState('config');
         return;
       }
@@ -234,7 +240,7 @@ ${SAFETY_INSTRUCTION}`;
       setGameState('playing');
     } catch (err: any) {
       console.error(err);
-      alert(`システムエラー: ${err.message || '不明なエラー'} `);
+      alert(`システムエラー: ${err.message || '不明なエラー'}`);
       setGameState('config');
     }
   };
@@ -267,6 +273,23 @@ ${SAFETY_INSTRUCTION}`;
       }
     });
     
+    // 選択肢は「実際に空欄になった単語」に合わせる（AIが単語を使い忘れる／2回使うことがあり、
+    // 空欄の数と選択肢の数がズレていた）。空欄が4つ未満なら、お話に出てこないダミー語を足して
+    // 最低4択にする（3択以下だと消去法で当たってしまう）。
+    const usedIds = new Set(fragments.filter(f => f.type === 'blank').map(f => f.wordId));
+    if (usedIds.size === 0) {
+      alert('うまく作れませんでした。もう一度「お話をつくる」を押してみてね。');
+      setGameState('config');
+      return;
+    }
+    const choices = words.filter(w => usedIds.has(w.id));
+    const usedEn = new Set(choices.map(w => w.english.toLowerCase()));
+    const extras = [...vocabulary]
+      .filter(v => !usedIds.has(v.id) && !usedEn.has(v.english.toLowerCase()))
+      .sort(() => 0.5 - Math.random());
+    while (choices.length < MIN_CHOICES && extras.length) choices.push(extras.pop()!);
+    setTargetWords(choices.sort(() => 0.5 - Math.random()));
+
     setStoryFragments(fragments);
     
     // Auto-select the first blank
@@ -468,13 +491,13 @@ ${SAFETY_INSTRUCTION}`;
     <div className="flex-col" style={{ flex: 1, paddingBottom: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
-        <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIおはなしづくり</h1>
+        <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0 }}>📖 AIお話づくり</h1>
         <div style={{ width: '80px' }}></div>
       </div>
 
       {gameState === 'config' && (
         <div className="glass-card flex-col gap-lg" style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-          <h2 style={{ textAlign: 'center', margin: 0 }}>どんなおはなしをつくる？</h2>
+          <h2 style={{ textAlign: 'center', margin: 0 }}>どんなお話をつくる？</h2>
           
           <div>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>文章の長さ（{sentenceCount}文）</label>
@@ -511,7 +534,7 @@ ${SAFETY_INSTRUCTION}`;
             icon={Sparkles}
             style={{ marginTop: '1rem', background: 'var(--color-accent)', color: 'black' }}
           >
-            おはなしをつくる！
+            お話をつくる！
           </Button>
         </div>
       )}
@@ -519,7 +542,7 @@ ${SAFETY_INSTRUCTION}`;
       {gameState === 'generating' && (
         <div className="flex-col flex-center gap-md" style={{ flex: 1 }}>
           <Sparkles className="animate-pulse" size={60} color="var(--color-accent)" />
-          <h2 className="text-primary">AIがおはなしを作っています...</h2>
+          <h2 className="text-primary">AIがお話を作っています…</h2>
           <p>あなたの習った単語を使っているよ！</p>
         </div>
       )}
@@ -565,7 +588,7 @@ ${SAFETY_INSTRUCTION}`;
           {gameState === 'completed' ? (
             <div className="glass-card flex-col flex-center animate-pop" style={{ padding: '2rem', background: '#f0fdf4', border: '2px solid var(--color-success)' }}>
               <CheckCircle size={60} color="var(--color-success)" />
-              <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! おはなしが完成したよ！</h2>
+              <h2 style={{ color: 'var(--color-success)', margin: '1rem 0' }}>Perfect! お話が完成したよ！</h2>
               
               {hasReadAloud && (
                 <div className="animate-pop" style={{ background: '#fffbeb', padding: '0.8rem 1.5rem', borderRadius: '20px', color: '#b45309', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', border: '2px solid #fde68a' }}>
@@ -618,7 +641,7 @@ ${SAFETY_INSTRUCTION}`;
                         color: readScore >= READ_PASS_SCORE ? 'var(--color-success)' : 'var(--color-error)'
                       }}
                     >
-                      音読スコア: {Math.round(readScore)} 点 {readScore >= READ_PASS_SCORE ? '✅' : '（もう一回！）'}
+                      音読スコア: {Math.round(readScore)} 点 {readScore >= READ_PASS_SCORE ? '✅' : '（もう一度！）'}
                     </div>
                   )}
 
@@ -686,7 +709,7 @@ ${SAFETY_INSTRUCTION}`;
               {japaneseTranslation && (
                 <div style={{ width: '100%', maxWidth: '600px', background: 'rgba(255,255,255,0.8)', padding: '1.5rem', borderRadius: '12px', marginTop: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🇯🇵 おはなしの意味</h3>
+                    <h3 style={{ margin: 0, color: 'var(--color-primary)' }}>🇯🇵 お話の意味</h3>
                     <Button variant="outline" onClick={() => setShowTranslation(!showTranslation)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
                       {showTranslation ? 'かくす' : '意味を見る'}
                     </Button>
@@ -704,7 +727,10 @@ ${SAFETY_INSTRUCTION}`;
               <h3 style={{ marginTop: 0, textAlign: 'center' }}>下から単語を選んでね</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
                 {targetWords.map(word => {
-                  const isUsed = storyFragments.some(f => f.type === 'blank' && f.filledWith === word.id);
+                  // 同じ単語が2つの空欄に出ることがあるので、「その単語の空欄が全部埋まったら」使用済み
+                  const need = storyFragments.filter(f => f.type === 'blank' && f.wordId === word.id).length;
+                  const filled = storyFragments.filter(f => f.type === 'blank' && f.filledWith === word.id).length;
+                  const isUsed = need > 0 ? filled >= need : filled > 0;
                   return (
                     <button
                       key={word.id}

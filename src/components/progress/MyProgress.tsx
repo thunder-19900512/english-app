@@ -11,7 +11,7 @@ import { usePronunciationHistory, type ScoreMode } from '../../hooks/usePronunci
 
 const MODE_STYLE: Record<ScoreMode, { color: string; label: string }> = {
   battle: { color: '#ff6b6b', label: 'モンスターバトル' },
-  story: { color: '#d946ef', label: 'おはなし音読' },
+  story: { color: '#d946ef', label: 'お話音読' },
   textbook: { color: '#00b894', label: '教科書ボーナス' },
   dialogue: { color: '#0984e3', label: 'ダイアログ' },
   test: { color: '#f59e0b', label: '単語テスト' },
@@ -23,6 +23,7 @@ const SKILLS: { key: keyof DictCategoryProgress; label: string; emoji: string; p
   { key: 'wordsearch', label: '言葉さがし', emoji: '🔍', path: 'game/wordsearch' },
   { key: 'spelling', label: 'タイピング', emoji: '⌨️', path: 'game/spelling' },
   { key: 'voice', label: '発音', emoji: '🎤', path: 'game/voice' },
+  { key: 'qa', label: 'Q&A', emoji: '❓', path: 'game/qa' },   // 子どもの声 2026-09-15
 ];
 
 // 進捗リング（％を円グラフで表示）
@@ -134,7 +135,7 @@ export const MyProgress: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Button variant="outline" onClick={goBack} icon={ArrowLeft}>もどる</Button>
         <h1 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, fontSize: '1.8rem', marginRight: '90px' }}>
-          🗺️ じぶんの記録
+          🗺️ 自分の記録
         </h1>
       </div>
 
@@ -157,7 +158,7 @@ export const MyProgress: React.FC = () => {
         </div>
       </div>
 
-      {/* これまでのふりかえりへ（じぶんの記録からも飛べるように） */}
+      {/* これまでのふりかえりへ（自分の記録からも飛べるように） */}
       <button
         className="glass-card hover-scale"
         onClick={() => navigate('/reflection/history')}
@@ -187,7 +188,7 @@ export const MyProgress: React.FC = () => {
         {history.length === 0 ? (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
             まだ発音の記録がないよ。<br/>
-            モンスターバトル・おはなし音読・教科書のボーナスでマイクを使うと、ここに点数の記録がたまっていくよ！
+            モンスターバトル・お話音読・教科書のボーナスでマイクを使うと、ここに点数の記録がたまっていくよ！
           </div>
         ) : (
           <>
@@ -247,7 +248,7 @@ export const MyProgress: React.FC = () => {
       {/* おすすめ */}
       {recommendations.length > 0 && (
         <div className="glass-card" style={{ padding: '1.5rem', background: 'rgba(162, 155, 254, 0.12)', border: '2px solid #a29bfe' }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#6c5ce7' }}>✨ つぎにやってみよう！</h3>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#6c5ce7' }}>✨ 次にやってみよう！</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
             {recommendations.map(({ cat, skill }) => (
               <button
@@ -265,7 +266,11 @@ export const MyProgress: React.FC = () => {
 
       {/* Picture Dictionary 単元ごとの現在地 */}
       <div>
-        <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-primary)' }}>📍 Picture Dictionary 単元ごとの現在地</h3>
+        <h3 style={{ margin: '0 0 0.3rem 0', color: 'var(--color-primary)' }}>📍 Picture Dictionary 単元ごとの現在地</h3>
+        <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
+          9月16日から <b>❓Q&amp;A</b> も 仲間に入ったよ（ぜんぶで {SKILLS.length}つ）。
+          そのため「マスター！」だった単元が「がんばり中」に もどって見えることがあるよ。記録は 消えていないよ
+        </p>
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
           {catStats.map(({ cat, done, p }) => {
             const c = colorFor(done);
@@ -274,7 +279,7 @@ export const MyProgress: React.FC = () => {
                 key={cat}
                 className="glass-card hover-scale"
                 style={{ padding: '1.2rem', background: c.bg, border: `2px solid ${c.border}`, cursor: 'pointer' }}
-                onClick={() => navigate('/dictionary')}
+                onClick={() => navigate(`/dictionary/${encodeURIComponent(cat)}`)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#2d3436' }}>{cat}</span>

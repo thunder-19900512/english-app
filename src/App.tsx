@@ -34,14 +34,14 @@ import { ToastHost } from './components/ui/Toast';
 
 
 const App: React.FC = () => {
-  // クラス共通の「あいことば」でログイン済みか。
+  // クラス共通の「合言葉」でログイン済みか。
   //  null=確認中 / false=未ログイン（ClassGateを出す） / true=ログイン済み（今まで通り）
   const [authed, setAuthed] = useState<boolean | null>(null);
   // 名簿（Supabaseから取得）の読み込み状態。null=まだ / true=完了 / string=エラー
   const [roster, setRoster] = useState<null | true | string>(null);
 
   useEffect(() => {
-    // 端末に保存されたログイン状態を確認（初回だけあいことば、以後はスキップ）
+    // 端末に保存されたログイン状態を確認（初回だけ合言葉、以後はスキップ）
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
     // ログイン／ログアウトの変化に追従（別タブでの変化やトークン失効にも対応）
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -50,20 +50,20 @@ const App: React.FC = () => {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // あいことばを通ったら、名簿をSupabaseから読み込む（コードには名簿を持たない）
+  // 合言葉を通ったら、名簿をSupabaseから読み込む（コードには名簿を持たない）
   useEffect(() => {
     if (authed !== true) return;
     let alive = true;
     loadRoster()
       .then(() => { if (alive) setRoster(true); })
-      .catch(() => { if (alive) setRoster('めいぼが よみこめませんでした。つうしんを かくにんして、ページを ひらきなおしてね'); });
+      .catch(() => { if (alive) setRoster('めいぼが 読み込めませんでした。通信を 確認して、ページを 開き直してね'); });
     return () => { alive = false; };
   }, [authed]);
 
   // セッション確認中は一瞬なので、ちらつき防止に何も出さない
   if (authed === null) return null;
 
-  // 未ログインなら、あいことば画面だけを出す（子ども向けの入口）
+  // 未ログインなら、合言葉画面だけを出す（子ども向けの入口）
   if (!authed) return <ClassGate onAuthed={() => setAuthed(true)} />;
 
   // 名簿の読み込み中／失敗
@@ -71,7 +71,7 @@ const App: React.FC = () => {
     return (
       <div className="flex-col flex-center gap-lg" style={{ minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>
         <p style={{ fontSize: '1.25rem' }}>
-          {typeof roster === 'string' ? roster : 'よみこみちゅう...'}
+          {typeof roster === 'string' ? roster : '読み込み中…'}
         </p>
       </div>
     );
@@ -79,7 +79,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      {/* 画面固定の通知（ポイント獲得・クリア・もう一回）。スクロール位置に関係なく見える */}
+      {/* 画面固定の通知（ポイント獲得・クリア・もう一度）。スクロール位置に関係なく見える */}
       <ToastHost />
       <Routes>
         <Route path="/" element={<Login />} />

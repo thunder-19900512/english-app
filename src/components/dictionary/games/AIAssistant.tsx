@@ -12,7 +12,9 @@ import { ArrowLeft, Send, Sparkles, Coins, HelpCircle, Languages, Trophy } from 
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { DIALOGUES } from '../../dialogue/dialogueData';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
-import { generateWithGemini, type GeminiContent } from '../../../lib/aiProxy';
+import { generateWithGemini, ProxyError, type GeminiContent } from '../../../lib/aiProxy';
+import { EIKEN_LEVELS, findEiken, loadEiken, saveEiken } from '../../../data/eikenLevels';
+import { isArchived } from '../../../data/archivedUnits';
 import { useSafeBack } from '../../../hooks/useSafeBack';
 
 // 教科書の各Unitに紐づくフリートークの場面とゴール。
@@ -25,12 +27,12 @@ export const FREETALK_UNITS: FreetalkUnit[] = [
   { id: 'g5-u1', label: '5年 U1 好きな教科', situation: '休み時間に、好きな教科について話す', goal: 'The goal is reached only after the user has BOTH asked you what subject you like AND told you their own favorite subject.', missionJa: 'すきな教科をたずねて、自分のすきな教科も伝えよう！', greeting: { en: 'Hi! What subject do you like?', ja: 'やあ！何の教科が好き？' } },
   { id: 'g5-u2', label: '5年 U2 誕生日', situation: '友だちの誕生日とほしいものを聞き合う', goal: 'The goal is reached only after the user has asked when your birthday is AND told you their own birthday AND said one thing they want.', missionJa: '誕生日をたずね合って、ほしいものも伝えよう！', greeting: { en: 'Hi! When is your birthday?', ja: 'やあ！誕生日はいつ？' } },
   { id: 'g5-u3', label: '5年 U3 できること', situation: 'お互いにできること（楽器・スポーツ）を聞き合う', goal: 'The goal is reached only after the user has asked what you can do AND told you one thing they can do.', missionJa: 'おたがいの「できること」をたずね合おう！', greeting: { en: 'Can you play the piano?', ja: 'ピアノは弾ける？' } },
-  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'The goal is reached only after the user has introduced what their friend can do well using "He can ..." or "She can ...".', missionJa: '友だちが上手にできることをしょうかいしよう！', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
+  { id: 'g5-u4', label: '5年 U4 友だちの特技', situation: '友だちが上手にできることを紹介し合う', goal: 'The goal is reached only after the user has introduced what their friend can do well using "He can ..." or "She can ...".', missionJa: '友だちが上手にできることを紹介しよう！', greeting: { en: 'My friend can run fast. How about your friend?', ja: '友だちは速く走れるよ。きみの友だちは？' } },
   { id: 'g5-u5', label: '5年 U5 道案内', situation: '町で道をたずねて案内する', goal: 'You are lost and looking for the station. The goal is reached only after the user gives directions (go straight / turn right / turn left) and you arrive at the station.', missionJa: '駅まで道案内しよう！（まっすぐ・右・左）', greeting: { en: 'Excuse me. Where is the station?', ja: 'すみません、駅はどこ？' } },
   { id: 'g5-u6', label: '5年 U6 レストラン注文', situation: 'レストランで食べ物や飲み物を注文する', goal: 'You are a cashier. The goal is reached only after the user orders food and/or drink, hears the price, and pays or says thank you/goodbye.', missionJa: 'ごはんを注文して、お会計までしよう！', greeting: { en: 'What would you like?', ja: '何にする？' } },
   { id: 'g5-u7', label: '5年 U7 行きたい場所', situation: '行きたい場所とその理由を話す', goal: 'The goal is reached only after the user has said where they want to go AND given a reason (because ...).', missionJa: '行きたい場所と、その理由をつたえよう！', greeting: { en: 'Where do you want to go?', ja: 'どこに行きたい？' } },
-  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'The goal is reached only after the user has told you who their hero is AND why (what the hero can do or is good at).', missionJa: '自分のヒーローと、その理由をしょうかいしよう！', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
-  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'The goal is reached only after the user has told you their name AND one thing they can do.', missionJa: '名前と、できることをしょうかいしよう！', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
+  { id: 'g5-u8', label: '5年 U8 ヒーロー', situation: '自分のヒーローについて紹介する', goal: 'The goal is reached only after the user has told you who their hero is AND why (what the hero can do or is good at).', missionJa: '自分のヒーローと、その理由を紹介しよう！', greeting: { en: 'Who is your hero?', ja: 'あなたのヒーローは誰？' } },
+  { id: 'g6-u1', label: '6年 U1 自己紹介', situation: 'はじめて会った人に自己紹介する', goal: 'The goal is reached only after the user has told you their name AND one thing they can do.', missionJa: '名前と、できることを紹介しよう！', greeting: { en: "Hi! I'm Jordan. What can you do?", ja: 'やあ！ジョーダンだよ。何ができる？' } },
   { id: 'g6-u2', label: '6年 U2 一日の生活', situation: '毎日の生活（起きる時間など）を聞き合う', goal: 'The goal is reached only after the user has asked about your daily routine AND told you what time they do something (get up / go to bed, etc.).', missionJa: '毎日の生活（起きる時間など）をたずね合おう！', greeting: { en: 'What time do you get up?', ja: '何時に起きる？' } },
   { id: 'g6-u3', label: '6年 U3 週末のこと', situation: '週末にしたことを話す', goal: 'The goal is reached only after the user has told you TWO things they did on the weekend in the past tense (I went / I played ...).', missionJa: '週末にしたことを2つ伝えよう！（過去形）', greeting: { en: 'How was your weekend?', ja: '週末はどうだった？' } },
   { id: 'g6-u4', label: '6年 U4 行きたい国', situation: '行きたい国と見られるものを話す', goal: 'The goal is reached only after the user has said which country they want to visit AND what they can see or do there.', missionJa: '行きたい国と、そこで見られるものを伝えよう！', greeting: { en: 'Where do you want to go?', ja: 'どこの国に行きたい？' } },
@@ -39,6 +41,28 @@ export const FREETALK_UNITS: FreetalkUnit[] = [
   { id: 'g6-u7', label: '6年 U7 一番の思い出', situation: '小学校の一番の思い出を話す', goal: 'The goal is reached only after the user has told you their best school memory AND what they did, in the past tense.', missionJa: '小学校の一番の思い出を伝えよう！（過去形）', greeting: { en: 'What is your best memory?', ja: '一番の思い出は？' } },
   { id: 'g6-u8', label: '6年 U8 将来の夢', situation: '将来なりたいものとその理由を話す', goal: 'The goal is reached only after the user has said what they want to be AND why.', missionJa: '将来なりたいものと、その理由を伝えよう！', greeting: { en: 'What do you want to be?', ja: '将来何になりたい？' } },
 ];
+
+
+// AIの通信エラーを、子どもが読んで次の行動が分かる日本語にする。
+// （英語の生エラーが会話に混ざると、何が起きたのか分からず不安になるため）
+const friendlyAiError = (err: any): string => {
+  // 中継役（Edge Function）からのメッセージは、そのまま子ども向けの文になっている
+  if (err instanceof ProxyError && err.status) return err.message;
+  const raw = String(err?.message || err || '');
+  if (/Failed to fetch|NetworkError|ERR_INTERNET|Load failed/i.test(raw)) {
+    return '📶 いま インターネットに つながらないみたい。少し待って もう一度送ってね。（直らないときは先生を呼ぼう）';
+  }
+  if (/429|quota|RESOURCE_EXHAUSTED|rate/i.test(raw)) {
+    return '⏳ いま みんなが たくさん使っていて 混んでいます。少し待って もう一度送ってね。';
+  }
+  if (/API key|401|403|PERMISSION|invalid/i.test(raw)) {
+    return '🔑 AIの設定に 問題があるみたい。先生を呼んでね。';
+  }
+  if (/500|503|internal|unavailable/i.test(raw)) {
+    return '🛠 AIのサーバーが 混んでいます。少し待って もう一度試してね。';
+  }
+  return '⚠️ うまく 送れませんでした。もう一度試して、直らないときは先生を呼んでね。';
+};
 
 const stripSlots = (s: string) => s.replace(/[{}]/g, '');
 
@@ -51,6 +75,12 @@ interface InitOpts {
   title?: string;
   histSuffix?: string;
 }
+
+const shortHash = (s: string): string => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+};
 
 // Unit別フリートークを開始するための opts を組み立てる（例文サジェストはダイアログから流用）
 const buildUnitOpts = (u: FreetalkUnit): InitOpts => {
@@ -103,7 +133,7 @@ const BENTO_SHOP_CHALLENGE_GOAL =
   'The goal is reached ONLY after the staff has welcomed you, taken at least TWO orders with a price for each, given the CORRECT total, and you have paid.';
 
 const BENTO_SHOP_SIMPLE_LABEL =
-  '🎯 ミッション：お店の人になろう！ メニューをつたえる→注文をうける→値段を言う→合計を伝える→お客さんがはらったらクリア！';
+  '🎯 ミッション：お店の人になろう！ メニューを伝える→注文を受ける→値段を言う→合計を伝える→お客さんがはらったらクリア！';
 const BENTO_SHOP_CHALLENGE_LABEL =
   '🎯 ミッション（チャレンジ）：お客さんが料理の質問（What\'s in it? など）もしてくるよ。答えながら、注文と合計までいけたらクリア！';
 
@@ -167,25 +197,23 @@ const SCENARIOS: Record<string, Scenario> = {
   },
 };
 
-const ADAPTIVE_INSTRUCTION =
-  'ADAPT to the user\'s level: estimate their English ability from their messages. ' +
-  'If they write very short/simple text, make mistakes, or use Japanese, reply with VERY short and VERY simple English. ' +
-  'If they write well, you may use slightly longer and more natural English. Always one short sentence is safest for beginners.';
-
-const FORMAT_INSTRUCTION =
-  'OUTPUT FORMAT: Reply with exactly ONE short English sentence. Then a new line starting with "JA:" and the natural Japanese translation. ' +
-  'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line).';
+// 出力フォーマット。英文の本数は申告した英検レベルで変わる（上ほど長く自然に話す）。
+const formatInstruction = (sentences: string) =>
+  `OUTPUT FORMAT: Reply with ${sentences}. Then a new line starting with "JA:" and the natural Japanese translation. ` +
+  'Nothing else. When the GOAL has been reached, add the token [CLEAR] at the very end (after the JA line). ' +
+  'If the GOAL text defines a BONUS and the user has just earned it, add the token [BONUS] at the very end instead.';
 
 const REDIRECT_MESSAGE = "Let's keep it kind! 😊 そういう言葉はお返事できないよ。すきな食べ物やスポーツを英語で話してみよう！";
 
 // AIの返答から英語・日本語訳・クリア判定を取り出す
-const parseReply = (raw: string): { en: string; ja: string; cleared: boolean } => {
+const parseReply = (raw: string): { en: string; ja: string; cleared: boolean; bonus: boolean } => {
   const cleared = /\[CLEAR\]/i.test(raw);
-  let t = raw.replace(/\[CLEAR\]/gi, '').trim();
+  const bonus = /\[BONUS\]/i.test(raw);
+  let t = raw.replace(/\[CLEAR\]|\[BONUS\]/gi, '').trim();
   const parts = t.split(/\n?\s*JA[:：]/i);
   const en = (parts[0] || '').trim();
   const ja = parts.length > 1 ? parts.slice(1).join(' ').trim() : '';
-  return { en, ja, cleared };
+  return { en, ja, cleared, bonus };
 };
 
 export const AIAssistant: React.FC = () => {
@@ -200,7 +228,7 @@ export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [mode, setMode] = useState<keyof typeof SCENARIOS | null>(null);
   // Geminiに毎回送る会話の文脈（システム指示＋これまでのやりとり）。nullの間は会話未開始。
-  const [chat, setChat] = useState<{ system: string; history: GeminiContent[] } | null>(null);
+  const [chat, setChat] = useState<{ system: string; history: GeminiContent[]; maxOutputTokens: number } | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [inputText, setInputText] = useState('');
   const [showTranslation, setShowTranslation] = useState(false);
@@ -217,7 +245,11 @@ export const AIAssistant: React.FC = () => {
   // 上級モード（P1-3）：高習熟層向け。文で話す・追加質問・日本語NGを厳格化
   const [isAdvanced, setIsAdvanced] = useState(false);
 
-  // チームモード（4人1組などで、ターンごとに話す人をえらんでリレー）
+  // 申告した英検レベル（AIの英語の難しさとクリア条件の土台になる）
+  const [eiken, setEiken] = useState<string>(() => loadEiken(studentId));
+  const chooseEiken = (id: string) => { setEiken(id); saveEiken(studentId, id); };
+
+  // チームモード（4人1組などで、ターンごとに話す人を選んでリレー）
   const [isTeam, setIsTeam] = useState(false);
   const [teamMembers, setTeamMembers] = useState<{ id: string; name: string }[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<{ id: string; name: string } | null>(null);
@@ -226,13 +258,21 @@ export const AIAssistant: React.FC = () => {
     setTeamMembers(prev => prev.some(x => x.id === m.id) ? prev.filter(x => x.id !== m.id) : [...prev, m]);
 
   // 先生がダッシュボードで編集したUnitゴールがあれば上書きする
+  const activeUnitIdRef = useRef<string | null>(null);
   const withGoalOverride = (opts: InitOpts, unitId: string): InitOpts => {
+    activeUnitIdRef.current = unitId;
     const ov = freetalkGoals?.[unitId];
     if (!ov) return opts;
     return {
       ...opts,
       goal: ov.goal || opts.goal,
       goalLabel: ov.missionJa ? `🎯 ミッション：${ov.missionJa}` : opts.goalLabel,
+      // 場面を変えたとき、AIの第一声がゴールと食い違わないように第一声も差し替えられる
+      greeting: ov.greetingEn ? { en: ov.greetingEn, ja: ov.greetingJa || '' } : opts.greeting,
+      // 前の場面の会話が残っていると、画面は古い第一声のまま、AIは新しい第一声の続きとして話し始めてしまう
+      histSuffix: ov.greetingEn ? `${opts.histSuffix || 'default'}_${shortHash(ov.greetingEn)}` : opts.histSuffix,
+      // ヘルプの例文もUnitごとに差し替えられる（既定はダイアログの文＝役が逆になることがある）
+      suggestions: ov.hints?.length ? ov.hints : opts.suggestions,
     };
   };
 
@@ -255,6 +295,8 @@ export const AIAssistant: React.FC = () => {
     setTimeout(() => setRecordMsg(''), 4000);
   };
   const awardedRef = useRef(false);
+  const bonusAwardedRef = useRef(false);
+  const [bonusMsg, setBonusMsg] = useState(false);
   const activeOptsRef = useRef<InitOpts | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -279,11 +321,14 @@ export const AIAssistant: React.FC = () => {
     setPendingFreetalk(false);
     setCleared(false);
     awardedRef.current = false;
+    bonusAwardedRef.current = false;
+    setBonusMsg(false);
     setShowHelp(false);
     setCurrentSpeaker(null);
     setLastSpeakerId(null);
 
-    const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}`;
+    // レベルごとに会話を分ける（3級で話した続きを5級で読むと、難易度がちぐはぐになるため）
+    const histKey = `ai_hist_${studentId}_${selectedMode}_${opts?.histSuffix || 'default'}_${eiken}`;
     const savedHist = localStorage.getItem(histKey);
     let pastMessages: ChatMessage[] = [];
     if (savedHist) {
@@ -296,14 +341,16 @@ export const AIAssistant: React.FC = () => {
         ? `The user set this situation (in Japanese): 「${opts.situation.trim()}」. Play along with this situation.`
         : '';
 
+      // 申告された英検レベルで、AIの英語の難しさとクリア条件を変える
+      const lv = findEiken(eiken);
       const systemText = [
         scenario.role,
         situationLine,
-        `GOAL: ${scenario.goal}`,
-        ADAPTIVE_INSTRUCTION,
+        `GOAL: ${scenario.goal}${lv.goalSuffix}`,
+        lv.spec,
         'Always reply in English only (never Japanese in the English line).',
         SAFETY_INSTRUCTION,
-        FORMAT_INSTRUCTION,
+        formatInstruction(lv.sentences),
       ].filter(Boolean).join('\n');
 
       const greetSeed = `${scenario.greeting.en}\nJA: ${scenario.greeting.ja}`;
@@ -321,7 +368,11 @@ export const AIAssistant: React.FC = () => {
         ];
       }
 
-      setChat({ system: systemText, history: historyForGemini });
+      setChat({
+        system: systemText,
+        history: historyForGemini,
+        maxOutputTokens: lv.multiplier >= 1.4 ? 300 : lv.multiplier >= 1.25 ? 220 : 140,
+      });
 
       if (pastMessages.length === 0) {
         const initialMsg: ChatMessage = { role: 'model', text: scenario.greeting.en, ja: scenario.greeting.ja };
@@ -331,7 +382,8 @@ export const AIAssistant: React.FC = () => {
       }
     } catch (err: any) {
       console.error('AI Init Error:', err);
-      setMessages([{ role: 'model', text: err.message ? `[システムエラー] ${err.message}` : '[システムエラー] AIの初期化に失敗しました。' }]);
+      console.error('AI init failed', err);
+      setMessages([{ role: 'model', text: friendlyAiError(err) }]);
       setIsAiThinking(false);
     }
   };
@@ -349,7 +401,7 @@ export const AIAssistant: React.FC = () => {
 
     // トーク中は日本語NG。日本語が含まれていたら送らず（ポイントも消費せず）英語をうながす。
     if (/[぀-ヿ㐀-鿿]/.test(text)) {
-      setMessages(prev => [...prev, { role: 'model', text: 'English, please! 英語で話してみよう。こまったら 💡ヘルプ を見てね。' }]);
+      setMessages(prev => [...prev, { role: 'model', text: 'English, please! 英語で話してみよう。困ったら 💡ヘルプ を見てね。' }]);
       setShowHelp(true);
       speak('In English, please!');
       return;
@@ -370,18 +422,32 @@ export const AIAssistant: React.FC = () => {
     // チーム：話したら次は別の人がえらべるよう、直前の話者を記録して選択をリセット
     if (isTeam && currentSpeaker) { setLastSpeakerId(currentSpeaker.id); setCurrentSpeaker(null); }
 
-    const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
+    const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}_${eiken}`;
+    // 先生が判定ルール（正規表現）を設定したUnitは、AIの[CLEAR]を待たず子どもの発言で判定する。
+    // 軽量モデルが「2ブロック進んで右」のような一文の中の2条件を取りこぼすことがあるため。
+    const rules = activeUnitIdRef.current ? freetalkGoals?.[activeUnitIdRef.current] : undefined;
+    const saidSoFar = newMessages.filter(m => m.role === 'user').map(m => m.text).join(' ').toLowerCase();
+    const safeTest = (re: string, s: string) => { try { return new RegExp(re, 'i').test(s); } catch { return false; } };
+    if (rules?.clearAll?.length && !awardedRef.current && rules.clearAll.every(re => safeTest(re, saidSoFar))) {
+      awardedRef.current = true;
+      setCleared(true);
+      addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+    } else if (rules?.bonusAny?.length && awardedRef.current && !bonusAwardedRef.current && rules.bonusAny.some(re => safeTest(re, text.toLowerCase()))) {
+      bonusAwardedRef.current = true;
+      setBonusMsg(true);
+      addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
+    }
     try {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
       const userTurn: GeminiContent = { role: 'user', parts: [{ text }] };
       const raw = await generateWithGemini({
         system: chat.system,
         contents: [...chat.history, userTurn],
-        maxOutputTokens: 120,
+        maxOutputTokens: chat.maxOutputTokens,
         temperature: 0.7,
       });
-      setChat({ system: chat.system, history: [...chat.history, userTurn, { role: 'model', parts: [{ text: raw }] }] });
-      const { en, ja, cleared: didClear } = parseReply(raw);
+      setChat({ ...chat, history: [...chat.history, userTurn, { role: 'model', parts: [{ text: raw }] }] });
+      const { en, ja, cleared: didClear, bonus: didBonus } = parseReply(raw);
       const safeEn = isInappropriate(en) ? REDIRECT_MESSAGE : en;
 
       const updated: ChatMessage[] = [...newMessages, { role: 'model', text: safeEn, ja }];
@@ -390,14 +456,22 @@ export const AIAssistant: React.FC = () => {
       localStorage.setItem(histKey, JSON.stringify(savable));
       speak(safeEn);
 
-      if (didClear && !awardedRef.current) {
+      // ルール判定があるUnitでは、AIのトークンでは加点しない（軽量モデルの誤発火を防ぐ）
+      if (didClear && !awardedRef.current && !rules?.clearAll?.length) {
         awardedRef.current = true;
         setCleared(true);
-        addPoints(`ai_clear_${mode}`, {});
+        // きびしい条件をクリアした分だけ上乗せ（レベルを盛ってもラクにはならないので自己申告でよい）
+        addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+      }
+      if (didBonus && awardedRef.current && !bonusAwardedRef.current && !rules?.bonusAny?.length) {
+        bonusAwardedRef.current = true;
+        setBonusMsg(true);
+        addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
       }
     } catch (err: any) {
       console.error('AI Send Error:', err);
-      setMessages([...newMessages, { role: 'model', text: err.message ? `[エラー] ${err.message}` : "Oops, I didn't catch that. Can you say it again?" }]);
+      console.error('AI send failed', err);
+      setMessages([...newMessages, { role: 'model', text: friendlyAiError(err) }]);
     } finally {
       setIsAiThinking(false);
     }
@@ -449,7 +523,7 @@ export const AIAssistant: React.FC = () => {
   };
 
   // URLパラメータ（?unit=g5-u1）で特定Unitのフリートークを直接ひらく（今日のミッション用）。
-  // 一度だけ自動開始する。
+  // APIキーの読み込みを待ってから一度だけ自動開始する（キー未取得だとinitChatが空振りするため）。
   const [searchParams] = useSearchParams();
   const autoStartedRef = useRef(false);
   useEffect(() => {
@@ -471,6 +545,7 @@ export const AIAssistant: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+
   // 状況設定（フリートーク）
   if (pendingFreetalk) {
     return (
@@ -480,7 +555,7 @@ export const AIAssistant: React.FC = () => {
           <h2 className="text-primary" style={{ flex: 1, textAlign: 'center', margin: 0, marginRight: '80px' }}>🤖 AIと英語で話そう！</h2>
         </div>
 
-        {/* チームでやる（メンバーをえらんでリレー会話） */}
+        {/* チームでやる（メンバーを選んでリレー会話） */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ margin: 0 }}>👥 チームでやる</h3>
@@ -510,6 +585,34 @@ export const AIAssistant: React.FC = () => {
           )}
         </div>
 
+        {/* 英検レベルの申告（AIの英語の難しさとクリア条件が変わる） */}
+        <div className="glass-card flex-col gap-md" style={{ padding: '1.2rem' }}>
+          <div>
+            <h3 style={{ margin: 0 }}>🎖 英検レベル</h3>
+            <p style={{ color: '#666', margin: '0.2rem 0 0 0', fontSize: '0.85rem' }}>
+              いまの自分に近いものを選んでね。上のレベルほど<b>AIの英語が難しくなり、クリアの条件も増える</b>よ。
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {EIKEN_LEVELS.map(l => {
+              const on = l.id === eiken;
+              return (
+                <button key={l.id} onClick={() => chooseEiken(l.id)}
+                  style={{ padding: '0.45rem 0.9rem', borderRadius: '999px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold',
+                    border: `2px solid ${l.color}`, background: on ? l.color : 'white', color: on ? 'white' : l.color }}>
+                  {on ? '✓ ' : ''}{l.label}
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>{findEiken(eiken).hintJa}</p>
+          {findEiken(eiken).multiplier > 1 && (
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#b45309', fontWeight: 'bold' }}>
+              クリアすると ポイント ×{findEiken(eiken).multiplier}（条件がきびしいぶん多くもらえる）
+            </p>
+          )}
+        </div>
+
         {/* 上級モード（高習熟層向け。AIがきびしめになる） */}
         <div className="glass-card" style={{ padding: '1rem 1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
@@ -521,11 +624,13 @@ export const AIAssistant: React.FC = () => {
           </Button>
         </div>
 
-        {/* World Bento お店屋さん（AI＝お客さん／児童＝店員） */}
+        {/* World Bento お店屋さん（AI＝お客さん／児童＝店員）。
+            アーカイブ中は出さない → もどすときは archivedUnits.ts の 'worldbento' を消すだけ */}
+        {!isArchived('worldbento') && (<>
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem', border: '2px solid #f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}>
           <h3 style={{ margin: 0, color: '#b45309' }}>🍱 World Bento お店屋さん（店員の練習）</h3>
           <p style={{ color: '#7a5a00', margin: 0, fontSize: '0.9rem' }}>
-            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューをつたえて、値段と合計を言おう。
+            <b>あなたが店員さん！</b> AIがお客さんになって注文しに来るよ。メニューを伝えて、値段と合計を言おう。
           </p>
           <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
             <button className="hover-scale" onClick={() => startShop('simple')}
@@ -538,13 +643,14 @@ export const AIAssistant: React.FC = () => {
             </button>
           </div>
         </div>
+        </>)}
 
-        {/* 教科書のUnitから場面をえらぶ */}
+        {/* 教科書のUnitから場面を選ぶ */}
         <div className="glass-card flex-col gap-md" style={{ padding: '1.5rem' }}>
-          <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面をえらぶ</h3>
+          <h3 style={{ margin: 0 }}>📖 教科書のUnitから場面を選ぶ</h3>
           <p style={{ color: '#666', margin: 0, fontSize: '0.9rem' }}>そのUnitの表現を使って、AIと会話の練習ができるよ。</p>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
-            {FREETALK_UNITS.map(u => (
+            {FREETALK_UNITS.filter(u => !isArchived(u.id)).map(u => (
               <button key={u.id} className="hover-scale"
                 onClick={() => startFreetalk(withGoalOverride(buildUnitOpts(u), u.id))}
                 style={{ padding: '0.7rem', borderRadius: '10px', border: '2px solid var(--color-primary)', background: 'white', color: 'var(--color-primary)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', textAlign: 'center' }}>
@@ -564,9 +670,9 @@ export const AIAssistant: React.FC = () => {
             style={{ width: '100%', minHeight: '70px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
           />
           <Button size="lg" onClick={() => startFreetalk({ situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
-            この場面ではじめる！
+            この場面で始める！
           </Button>
-          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしではじめる</Button>
+          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしで始める</Button>
         </div>
       </div>
     );
@@ -587,7 +693,7 @@ export const AIAssistant: React.FC = () => {
         <Button variant="outline" onClick={() => setShowTranslation(t => !t)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.7rem' }} icon={Languages}>
           {showTranslation ? '訳オフ' : '訳オン'}
         </Button>
-        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
+        <Button variant="outline" onClick={() => { if (window.confirm('会話をリセットして最初からやり直しますか？')) { localStorage.removeItem(`ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}_${eiken}`); initChat(mode, activeOptsRef.current); } }} style={{ fontSize: '0.8rem', padding: '0.4rem' }}>リセット</Button>
         <Button variant="outline" onClick={() => setShowRecord(s => !s)} style={{ fontSize: '0.8rem', padding: '0.4rem' }} disabled={messages.length === 0}>📝 記録</Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--color-primary)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
           <Coins size={18} color="#FFD700" />{totalPoints} P
@@ -616,7 +722,7 @@ export const AIAssistant: React.FC = () => {
         <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '0.6rem 0.9rem', marginBottom: '0.5rem' }}>
           {!currentSpeaker ? (
             <>
-              <div style={{ fontSize: '0.9rem', color: '#4338ca', fontWeight: 'bold', marginBottom: '0.4rem' }}>📣 作戦タイム：「なんて言う？」を相談しよう（日本語OK）→ 話す人をえらぶ👇</div>
+              <div style={{ fontSize: '0.9rem', color: '#4338ca', fontWeight: 'bold', marginBottom: '0.4rem' }}>📣 作戦タイム：「なんて言う？」を相談しよう（日本語OK）→ 話す人を選ぶ👇</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {teamMembers.map(m => {
                   const isLast = m.id === lastSpeakerId;
@@ -635,7 +741,7 @@ export const AIAssistant: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#4338ca' }}>🎤 いま話す人：{currentSpeaker.name} さん</span>
               <span style={{ fontSize: '0.85rem', color: '#6366f1' }}>マイクで話して、文を確認してから送ってね</span>
-              <Button variant="outline" onClick={() => setCurrentSpeaker(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', marginLeft: 'auto' }}>えらび直す</Button>
+              <Button variant="outline" onClick={() => setCurrentSpeaker(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem', marginLeft: 'auto' }}>選び直す</Button>
             </div>
           )}
         </div>
@@ -645,6 +751,11 @@ export const AIAssistant: React.FC = () => {
         <div className="animate-pop" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid var(--color-success)', borderRadius: '12px', padding: '0.8rem', marginBottom: '0.5rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <Trophy color="var(--color-accent)" />
           <span style={{ fontWeight: 'bold', color: 'var(--color-success)', fontSize: '1.2rem' }}>ミッションクリア！🎉 よくがんばったね！</span>
+        </div>
+      )}
+      {bonusMsg && (
+        <div className="animate-pop" style={{ background: 'linear-gradient(135deg, #fefce8, #fef9c3)', border: '2px solid var(--color-accent)', borderRadius: '12px', padding: '0.6rem', marginBottom: '0.5rem', textAlign: 'center' }}>
+          <span style={{ fontWeight: 'bold', color: '#a16207', fontSize: '1.1rem' }}>⭐ ボーナス！ おすすめまで言えた！</span>
         </div>
       )}
 
@@ -675,7 +786,7 @@ export const AIAssistant: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{ fontSize: '2rem' }}>🤖</div>
             <div className="glass-card" style={{ padding: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>考え中...</span>
+              <Sparkles className="animate-float" color="var(--color-accent)" /><span style={{ color: '#666' }}>考え中…</span>
             </div>
           </div>
         )}

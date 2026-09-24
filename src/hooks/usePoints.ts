@@ -1,6 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 import { showToast } from '../components/ui/Toast';
+import { currentMission, MISSION_MULTIPLIER } from '../lib/missionBonus';
+import { isTrialId } from '../lib/trial';
+import { dictPolicy } from '../lib/dictDepth';
+
+// ボーナスの重ねがけの上限（ミッション×やりきり等）
+const MAX_MULTIPLIER = 2;
 
 export const usePoints = () => {
   const studentId = localStorage.getItem('studentId');
@@ -47,10 +53,29 @@ export const usePoints = () => {
   ) => {
     if (!studentId) return 0;
 
+    // お試しアカウント（Test／おためし）はポイントをためない。
+    // 代わりに「子どもならいくらもらえるか（1回目の点）」を見せる。サーバとのやり取りもしない
+    if (isTrialId(studentId)) {
+      const mission = currentMission();
+      const mul = Math.min((options.multiplier !== undefined ? options.multiplier : 1) * (mission ? MISSION_MULTIPLIER : 1), MAX_MULTIPLIER);
+      let earned = 20 + (options.isPerfect ? 5 : 0) + (options.isNewRecord ? 10 : 0);
+      if (mul !== 1) earned = Math.max(1, Math.round(earned * mul));
+      showToast(`🎉 クリア！ 子どもたちには ＋${earned}ポイント たまります（お試しでは たまりません）`, 'success');
+      return 0;
+    }
+
     // 先に最新データをSupabaseから取り込む。
     // （あとで clearCounts を更新するより前にやらないと、pullがDBの古い値で
     //   こちらの増分を上書きして「クリア記録が消える」バグになる）
-    await pullFromSupabase(studentId);
+    //
+    // ★pullが失敗（通信断など）したときは、この端末のローカル値が古い可能性がある。
+    //   そのまま加点してpushすると、他端末で貯めた記録を古い値で塗り替えかねないので、
+    //   1回だけ待って再試行する。それでもダメなら加点はするが、その旨を伝える。
+    let synced = await pullFromSupabase(studentId);
+    if (!synced) {
+      await new Promise(r => setTimeout(r, 800));
+      synced = await pullFromSupabase(studentId);
+    }
 
     // Load clear counts（pull後の最新を読む）
     const countsKey = `clearCounts_${studentId}`;
@@ -58,7 +83,23 @@ export const usePoints = () => {
     const clearCounts = countsStr ? JSON.parse(countsStr) : {};
 
     // Determine current clear count for this stage
-    const currentCount = clearCounts[stageKey] || 0;
+    //
+    // ★「久しぶりの復習」はまた点が入る（子どもの声 2026-09-16
+    //   「ピクチャーディクショナリーよりふりかえりの方が稼げる」）。
+    //   逓減は連打を防ぐための仕組みだが、一度やり切った単元は永久に0Pのままで、
+    //   毎日書けば3〜8P入るふりかえりより軽い、という逆転が起きていた。
+    //   最後にクリアしてから1週間あくごとに、逓減を1段階もどす（時間をおいた復習は
+    //   学習として価値があるうえ、その場で連打しても回復しない＝荒稼ぎにはならない）。
+    const atKey = `clearAt_${studentId}`;
+    const clearAt = JSON.parse(localStorage.getItem(atKey) || '{}');
+    const rawCount = clearCounts[stageKey] || 0;
+    const last = clearAt[stageKey] || 0;
+    const weeks = last ? Math.floor((Date.now() - last) / (7 * 24 * 3600 * 1000)) : 0;
+    const currentCount = Math.max(0, rawCount - weeks * 2);   // 1週間あくごとに2段階もどす
+    const revisited = weeks > 0 && rawCount > 0;
+    // 日をまたいだ練習は、逓減しきっていても0Pにはしない（毎日の練習が無意味にならないように）。
+    // 同じ日の連打には効かない＝荒稼ぎにはならない。
+    const newDay = !!last && new Date(last).toDateString() !== new Date().toDateString();
 
     // Calculate base points（繰り返すほど減り、最終的には0ポイントに＝荒稼ぎ防止）
     let earned = 0;
@@ -69,21 +110,34 @@ export const usePoints = () => {
     else if (currentCount === 4) earned = 1;   // 5回目
     else earned = 0;                           // 6回目以降は0ポイント
 
+    if (earned === 0 && newDay) earned = 1;
+
     // ボーナスは最初の2回まで（連打で荒稼ぎできないように）
     if (currentCount <= 1) {
       if (options.isPerfect) earned += 5;
       if (options.isNewRecord) earned += 10;
     }
 
-    // Apply multiplier if provided (for scaled down modes)
-    // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない。
-    if (options.multiplier !== undefined && options.multiplier < 1 && earned > 0) {
-      earned = Math.max(1, Math.round(earned * options.multiplier));
+    // 倍率をかける。正答率のような「減らす倍率」と、今日のミッションのような
+    // 「増やす倍率」の両方に効く。
+    // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない＝連打で稼げない。
+    const mission = currentMission();
+    const missionMul = mission ? MISSION_MULTIPLIER : 1;
+    // ボーナスが重なっても最大2倍まで。1回のクリアで稼ぎすぎて、
+    // 他の活動やショップ・町のバランスが壊れないようにする。
+    // 辞書は「1つの単元を深める」と得、「単元をたくさん回す」と損になる倍率をかける（dictDepth.ts）
+    const dict = dictPolicy(studentId, stageKey, clearCounts);
+    const raw = (options.multiplier !== undefined ? options.multiplier : 1) * missionMul * dict.multiplier;
+    const mul = Math.min(raw, MAX_MULTIPLIER);
+    if (mul !== 1 && earned > 0) {
+      earned = Math.max(1, Math.round(earned * mul));
     }
 
-    // Update clear counts
-    clearCounts[stageKey] = currentCount + 1;
+    // Update clear counts（記録としては積み上げ、回復は日付で表す）
+    clearCounts[stageKey] = rawCount + 1;
     localStorage.setItem(countsKey, JSON.stringify(clearCounts));
+    clearAt[stageKey] = Date.now();
+    localStorage.setItem(atKey, JSON.stringify(clearAt));
 
     // Update total points
     const currentPoints = getPoints();
@@ -95,9 +149,22 @@ export const usePoints = () => {
     // Sync to Supabase in the background
     pushToSupabase(studentId);
 
+    if (!synced) {
+      // 記録はローカルに残る（次に通信できたときpushされる）が、子どもに気づかせる
+      showToast('📶 通信が 不安定です。先生に 伝えてね', 'fail');
+    }
+
     // 「今見ている画面のそば」に必ず出る通知（画面上部まで戻らなくても分かるように）
-    if (earned > 0) {
-      showToast(`🎉 クリア！ ＋${earned}ポイント ゲット！`, 'points');
+    if (earned > 0 && revisited && currentCount === 0) {
+      showToast(`🔁 久しぶりの復習！ ＋${earned}ポイント（また1回目から数えるよ）`, 'points');
+    } else if (earned > 0 && dict.note) {
+      showToast(`🎉 クリア！ ＋${earned}ポイント　${dict.note}`, 'points');
+    } else if (earned > 0) {
+      showToast(
+        mission
+          ? `🎯 今日のミッション！ ＋${earned}ポイント（${MISSION_MULTIPLIER}倍ボーナス）`
+          : `🎉 クリア！ ＋${earned}ポイント ゲット！`,
+        'points');
     } else {
       showToast('🎉 クリア！（くり返しのため、今回はポイントなし）', 'success');
     }
@@ -105,5 +172,30 @@ export const usePoints = () => {
     return earned;
   }, [studentId, getPoints]);
 
-  return { getPoints, addPoints, consumePoints, totalPoints, setTotalPoints };
+  // 逓減ルールに乗せない「固定ポイント」。毎日書く「ふりかえり」のように、
+  // くり返すこと自体が目的の活動に使う（addPoints だと5日目以降は1→0Pになり、
+  // がんばって書いたのに1P、という状態になっていた）。
+  // 回数の上限（1日1回など）は呼び出し側で守ること。points は累計・単調増加のまま。
+  const addFixedPoints = useCallback(async (stageKey: string, amount: number): Promise<number> => {
+    if (!studentId || amount <= 0) return 0;
+    if (isTrialId(studentId)) {
+      showToast(`🎉 子どもたちには ＋${Math.round(amount)}ポイント たまります（お試しでは たまりません）`, 'success');
+      return 0;
+    }
+    let synced = await pullFromSupabase(studentId);
+    if (!synced) { await new Promise(r => setTimeout(r, 800)); synced = await pullFromSupabase(studentId); }
+    const countsKey = `clearCounts_${studentId}`;
+    const clearCounts = JSON.parse(localStorage.getItem(countsKey) || '{}');
+    clearCounts[stageKey] = (clearCounts[stageKey] || 0) + 1; // 記録としては数える
+    localStorage.setItem(countsKey, JSON.stringify(clearCounts));
+    const newTotal = getPoints() + Math.round(amount);
+    localStorage.setItem(`points_${studentId}`, newTotal.toString());
+    setTotalPoints(newTotal);
+    window.dispatchEvent(new Event('pointsUpdated'));
+    pushToSupabase(studentId);
+    if (!synced) showToast('📶 通信が 不安定です。先生に 伝えてね', 'fail');
+    return Math.round(amount);
+  }, [studentId, getPoints]);
+
+  return { getPoints, addPoints, addFixedPoints, consumePoints, totalPoints, setTotalPoints };
 };
