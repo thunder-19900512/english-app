@@ -23,48 +23,24 @@ Supabaseをデータベースとして使用。GitHub Pagesにデプロイ済み
 
 ---
 
-## 現在の問題点と改善してほしいこと
+## いまの仕組み（2026-09-24 時点）
 
-### 🔴 優先度：高
+- **フロントエンド**: React 19 + TypeScript + Vite。公開は GitHub Pages（`npm run deploy`）
+- **DB**: Supabase（プロジェクト「English Learning Adventure」）。ログインは「あいことば」1つのクラス共用アカウント
+- **AI・音声のキーはブラウザに置かない**。Supabase の Edge Function（`supabase/functions/`）が中継する
+  - `gemini` … AI英会話・お話づくり（アプリ側は `src/lib/aiProxy.ts` から呼ぶ）
+  - `azure-token` … 発音チェック用の10分で切れるトークン
+  - `staff-check` … スタッフPINの照合（PINは `staff_secret` テーブル。コードに書かない）
+  - キーは Supabase Secrets（`GEMINI_API_KEY` ほか）。値は山田が管理画面で入れる
+- クラス全体の1日の上限は `api_usage` ＋ `consume_api_quota`。端末ごとの上限（localStorage）も併用
+- なりすまし対策の応急処置：ポイントを使うときの合言葉（`spend_pins` ＋ `set/check/reset_spend_pin`）。
+  本命は学園アカウントでのGoogleログイン（未着手・学園の情報担当に確認中）
+- `.env` には Supabase のURLと公開用の anon キーだけ（`.gitignore` 済み）
 
-#### 1. データファイルの増殖問題
-- `students_data.json` `students_data_2.json` `students_data_3.json` が3つに増えている
-- どれが最新か・どう使い分けているか不明な状態
-- **やってほしいこと**：3つのファイルの内容を比較して、統合・整理の方針を提案する
+## セキュリティの約束
 
-#### 2. Gemini APIへの依存
-- `package.json` に `@google/generative-ai` が含まれている
-- **やってほしいこと**：どのファイルでGemini APIを使っているか調べて教える（すぐ変更しなくてよい、まず現状把握）
-
----
-
-### 🟡 優先度：中
-
-#### 3. コンポーネント構成の把握
-- `src/components/` にどんな画面・部品があるか整理されていない
-- **やってほしいこと**：コンポーネント一覧と、それぞれが何をする画面かを日本語でまとめる
-
-#### 4. `.env` ファイルの確認
-- Supabaseのキーなどが `.env` に入っているはず
-- **やってほしいこと**：`.gitignore` に `.env` が含まれているか確認する（GitHubに流出していないかチェック）
-
----
-
-### 🟢 優先度：低（余裕があれば）
-
-#### 5. テストファイルの整理
-- `test-supabase.mjs` `test-supabase-read.mjs` `test-supabase-full.mjs` が3つある
-- 開発中に作ったテスト用ファイルと思われる
-- **やってほしいこと**：不要なら削除提案、必要なら `scripts/` フォルダに移動提案
-
----
-
-## 技術スタック（参考情報）
-
-- **フロントエンド**: React 19 + TypeScript + Vite
-- **DB**: Supabase
-- **デプロイ**: GitHub Pages（`gh-pages` コマンドで更新）
-- **現在のAI**: @google/generative-ai（Gemini）→ 将来的にClaudeへ移行検討中
+- キー・PIN・子どもの名前は、コードにもチャットにも書かない
+- push の前に、キーらしい文字列や名簿が入っていないか確認する
 
 ## ポイント設計ルール（新モードを追加するときは必ず準拠）
 
@@ -99,8 +75,7 @@ Supabaseをデータベースとして使用。GitHub Pagesにデプロイ済み
 ## 作業開始前に必ずやること
 
 1. `src/` フォルダの構成を確認する
-2. `students_data.json` 3ファイルの内容を比較する
-3. 変更を加える前に必ず山田に説明・確認を取る
+2. 変更を加える前に必ず山田に説明・確認を取る（何を・なぜ・安全か）
 
 ## 文言のルール（子ども向け画面）
 
