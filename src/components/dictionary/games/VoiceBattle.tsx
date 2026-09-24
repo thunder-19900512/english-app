@@ -4,7 +4,6 @@ import { type Vocabulary } from '../../../data/vocabulary';
 import { useVocabulary } from '../../../hooks/useVocabulary';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
-import { useAppSettings } from '../../../hooks/useAppSettings';
 import { usePronunciationAssessment } from '../../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../../hooks/usePronunciationHistory';
 import { usePoints } from '../../../hooks/usePoints';
@@ -32,8 +31,7 @@ export const VoiceBattle: React.FC = () => {
   
   const { speak } = useSpeechSynthesis();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { assess, isAssessing, isAvailable: azureAvailable, error: azureError, lastRecordingUrl, getLastError } = usePronunciationAssessment();
   const { saveProgress } = useDictionaryProgress();
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();

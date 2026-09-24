@@ -4,6 +4,7 @@ import { STUDENTS } from '../../data/students';
 import { pullFromSupabase, pushToSupabase } from '../../lib/sync';
 import { supabase } from '../../lib/supabase';
 import { findTitle } from '../../data/shopItems';
+import { checkStaffPin } from '../../lib/aiProxy';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -39,8 +40,13 @@ export const Login: React.FC = () => {
     setPinTarget(target);
   };
 
-  const handlePinSubmit = () => {
-    if (pinInput === '7777') {
+  const [pinChecking, setPinChecking] = useState(false);
+  const handlePinSubmit = async () => {
+    if (pinChecking) return;
+    setPinChecking(true);
+    const ok = await checkStaffPin(pinInput);
+    setPinChecking(false);
+    if (ok) {
       const target = pinTarget;
       setPinTarget(null);
       setPinInput('');

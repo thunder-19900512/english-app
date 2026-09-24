@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSettings } from '../../../hooks/useAppSettings';
 import { saveConversationLog } from '../../../lib/conversationLogs';
 import { STUDENTS } from '../../../data/students';
@@ -9,10 +8,11 @@ import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { usePoints } from '../../../hooks/usePoints';
 import { Button } from '../../ui/Button';
 import { MicButton } from '../../ui/MicButton';
-import { ArrowLeft, Send, Sparkles, AlertTriangle, Coins, HelpCircle, Languages, Trophy } from 'lucide-react';
+import { ArrowLeft, Send, Sparkles, Coins, HelpCircle, Languages, Trophy } from 'lucide-react';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { DIALOGUES } from '../../dialogue/dialogueData';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
+import { generateWithGemini, type GeminiContent } from '../../../lib/aiProxy';
 import { useSafeBack } from '../../../hooks/useSafeBack';
 
 // 教科書の各Unitに紐づくフリートークの場面とゴール。
@@ -189,9 +189,8 @@ const parseReply = (raw: string): { en: string; ja: string; cleared: boolean } =
 };
 
 export const AIAssistant: React.FC = () => {
-  const navigate = useNavigate();
   const goBack = useSafeBack();
-  const { geminiApiKey, freetalkGoals } = useAppSettings();
+  const { freetalkGoals } = useAppSettings();
   const studentName = localStorage.getItem('studentName') || 'ゲスト';
   const { speak } = useSpeechSynthesis();
   const { transcript, isRecording, startListening, stopListening, setTranscript } = useSpeechRecognition();
@@ -200,7 +199,8 @@ export const AIAssistant: React.FC = () => {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [mode, setMode] = useState<keyof typeof SCENARIOS | null>(null);
-  const [chatSession, setChatSession] = useState<ChatSession | null>(null);
+  // Geminiに毎回送る会話の文脈（システム指示＋これまでのやりとり）。nullの間は会話未開始。
+  const [chat, setChat] = useState<{ system: string; history: GeminiContent[] } | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [inputText, setInputText] = useState('');
   const [showTranslation, setShowTranslation] = useState(false);
@@ -263,7 +263,6 @@ export const AIAssistant: React.FC = () => {
   }, [messages]);
 
   const initChat = async (selectedMode: keyof typeof SCENARIOS, opts?: InitOpts) => {
-    if (!geminiApiKey) return;
     // 基本シナリオに、Unit別フリートーク等の上書きを適用した「実シナリオ」を作る
     const base = SCENARIOS[selectedMode];
     const scenario: Scenario = {
@@ -293,32 +292,6 @@ export const AIAssistant: React.FC = () => {
     setMessages(pastMessages);
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
-      const data = await response.json();
-      const flashModels = data.models
-        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('flash'))
-        .map((m: any) => m.name.replace('models/', ''))
-        .sort((a: string, b: string) => b.localeCompare(a));
-      // コスト固定のため、安価で十分な品質の flash-lite を優先。使えない/混雑時は従来どおり新しいflashへフォールバック。
-      const PREFERRED = ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.0-flash-lite'];
-      const availableModels = [
-        ...PREFERRED.filter(m => flashModels.includes(m)),
-        ...flashModels.filter((m: string) => !PREFERRED.includes(m)),
-      ];
-
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-      let targetModel = '';
-      let lastError: any = null;
-      for (const modelName of availableModels) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          await model.generateContent('test');
-          targetModel = modelName;
-          break;
-        } catch (e: any) { lastError = e; }
-      }
-      if (!targetModel) throw lastError || new Error('利用可能なモデルが見つかりませんでした');
-
       const situationLine = opts?.situation && opts.situation.trim()
         ? `The user set this situation (in Japanese): 「${opts.situation.trim()}」. Play along with this situation.`
         : '';
@@ -333,10 +306,8 @@ export const AIAssistant: React.FC = () => {
         FORMAT_INSTRUCTION,
       ].filter(Boolean).join('\n');
 
-      const model = genAI.getGenerativeModel({ model: targetModel, systemInstruction: systemText });
-
       const greetSeed = `${scenario.greeting.en}\nJA: ${scenario.greeting.ja}`;
-      let historyForGemini: any[];
+      let historyForGemini: GeminiContent[];
       if (pastMessages.length === 0) {
         historyForGemini = [
           { role: 'user', parts: [{ text: `[SYSTEM]\n${systemText}` }] },
@@ -350,8 +321,7 @@ export const AIAssistant: React.FC = () => {
         ];
       }
 
-      const chat = model.startChat({ history: historyForGemini, generationConfig: { maxOutputTokens: 120, temperature: 0.7 } });
-      setChatSession(chat);
+      setChat({ system: systemText, history: historyForGemini });
 
       if (pastMessages.length === 0) {
         const initialMsg: ChatMessage = { role: 'model', text: scenario.greeting.en, ja: scenario.greeting.ja };
@@ -361,13 +331,13 @@ export const AIAssistant: React.FC = () => {
       }
     } catch (err: any) {
       console.error('AI Init Error:', err);
-      setMessages([{ role: 'model', text: err.message ? `[システムエラー] ${err.message}` : '[システムエラー] AIの初期化に失敗しました。APIキーを確認してください。' }]);
+      setMessages([{ role: 'model', text: err.message ? `[システムエラー] ${err.message}` : '[システムエラー] AIの初期化に失敗しました。' }]);
       setIsAiThinking(false);
     }
   };
 
   const handleSend = async (text: string) => {
-    if (!text.trim() || !chatSession) return;
+    if (!text.trim() || !chat) return;
     if (isTeam && !currentSpeaker) { alert('だれが話すか、チームで選んでね！'); return; }
 
     if (isInappropriate(text)) {
@@ -403,8 +373,14 @@ export const AIAssistant: React.FC = () => {
     const histKey = `ai_hist_${studentId}_${mode}_${activeOptsRef.current?.histSuffix || 'default'}`;
     try {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
-      const result = await chatSession.sendMessage(text);
-      const raw = result.response.text();
+      const userTurn: GeminiContent = { role: 'user', parts: [{ text }] };
+      const raw = await generateWithGemini({
+        system: chat.system,
+        contents: [...chat.history, userTurn],
+        maxOutputTokens: 120,
+        temperature: 0.7,
+      });
+      setChat({ system: chat.system, history: [...chat.history, userTurn, { role: 'model', parts: [{ text: raw }] }] });
       const { en, ja, cleared: didClear } = parseReply(raw);
       const safeEn = isInappropriate(en) ? REDIRECT_MESSAGE : en;
 
@@ -473,11 +449,11 @@ export const AIAssistant: React.FC = () => {
   };
 
   // URLパラメータ（?unit=g5-u1）で特定Unitのフリートークを直接ひらく（今日のミッション用）。
-  // APIキーの読み込みを待ってから一度だけ自動開始する（キー未取得だとinitChatが空振りするため）。
+  // 一度だけ自動開始する。
   const [searchParams] = useSearchParams();
   const autoStartedRef = useRef(false);
   useEffect(() => {
-    if (autoStartedRef.current || !geminiApiKey) return;
+    if (autoStartedRef.current) return;
     // ?shop=simple / ?shop=challenge でお店屋さんモードを直接ひらく（今日のミッション用）
     const shop = searchParams.get('shop');
     if (shop === 'simple' || shop === 'challenge') {
@@ -493,18 +469,7 @@ export const AIAssistant: React.FC = () => {
     autoStartedRef.current = true;
     initChat('freetalk', withGoalOverride(buildUnitOpts(u), u.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, geminiApiKey]);
-
-  if (!geminiApiKey) {
-    return (
-      <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
-        <AlertTriangle size={60} color="var(--color-error)" />
-        <h2 className="text-primary">AIのじゅんびができていません</h2>
-        <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
-        <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
-      </div>
-    );
-  }
+  }, [searchParams]);
 
   // 状況設定（フリートーク）
   if (pendingFreetalk) {

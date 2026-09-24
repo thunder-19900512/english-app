@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { ArrowLeft, Key, Save, Mic, Target, Gauge } from 'lucide-react';
+import { ArrowLeft, Key, Save, Target, Gauge } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { setCap, getUsage, DEFAULT_CAP } from '../../lib/apiUsage';
+import { checkStaffPin } from '../../lib/aiProxy';
 import { DIALOGUES } from '../dialogue/dialogueData';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 import { stages } from '../../data/stages';
@@ -49,15 +50,6 @@ export const TeacherDashboard: React.FC = () => {
   // ログイン画面のPINモーダルで認証済みなら、このタブの間はPIN画面をスキップ
   const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('staff_authed') === '1');
   
-  const [geminiKey, setGeminiKey] = useState('');
-  const [azureKey, setAzureKey] = useState('');
-  const [azureRegion, setAzureRegion] = useState('');
-  const [saveStatus, setSaveStatus] = useState('');
-  const [isError, setIsError] = useState(false);
-  const [showKey, setShowKey] = useState(false);
-  const [azureSaveStatus, setAzureSaveStatus] = useState('');
-  const [azureIsError, setAzureIsError] = useState(false);
-  const [showAzureKey, setShowAzureKey] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [customVocabEnabled, setCustomVocabEnabled] = useState(false);
   // AI英会話：Unitゴールの上書き（{id:{goal,missionJa}}）と保存メッセージ
@@ -93,9 +85,9 @@ export const TeacherDashboard: React.FC = () => {
   const [capStatus, setCapStatus] = useState('');
 
   // Handle PIN
-  const handlePinSubmit = (e: React.FormEvent) => {
+  const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === '7777') {
+    if (await checkStaffPin(pin)) {
       sessionStorage.setItem('staff_authed', '1'); // このタブの間は再入力不要
       setIsAuthenticated(true);
     } else {
@@ -119,15 +111,6 @@ export const TeacherDashboard: React.FC = () => {
       .single();
       
     if (data && data.dictionary_progress) {
-      if (data.dictionary_progress.geminiApiKey) {
-        setGeminiKey(data.dictionary_progress.geminiApiKey);
-      }
-      if (data.dictionary_progress.azureSpeechKey) {
-        setAzureKey(data.dictionary_progress.azureSpeechKey);
-      }
-      if (data.dictionary_progress.azureSpeechRegion) {
-        setAzureRegion(data.dictionary_progress.azureSpeechRegion);
-      }
       if (data.dictionary_progress.isScreenLocked !== undefined) {
         setIsScreenLocked(data.dictionary_progress.isScreenLocked);
       }
@@ -178,9 +161,6 @@ export const TeacherDashboard: React.FC = () => {
         id: 'app_settings_v1',
         name: 'System Settings',
         dictionary_progress: {
-          geminiApiKey: geminiKey.trim(),
-          azureSpeechKey: azureKey.trim(),
-          azureSpeechRegion: azureRegion.trim(),
           isScreenLocked: isScreenLocked,
           todayMissions: currentMissions,
           todayMission: currentMissions[0] || null, // 旧バージョンのアプリ（キャッシュ）向けの互換
@@ -333,68 +313,6 @@ export const TeacherDashboard: React.FC = () => {
     setTimeout(() => setCapStatus(''), 4000);
   };
 
-  const handleSave = async () => {
-    if (!supabase) return;
-
-    const cleanedKey = geminiKey.trim();
-    if (cleanedKey === '') {
-      setIsError(true);
-      setSaveStatus('エラー: APIキーを入力してください。');
-      return;
-    }
-
-    if (cleanedKey.startsWith('ya29')) {
-      setIsError(true);
-      setSaveStatus('エラー: これはOAuthトークンです。APIキーを入力してください。');
-      return;
-    }
-
-    setSaveStatus('保存中...');
-    setIsError(false);
-
-    const { error } = await persistSettings({ geminiApiKey: cleanedKey });
-
-    if (error) {
-      setIsError(true);
-      setSaveStatus('通信エラーが発生しました');
-      console.error(error);
-    } else {
-      setIsError(false);
-      setSaveStatus('保存しました！');
-      setTimeout(() => setSaveStatus(''), 3000);
-    }
-  };
-
-  const handleAzureSave = async () => {
-    if (!supabase) return;
-
-    const cleanedKey = azureKey.trim();
-    const cleanedRegion = azureRegion.trim();
-    if (cleanedKey === '' || cleanedRegion === '') {
-      setAzureIsError(true);
-      setAzureSaveStatus('エラー: キーとリージョンの両方を入力してください。');
-      return;
-    }
-
-    setAzureSaveStatus('保存中...');
-    setAzureIsError(false);
-
-    const { error } = await persistSettings({
-      azureSpeechKey: cleanedKey,
-      azureSpeechRegion: cleanedRegion
-    });
-
-    if (error) {
-      setAzureIsError(true);
-      setAzureSaveStatus('通信エラーが発生しました');
-      console.error(error);
-    } else {
-      setAzureIsError(false);
-      setAzureSaveStatus('保存しました！');
-      setTimeout(() => setAzureSaveStatus(''), 3000);
-    }
-  };
-
   if (!isAuthenticated) {
     return (
       <div className="flex-col flex-center" style={{ flex: 1 }}>
@@ -523,75 +441,12 @@ export const TeacherDashboard: React.FC = () => {
         <div className="glass-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
             <Key color="var(--color-accent)" />
-            <h2 style={{ margin: 0 }}>AI機能設定 (Gemini API)</h2>
+            <h2 style={{ margin: 0 }}>AIのキー（Gemini / Azure）</h2>
           </div>
-          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            GitHub等にパスワードが漏れないように、ここにAPIキーを入力してデータベースに保存します。<br/>
-            Google AI Studioで取得したキーを入力してください。
+          <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>
+            キーはアプリには置かず、Supabaseの管理画面（Edge Functions → Secrets）で管理しています。<br />
+            取り替えるときは <code>GEMINI_API_KEY</code> / <code>AZURE_SPEECH_KEY</code> / <code>AZURE_SPEECH_REGION</code> を更新してください。
           </p>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <input 
-              type={showKey ? "text" : "password"}
-              value={geminiKey}
-              onChange={e => setGeminiKey(e.target.value)}
-              placeholder="AIzaSy..."
-              style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace' }}
-              autoComplete="new-password"
-              name="gemini_api_key"
-            />
-            <Button variant="outline" onClick={() => setShowKey(!showKey)}>
-              {showKey ? '隠す' : '見る'}
-            </Button>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Button onClick={handleSave} icon={Save}>APIキーを保存する</Button>
-            {saveStatus && <span style={{ color: isError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{saveStatus}</span>}
-          </div>
-        </div>
-
-        <div className="glass-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Mic color="var(--color-accent)" />
-            <h2 style={{ margin: 0 }}>発音判定設定 (Azure Speech)</h2>
-          </div>
-          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
-            「発音バトル」で発音の正確さを採点するために使います。<br/>
-            Azureの「キーとエンドポイント」からコピーした<strong>キー</strong>と<strong>リージョン</strong>（例: japaneast）を入力してください。
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
-            <input
-              type={showAzureKey ? "text" : "password"}
-              value={azureKey}
-              onChange={e => setAzureKey(e.target.value)}
-              placeholder="Azure Speech キー"
-              style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace' }}
-              autoComplete="new-password"
-              name="azure_speech_key"
-            />
-            <Button variant="outline" onClick={() => setShowAzureKey(!showAzureKey)}>
-              {showAzureKey ? '隠す' : '見る'}
-            </Button>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <input
-              type="text"
-              value={azureRegion}
-              onChange={e => setAzureRegion(e.target.value)}
-              placeholder="リージョン (例: japaneast)"
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ccc', fontFamily: 'monospace', boxSizing: 'border-box' }}
-              autoComplete="off"
-              name="azure_speech_region"
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Button onClick={handleAzureSave} icon={Save}>発音判定の設定を保存</Button>
-            {azureSaveStatus && <span style={{ color: azureIsError ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 'bold' }}>{azureSaveStatus}</span>}
-          </div>
         </div>
 
         <div className="glass-card">
@@ -667,6 +522,7 @@ export const TeacherDashboard: React.FC = () => {
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
             1台の端末が1日に使えるAIの回数の上限です。上限に達すると、その日はやさしいメッセージが出て止まります（翌日リセット）。
             <br />Gemini＝AI英会話・お話づくり、Azure＝発音チェックの回数。<b>0にすると無制限</b>になります。
+            <br />これとは別に、サーバー側で<b>クラス全体の1日上限</b>（Gemini 1500回・Azure 2000回）がかかります。変更はSupabaseのSecrets（<code>GEMINI_DAILY_CAP</code> / <code>AZURE_DAILY_CAP</code>）で。
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
             <div style={{ flex: '1 1 200px' }}>

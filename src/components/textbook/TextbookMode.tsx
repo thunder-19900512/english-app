@@ -8,7 +8,6 @@ import { usePoints } from '../../hooks/usePoints';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
-import { useAppSettings } from '../../hooks/useAppSettings';
 import { DEFAULT_QUIZZES } from './textbookQuizData';
 import { WORLD_BENTO_QUIZZES } from './worldBentoQuizData';
 import { showToast } from '../ui/Toast';
@@ -47,14 +46,13 @@ export const TextbookMode: React.FC = () => {
   const goBack = useSafeBack();
   const { addPoints } = usePoints();
   const { isRecording, transcript, startListening, stopListening, setTranscript } = useSpeechRecognition();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const {
     assess,
     isAssessing,
     isAvailable: azureAvailable,
     lastRecordingUrl,
     getLastError,
-  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  } = usePronunciationAssessment();
   const { addScore } = usePronunciationHistory();
   // ボーナス課題のAzureスコア（表示用）と、ボーナス獲得済みフラグ（ポイント二重取り防止）
   const [bonusScore, setBonusScore] = useState<number | null>(null);

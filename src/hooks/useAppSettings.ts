@@ -9,9 +9,6 @@ export interface TodayMission {
 }
 
 export const useAppSettings = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [azureSpeechKey, setAzureSpeechKey] = useState<string | null>(null);
-  const [azureSpeechRegion, setAzureSpeechRegion] = useState<string | null>(null);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
   // 今日のミッション（複数対応）。旧データの todayMission（単数）も読めるようにする。
   const [todayMissions, setTodayMissions] = useState<TodayMission[]>([]);
@@ -29,9 +26,6 @@ export const useAppSettings = () => {
 
     const applySettings = (progress: any) => {
       if (!progress) return;
-      if (progress.geminiApiKey !== undefined) setApiKey(progress.geminiApiKey);
-      if (progress.azureSpeechKey !== undefined) setAzureSpeechKey(progress.azureSpeechKey);
-      if (progress.azureSpeechRegion !== undefined) setAzureSpeechRegion(progress.azureSpeechRegion);
       if (progress.isScreenLocked !== undefined) setIsScreenLocked(progress.isScreenLocked);
       // 複数ミッション（新形式）を優先。無ければ旧形式（単数）を配列に包んで互換維持
       if (progress.todayMissions !== undefined) setTodayMissions(progress.todayMissions || []);
@@ -75,5 +69,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { geminiApiKey: apiKey, azureSpeechKey, azureSpeechRegion, isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode };
+  return { isScreenLocked, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode };
 };

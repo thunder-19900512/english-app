@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useAppSettings } from '../../../hooks/useAppSettings';
 import { usePoints } from '../../../hooks/usePoints';
 import { useSpeechSynthesis } from '../../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
@@ -16,6 +13,7 @@ import { useVocabulary } from '../../../hooks/useVocabulary';
 import type { Vocabulary } from '../../../data/vocabulary';
 import { SAFETY_INSTRUCTION, isInappropriate } from '../../../lib/contentFilter';
 import { isOverCap, incUsage } from '../../../lib/apiUsage';
+import { generateWithGemini } from '../../../lib/aiProxy';
 import { useSafeBack } from '../../../hooks/useSafeBack';
 import { getPreferredVoice } from '../../../lib/voice';
 
@@ -41,10 +39,8 @@ const DIFFICULTY_LEVELS = [
 const READ_PASS_SCORE = 60;
 
 export const StoryMode: React.FC = () => {
-  const navigate = useNavigate();
   const goBack = useSafeBack();
   const vocabulary = useVocabulary();
-  const { geminiApiKey, azureSpeechKey, azureSpeechRegion } = useAppSettings();
   const { addPoints } = usePoints();
   const { speak } = useSpeechSynthesis();
   const { progress } = useDictionaryProgress();
@@ -54,7 +50,7 @@ export const StoryMode: React.FC = () => {
     isAvailable: azureAvailable,
     lastRecordingUrl,
     getLastError,
-  } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  } = usePronunciationAssessment();
   const { addScore } = usePronunciationHistory();
   // 音読のAzureスコア（表示用）
   const [readScore, setReadScore] = useState<number | null>(null);
@@ -184,7 +180,6 @@ export const StoryMode: React.FC = () => {
   };
 
   const generateStory = async () => {
-    if (!geminiApiKey) return;
     // 1日のお話づくり（AI生成）の上限に達していたら止める（課金の安全装置）。
     if (isOverCap('gemini')) {
       alert('今日のお話づくりは1日の上限に達したよ。また明日つくろうね！');
@@ -199,22 +194,6 @@ export const StoryMode: React.FC = () => {
     const wordListEn = wordsToUse.map(w => w.english);
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`);
-      const data = await response.json();
-      
-      const flashModels = data.models
-        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('flash'))
-        .map((m: any) => m.name.replace('models/', ''))
-        .sort((a: string, b: string) => b.localeCompare(a)); // Sort descending to try newer models first
-      // コスト固定のため flash-lite を優先。使えない/混雑時は従来どおり新しいflashへフォールバック。
-      const PREFERRED = ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.0-flash-lite'];
-      const availableModels = [
-        ...PREFERRED.filter(m => flashModels.includes(m)),
-        ...flashModels.filter((m: string) => !PREFERRED.includes(m)),
-      ];
-
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-
       const prompt = `You are writing an interactive English story for a Japanese student.
       
 RULES:
@@ -231,29 +210,13 @@ RULES:
 
 ${SAFETY_INSTRUCTION}`;
 
-      let text = '';
-      let success = false;
-      let lastError: any = null;
+      incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
+      const text = await generateWithGemini({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        maxOutputTokens: 2048,
+        temperature: 1,
+      });
 
-      for (const modelName of availableModels) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
-          const result = await model.generateContent(prompt);
-          text = result.response.text();
-          success = true;
-          console.log(`Successfully generated using ${modelName}`);
-          break;
-        } catch (e: any) {
-          console.warn(`Model ${modelName} failed:`, e);
-          lastError = e;
-        }
-      }
-
-      if (!success) {
-        throw lastError || new Error("利用可能なモデルが見つかりませんでした");
-      }
-      
       // 安全装置：万一不適切な内容が生成されたら、表示せずに作り直しを促す。
       if (isInappropriate(text)) {
         alert('うまく作れませんでした。もう一度「おはなしをつくる」を押してみてね。');
@@ -271,7 +234,7 @@ ${SAFETY_INSTRUCTION}`;
       setGameState('playing');
     } catch (err: any) {
       console.error(err);
-      alert(`システムエラー: ${err.message || '不明なエラー'} (APIキーが正しいか、制限されていないか確認してください)`);
+      alert(`システムエラー: ${err.message || '不明なエラー'} `);
       setGameState('config');
     }
   };
@@ -500,16 +463,6 @@ ${SAFETY_INSTRUCTION}`;
   // 和訳は答えを伏せる：万一 {語} が残っていても空欄(＿＿)に置換してネタバレを防ぐ
   const jaLines = japaneseTranslation.split('\n').map(l => l.trim().replace(/\{[^}]*\}/g, '＿＿')).filter(Boolean);
 
-  if (!geminiApiKey) {
-    return (
-      <div className="flex-col flex-center gap-lg" style={{ flex: 1, padding: '2rem', textAlign: 'center' }}>
-        <AlertTriangle size={60} color="var(--color-error)" />
-        <h2 className="text-primary">AIのじゅんびができていません</h2>
-        <p>スタッフ用ダッシュボードから、APIキーを設定してください。</p>
-        <Button onClick={() => navigate('/home')}>ホームにもどる</Button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-col" style={{ flex: 1, paddingBottom: '2rem' }}>

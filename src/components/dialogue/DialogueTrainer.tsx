@@ -4,7 +4,6 @@ import { useSafeBack } from '../../hooks/useSafeBack';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
-import { useAppSettings } from '../../hooks/useAppSettings';
 import { usePronunciationAssessment } from '../../hooks/usePronunciationAssessment';
 import { usePronunciationHistory } from '../../hooks/usePronunciationHistory';
 import { usePoints } from '../../hooks/usePoints';
@@ -34,8 +33,7 @@ export const DialogueTrainer: React.FC = () => {
   const navigate = useNavigate();
   const goBack = useSafeBack();
   const { speak } = useSpeechSynthesis();
-  const { azureSpeechKey, azureSpeechRegion } = useAppSettings();
-  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl, getLastError } = usePronunciationAssessment(azureSpeechKey, azureSpeechRegion);
+  const { assess, isAssessing, isAvailable: azureAvailable, lastRecordingUrl, getLastError } = usePronunciationAssessment();
   const { addScore } = usePronunciationHistory();
   const { addPoints } = usePoints();
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { isOverCap, incUsage } from '../lib/apiUsage';
+import { fetchAzureSpeechToken } from '../lib/aiProxy';
 
 export interface WordScore {
   word: string;
@@ -111,10 +112,7 @@ const isNearSilent = (chunks: Float32Array[]): boolean => {
   return Math.sqrt(sum / n) < 0.008; // ほぼ無音のしきい値
 };
 
-export const usePronunciationAssessment = (
-  key: string | null,
-  region: string | null
-) => {
+export const usePronunciationAssessment = () => {
   const [isAssessing, setIsAssessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // 直近の失敗理由（呼び出し側がトースト表示に使う。state更新の遅延に左右されないようref）
@@ -129,7 +127,8 @@ export const usePronunciationAssessment = (
   // 録音再生用に、流し込んだのと同じ 16kHz PCM を溜めておく。
   const recordedChunksRef = useRef<Float32Array[]>([]);
 
-  const isAvailable = !!(key && region);
+  // キーはサーバー側にあるので、アプリからは常に「使える」扱い。未設定ならassess時にエラーを出す。
+  const isAvailable = true;
 
   // マイク＋WebAudio のパイプラインを一度だけ用意する（クリック起点で呼ぶ）。
   const ensurePipeline = useCallback(async () => {
@@ -185,11 +184,6 @@ export const usePronunciationAssessment = (
 
   const assess = useCallback(
     async (referenceText: string): Promise<PronunciationResult | null> => {
-      if (!key || !region) {
-        setError('Azure Speech is not configured');
-        return null;
-      }
-
       // 1日の発音チェック上限に達していたら、Azureを呼ばずに止める（課金の安全装置）。
       if (isOverCap('azure')) {
         setError('今日の発音チェックは上限に達したよ。また明日ためしてね！');
@@ -200,6 +194,12 @@ export const usePronunciationAssessment = (
       lastErrorRef.current = null;
       setIsAssessing(true);
 
+      // マイクの準備と並行して、Azureの使い捨てトークン（10分有効）をサーバーからもらう。
+      const tokenPromise = fetchAzureSpeechToken().then(
+        (t) => t,
+        (e: Error) => e
+      );
+
       try {
         await ensurePipeline();
       } catch (e) {
@@ -209,8 +209,16 @@ export const usePronunciationAssessment = (
         return null;
       }
 
+      const auth = await tokenPromise;
+      if (auth instanceof Error) {
+        setIsAssessing(false);
+        lastErrorRef.current = auth.message;
+        setError(auth.message);
+        return null;
+      }
+
       return new Promise((resolve) => {
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(key, region);
+        const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(auth.token, auth.region);
         speechConfig.speechRecognitionLanguage = 'en-US';
         speechConfig.setProperty(
           SpeechSDK.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs,
@@ -282,7 +290,7 @@ export const usePronunciationAssessment = (
               } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
                 const cancel = SpeechSDK.CancellationDetails.fromResult(result);
                 setError(
-                  `${SpeechSDK.CancellationReason[cancel.reason]}: ${cancel.errorDetails || 'キー/リージョンを確認してください'}`
+                  `${SpeechSDK.CancellationReason[cancel.reason]}: ${cancel.errorDetails || '発音チェックの通信でエラーが起きたよ'}`
                 );
                 finish(null);
               } else {
@@ -308,7 +316,7 @@ export const usePronunciationAssessment = (
         );
       });
     },
-    [key, region, ensurePipeline]
+    [ensurePipeline]
   );
 
   // 直近の失敗理由（トースト用）。assessがnullを返した直後に呼ぶ。
