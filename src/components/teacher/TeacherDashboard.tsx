@@ -17,12 +17,31 @@ import { KARUIZAWA_QUIZZES } from '../textbook/karuizawaQuizData';
 import { vocabulary } from '../../data/vocabulary';
 import { isArchived } from '../../data/archivedUnits';
 
+// 長いカードを「たたむ／ひらく」。状態はこの端末に覚えておく（次に開いたときも同じ）。
+const useFold = (key: string, defaultOpen: boolean): [boolean, () => void] => {
+  const [open, setOpen] = useState<boolean>(() => {
+    try { const v = localStorage.getItem(key); return v === null ? defaultOpen : v === '1'; } catch { return defaultOpen; }
+  });
+  const toggle = () => setOpen(prev => {
+    try { localStorage.setItem(key, prev ? '0' : '1'); } catch { /* noop */ }
+    return !prev;
+  });
+  return [open, toggle];
+};
+
+const FoldButton: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
+  <Button variant="outline" onClick={onClick} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+    {open ? '▲ たたむ' : '▼ ひらく'}
+  </Button>
+);
+
 // 📮 子どもから届いた「困った／こうしたい」（feedback）。
 // 画面右下の📮ボタンから送られてくる。Mac側の巡回が新着をメールでも知らせる。
 const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => void; onSaveNotifyTo: () => void; notifyMsg: string }> =
   ({ notifyTo, setNotifyTo, onSaveNotifyTo, notifyMsg }) => {
   const [rows, setRows] = useState<any[]>([]);
   const [showHandled, setShowHandled] = useState(false);
+  const [open, toggleOpen] = useFold('fold_feedback', false);
   const load = async () => {
     if (!supabase) return;
     const { data } = await supabase.from('feedback').select('*').order('ts', { ascending: false }).limit(200);
@@ -41,15 +60,20 @@ const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => voi
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h2 style={{ margin: 0 }}>📮 子どもからの声（困った／こうしたい）</h2>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="outline" onClick={load} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>更新</Button>
-          <Button variant="outline" onClick={() => setShowHandled(v => !v)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
-            {showHandled ? '未対応だけ' : '対応済みも見る'}
-          </Button>
+          {open && <Button variant="outline" onClick={load} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>更新</Button>}
+          {open && (
+            <Button variant="outline" onClick={() => setShowHandled(v => !v)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}>
+              {showHandled ? '未対応だけ' : '対応済みも見る'}
+            </Button>
+          )}
+          <FoldButton open={open} onClick={toggleOpen} />
         </div>
       </div>
       <p style={{ color: '#666', fontSize: '0.9rem', margin: '0.5rem 0 1rem' }}>
         子どもの画面の右下にある📮から届きます。未対応 <b style={{ color: openCount ? '#b91c1c' : 'var(--color-success)' }}>{openCount}件</b>。
       </p>
+
+      {open && (<>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontSize: '0.9rem', color: '#475569' }}>新着のお知らせ先：</span>
@@ -88,6 +112,7 @@ const FeedbackCard: React.FC<{ notifyTo: string; setNotifyTo: (v: string) => voi
           ))}
         </div>
       )}
+      </>)}
     </div>
   );
 };
@@ -247,6 +272,7 @@ export const TeacherDashboard: React.FC = () => {
   const STAMPS = ['👍', '🌟', '💯', '😊', '🎉', '🔥'];
   const [students, setStudents] = useState<any[]>([]);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [studentsOpen, toggleStudentsOpen] = useFold('fold_students', true);
   const [studentView, setStudentView] = useState<'byStudent' | 'byDate' | 'map'>('byStudent');
   // ポイント手動加算（消失時の補填用）。同期がmaxマージのため加算のみ対応。
   const [adjStudentId, setAdjStudentId] = useState('');
@@ -714,8 +740,6 @@ export const TeacherDashboard: React.FC = () => {
         {bgMsg && <span style={{ display: 'block', marginTop: '0.8rem', fontWeight: 'bold', color: 'var(--color-success)' }}>{bgMsg}</span>}
       </div>
 
-      <FeedbackCard notifyTo={notifyTo} setNotifyTo={setNotifyTo} onSaveNotifyTo={handleSaveNotifyTo} notifyMsg={notifyMsg} />
-
       <VoiceLogCard students={students} />
 
       {/* クラスの木：グループ分けの切替 */}
@@ -982,7 +1006,11 @@ export const TeacherDashboard: React.FC = () => {
       </div>
 
       <div className="glass-card" style={{ marginTop: '2rem' }}>
-        <h2>生徒の学習状況・ふりかえり</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h2 style={{ margin: 0 }}>生徒の学習状況・ふりかえり</h2>
+          <FoldButton open={studentsOpen} onClick={toggleStudentsOpen} />
+        </div>
+        {studentsOpen && (<>
         <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
           クラス全員の学習状況を一覧で確認できます。「生徒ごと」「日ごと」「到達マップ（誰が未達か＋ペア提案）」で切り替えられます。
         </p>
@@ -1218,6 +1246,12 @@ export const TeacherDashboard: React.FC = () => {
             );
           })()
         )}
+        </>)}
+      </div>
+
+      {/* 子どもの声はメールでもまとめが届くので、いちばん下に置く */}
+      <div style={{ marginTop: '2rem' }}>
+        <FeedbackCard notifyTo={notifyTo} setNotifyTo={setNotifyTo} onSaveNotifyTo={handleSaveNotifyTo} notifyMsg={notifyMsg} />
       </div>
     </div>
   );
