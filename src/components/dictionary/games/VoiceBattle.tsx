@@ -206,7 +206,7 @@ export const VoiceBattle: React.FC = () => {
   if (showCelebration) {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%', textAlign: 'center' }}>
-        <h1 className="text-primary" style={{ fontSize: '3rem' }}>討伐成功！</h1>
+        <h1 className="text-primary" style={{ fontSize: '3rem' }}>モンスターを たおした！</h1>
         <div className="animate-float">
           <Trophy size={100} color="var(--color-accent)" />
         </div>
@@ -227,7 +227,7 @@ export const VoiceBattle: React.FC = () => {
   if (showFailure) {
     return (
       <div className="flex-col flex-center gap-lg" style={{ height: '100%', textAlign: 'center' }}>
-        <h1 className="text-error" style={{ fontSize: '3rem' }}>討伐失敗…</h1>
+        <h1 className="text-error" style={{ fontSize: '3rem' }}>おしい！ もう少し…</h1>
         <p style={{ fontSize: '1.5rem' }}>{TOTAL_QUESTIONS}体中 <strong>{correctCount}</strong>体のモンスターを倒した。</p>
         <p style={{ fontSize: '1.2rem', color: '#666' }}>{PASS_MARK}体倒せばクリアだよ。マイクに向かってハッキリ発音してみよう！</p>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

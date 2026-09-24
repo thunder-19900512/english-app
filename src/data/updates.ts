@@ -14,6 +14,8 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-24', text: '👾 モンスターバトルの「討伐成功！」を「モンスターを たおした！」に 読みやすくしたよ', fromVoice: true },
+  { date: '2026-09-24', text: '🌳 みんなの木は、ほかの人が入れたポイントが 30秒ごとに 自動で 反映されるようになったよ', fromVoice: true },
   { date: '2026-09-23', text: '🖼 ショップに「名前のわく」ができたよ。名前をえらぶ画面で 自分のタイルの ふちの色が 変わるよ', fromVoice: true },
   { date: '2026-09-23', text: '📖 教科書モードで、全部クリアしたのに100%にならない記録の消え方を なおしたよ（消えた分も もどしたよ）', fromVoice: true },
   { date: '2026-09-23', text: '🎉 「セールの日」を 先生が 決められるようになったよ。その日は ショップが 安くなるよ', fromVoice: true },

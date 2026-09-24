@@ -100,6 +100,9 @@ export const ClassTree: React.FC = () => {
   };
 
   useEffect(() => { load(); }, [treeMode]); // eslint-disable-line
+  // ほかの子が入れたポイントも、開いているあいだ30秒ごとに自動で反映する
+  // （子どもの声「画面を新しくするとは何？」＝押す理由が分からないボタンだった 2026-09-24）
+  useEffect(() => { const t = setInterval(() => { if (!busy) load(); }, 30000); return () => clearInterval(t); }, [treeMode, busy]); // eslint-disable-line
 
   const myGroup = groups?.find(g => g.key === myTeam) || null;
   const townOpened = (myGroup?.total || 0) >= TOWN_OPEN;
@@ -290,8 +293,11 @@ export const ClassTree: React.FC = () => {
           )}
 
           <div className="flex-center">
-            <Button variant="outline" onClick={load} icon={RefreshCw}>画面を 新しくする（ポイントは へらないよ）</Button>
+            <Button variant="outline" onClick={load} icon={RefreshCw}>🔄 みんなのポイントを 見直す</Button>
           </div>
+          <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#64748b', margin: '0.3rem 0 0' }}>
+            ほかの人が いま入れたポイントが 反映されるよ（30秒ごとにも 自動で 反映）。押しても 自分のポイントは へらないよ
+          </p>
         </>
       )}
     </div>
