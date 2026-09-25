@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { setCap, getCap } from '../lib/apiUsage';
 import { saveMissionCache } from '../lib/missionBonus';
+import type { CurrentUnit } from '../lib/unitProgress';
 
 export interface TodayMission {
   label: string;
@@ -31,6 +32,8 @@ export const useAppSettings = () => {
   // セールの日（ショップの値引き。0＝ふだん）。先生がスタッフ画面で決める
   const [salePercent, setSalePercent] = useState<number>(0);
   const [saleLabel, setSaleLabel] = useState<string>('');
+  // 今の単元（トップにまとめて出すモード一覧）。先生が設定行の currentUnit に書く
+  const [currentUnit, setCurrentUnit] = useState<CurrentUnit | null>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -53,6 +56,7 @@ export const useAppSettings = () => {
       setSpendMode(progress.spendMode === 'setup' || progress.spendMode === 'open' ? progress.spendMode : 'locked');
       if (progress.salePercent !== undefined) setSalePercent(Math.min(80, Math.max(0, Number(progress.salePercent) || 0)));
       if (progress.saleLabel !== undefined) setSaleLabel(progress.saleLabel || '');
+      if (progress.currentUnit !== undefined) setCurrentUnit(progress.currentUnit && Array.isArray(progress.currentUnit.items) ? progress.currentUnit : null);
     };
 
     const fetchSettings = async () => {
@@ -86,5 +90,5 @@ export const useAppSettings = () => {
     };
   }, []);
 
-  return { azureDisabled, lockMode, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode, spendMode, salePercent, saleLabel };
+  return { azureDisabled, lockMode, todayMissions, geminiDailyCap, azureDailyCap, customVocabEnabled, freetalkGoals, treeMode, spendMode, salePercent, saleLabel, currentUnit };
 };

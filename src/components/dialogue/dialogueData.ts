@@ -179,6 +179,23 @@ export const DIALOGUES: Dialogue[] = [
     ],
   },
   {
+    // P6 Seasons Guide：観光客Lucyに、おすすめの季節を紹介する（冊子 p.3 観光客カード・ポスターと同じ4行）。あなたはガイド(B)。
+    id: 'g5-u7s', grade: 5, unitName: 'Unit 7: Welcome to Japan!（季節ガイド話型）', targetPhrase: 'I like autumn. You can see red leaves.',
+    lines: [
+      { speaker: 'A', en: 'Hello! What season do you like?', ja: 'こんにちは！どの季節が好き？' },
+      { speaker: 'B', en: 'I like {autumn}.', ja: '【秋】が好き。' },
+      { speaker: 'A', en: 'Why?', ja: 'どうして？' },
+      { speaker: 'B', en: 'You can {see red leaves}.', ja: '【紅葉が見られる】から。' },
+      { speaker: 'A', en: 'When?', ja: 'いつ？' },
+      { speaker: 'B', en: "Come in {October}! It's {beautiful}!", ja: '【10月】に来てね！【きれい】だよ！' },
+      { speaker: 'A', en: 'Nice! Thank you!', ja: 'いいね！ありがとう！' },
+    ],
+    note: 'あなたはガイド(B)！ {…}は自分のポスターに合わせて変えよう。れい："I like winter." / "You can enjoy skating." / "Come in January! It\'s fun!"。冊子 p.2 に言葉の一覧があるよ。',
+    relatedCategories: ['季節', '月', '年中行事', '感想・様子'],
+    aiRoute: '/ai?unit=g5-u7',
+    aiLabel: 'AIのLucyに季節をすすめる',
+  },
+  {
     id: 'g5-u8', grade: 5, unitName: 'Unit 8: Who is your hero?', targetPhrase: 'Who is your hero?',
     lines: [
       { speaker: 'A', en: 'Who is your hero?', ja: 'ヒーローは誰？' },

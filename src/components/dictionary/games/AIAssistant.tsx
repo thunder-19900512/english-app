@@ -16,6 +16,7 @@ import { generateWithGemini, ProxyError, type GeminiContent } from '../../../lib
 import { EIKEN_LEVELS, findEiken, loadEiken, saveEiken } from '../../../data/eikenLevels';
 import { isArchived } from '../../../data/archivedUnits';
 import { useSafeBack } from '../../../hooks/useSafeBack';
+import { markUnitClear } from '../../../lib/unitProgress';
 
 // 教科書の各Unitに紐づくフリートークの場面とゴール。
 // goal は英語（AIがこの条件を満たしたら最後に [CLEAR] を付ける＝クリア判定の基準）。
@@ -431,11 +432,13 @@ export const AIAssistant: React.FC = () => {
     if (rules?.clearAll?.length && !awardedRef.current && rules.clearAll.every(re => safeTest(re, saidSoFar))) {
       awardedRef.current = true;
       setCleared(true);
-      addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+      addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier })
+        .then(() => { if (activeUnitIdRef.current) markUnitClear(`ai_unit_clear_${activeUnitIdRef.current}`); });
     } else if (rules?.bonusAny?.length && awardedRef.current && !bonusAwardedRef.current && rules.bonusAny.some(re => safeTest(re, text.toLowerCase()))) {
       bonusAwardedRef.current = true;
       setBonusMsg(true);
-      addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
+      addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 })
+        .then(() => { if (activeUnitIdRef.current) markUnitClear(`ai_unit_bonus_${activeUnitIdRef.current}`); });
     }
     try {
       incUsage('gemini'); // Geminiを実際に呼ぶので1回ぶん計上する
@@ -461,12 +464,14 @@ export const AIAssistant: React.FC = () => {
         awardedRef.current = true;
         setCleared(true);
         // きびしい条件をクリアした分だけ上乗せ（レベルを盛ってもラクにはならないので自己申告でよい）
-        addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier });
+        addPoints(`ai_clear_${mode}`, { multiplier: findEiken(eiken).multiplier })
+        .then(() => { if (activeUnitIdRef.current) markUnitClear(`ai_unit_clear_${activeUnitIdRef.current}`); });
       }
       if (didBonus && awardedRef.current && !bonusAwardedRef.current && !rules?.bonusAny?.length) {
         bonusAwardedRef.current = true;
         setBonusMsg(true);
-        addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 });
+        addPoints(`ai_bonus_${mode}`, { multiplier: findEiken(eiken).multiplier * 0.5 })
+        .then(() => { if (activeUnitIdRef.current) markUnitClear(`ai_unit_bonus_${activeUnitIdRef.current}`); });
       }
     } catch (err: any) {
       console.error('AI Send Error:', err);
@@ -509,6 +514,7 @@ export const AIAssistant: React.FC = () => {
 
   // お店屋さんモード開始（AI＝客／児童＝店員）。シンプル／チャレンジで goal を差し替える。
   const startShop = (variant: 'simple' | 'challenge') => {
+    activeUnitIdRef.current = null; // Unit の記録・判定ルールを持ち越さない
     if (isTeam && teamMembers.length < 2) { alert('チームは2人以上選んでね！'); return; }
     if (variant === 'challenge') {
       initChat('bentoShop', {
@@ -669,10 +675,10 @@ export const AIAssistant: React.FC = () => {
             placeholder="（れい）休み時間に、すきなスポーツの話をする"
             style={{ width: '100%', minHeight: '70px', padding: '1rem', fontSize: '1.1rem', borderRadius: '12px', border: '2px solid #e2e8f0', boxSizing: 'border-box' }}
           />
-          <Button size="lg" onClick={() => startFreetalk({ situation: situationInput })} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
+          <Button size="lg" onClick={() => { activeUnitIdRef.current = null; startFreetalk({ situation: situationInput }); }} icon={Sparkles} style={{ background: 'var(--color-accent)', color: 'black' }}>
             この場面で始める！
           </Button>
-          <Button variant="outline" onClick={() => startFreetalk({})}>場面なしで始める</Button>
+          <Button variant="outline" onClick={() => { activeUnitIdRef.current = null; startFreetalk({}); }}>場面なしで始める</Button>
         </div>
       </div>
     );

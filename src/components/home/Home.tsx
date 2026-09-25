@@ -10,6 +10,7 @@ import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
 import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
+import { UnitHub } from './UnitHub';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export const Home: React.FC = () => {
     setSearchParams(tab ? { tab } : {});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
-  const { todayMissions } = useAppSettings();
+  const { todayMissions, currentUnit } = useAppSettings();
   const { shop } = useShop();
   const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
   const studentId = localStorage.getItem('studentId');
@@ -159,6 +160,11 @@ export const Home: React.FC = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {/* 今の単元：単元で使うモードをまとめて、達成率を見せる（次にやるものを子どもが選ぶ） */}
+      {!activeTab && currentUnit && currentUnit.items.length > 0 && (
+        <UnitHub unit={currentUnit} dictProgress={progress} studentId={studentId} todayMissions={todayMissions} />
       )}
 
       {!activeTab && (

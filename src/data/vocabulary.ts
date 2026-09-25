@@ -646,6 +646,25 @@ export const vocabulary: Vocabulary[] = [
   { id: 'v711', english: 'here', japanese: 'ここ', category: '道案内＋（プラスアルファ）', page: 0, emoji: '📌', keyPhrase: "It's over ◯◯." },
   { id: 'v712', english: 'there', japanese: 'そこ・あそこ', category: '道案内＋（プラスアルファ）', page: 0, emoji: '👉', keyPhrase: "You can see it over ◯◯." },
 
+  // ここから：P6「Seasons Guide 季節ガイド」の冊子 p.2 ②と同じ表現（2026-09-25 追加）。
+  //   その季節に「できること」をフレーズのまま覚える単元。季節の写真アルバムの見出しとそろえてある。
+  { id: 'v713', english: 'see cherry blossoms', japanese: '桜を見る（4月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🌸', keyPhrase: "You can ◯◯." },
+  { id: 'v714', english: 'enjoy Children\'s Day', japanese: 'こどもの日を楽しむ（5月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎏', keyPhrase: "You can ◯◯." },
+  { id: 'v715', english: 'eat strawberries', japanese: 'いちごを食べる（5月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🍓', keyPhrase: "You can ◯◯." },
+  { id: 'v716', english: 'enjoy the Dolls\' Festival', japanese: 'ひな祭りを楽しむ（3月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎎', keyPhrase: "You can ◯◯." },
+  { id: 'v717', english: 'see fireworks', japanese: '花火を見る（8月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎆', keyPhrase: "You can ◯◯." },
+  { id: 'v718', english: 'enjoy the Star Festival', japanese: '七夕を楽しむ（7月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎋', keyPhrase: "You can ◯◯." },
+  { id: 'v719', english: 'eat shaved ice', japanese: 'かき氷を食べる（8月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🍧', keyPhrase: "You can ◯◯." },
+  { id: 'v720', english: 'swim in the sea', japanese: '海で泳ぐ（7月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🏖️', keyPhrase: "You can ◯◯." },
+  { id: 'v721', english: 'see red leaves', japanese: '紅葉を見る（10月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🍁', keyPhrase: "You can ◯◯." },
+  { id: 'v722', english: 'enjoy Halloween', japanese: 'ハロウィンを楽しむ（10月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎃', keyPhrase: "You can ◯◯." },
+  { id: 'v723', english: 'eat sweet potatoes', japanese: 'さつまいもを食べる（10月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🍠', keyPhrase: "You can ◯◯." },
+  { id: 'v724', english: 'eat chestnuts', japanese: 'くりを食べる（9月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🌰', keyPhrase: "You can ◯◯." },
+  { id: 'v725', english: 'enjoy skating', japanese: 'スケートを楽しむ（1月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '⛸️', keyPhrase: "You can ◯◯." },
+  { id: 'v726', english: 'play in the snow', japanese: '雪で遊ぶ（1月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '⛄', keyPhrase: "You can ◯◯." },
+  { id: 'v727', english: 'enjoy Christmas', japanese: 'クリスマスを楽しむ（12月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎄', keyPhrase: "You can ◯◯." },
+  { id: 'v728', english: 'enjoy New Year\'s Day', japanese: 'お正月を楽しむ（1月）', category: '季節＋（プラスアルファ）', page: 0, emoji: '🎍', keyPhrase: "You can ◯◯." },
+
   // ここから：My Picture Dictionary から抜けていた単元（2026-09 追加）
   // 町（p.26）／乗り物（p.26 囲み）／道案内（p.27）／位置（p.27）／生き物の問題・できること（p.17）
   { id: 'v600', english: 'house', japanese: '家', category: '町', page: 26, emoji: '🏠', keyPhrase: "We have a nice ◯◯." },

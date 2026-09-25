@@ -21,6 +21,7 @@ const getQuestionForPhrase = (keyPhrase: string, category?: string) => {
   if (keyPhrase.includes("I want to join")) return "What club do you want to join?";
   if (keyPhrase.includes("I want a new")) return "What do you want?";
   if (keyPhrase.includes("I want to")) return "What do you want to do?";
+  if (keyPhrase === "You can ◯◯.") return "What can I do?";
   if (keyPhrase.includes("I can play the")) return "What can you play?";
   if (keyPhrase.includes("I can")) return "What can you do?";
   if (keyPhrase.includes("This is my")) return "What is this?";
