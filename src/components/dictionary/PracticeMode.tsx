@@ -33,7 +33,11 @@ export const PracticeMode: React.FC = () => {
   const [firstTryCorrect, setFirstTryCorrect] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   
-  const [startTime, setStartTime] = useState<number | null>(Date.now());
+  // 最初の1問は「スタート」を押してから始める（子どもの声 2026-09-25「選択モードを最初にやると反応しない」）。
+  // ブラウザは、画面を一度もタップしていないうちは音を出させないので、
+  // 入ってすぐの自動再生が鳴らず「反応しない」ように見えていた。押した瞬間に音が出せる。
+  const [started, setStarted] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [bestTime, setBestTime] = useState<{ name: string; time: number } | null>(null);
   const [newRecordMsg, setNewRecordMsg] = useState('');
@@ -97,13 +101,13 @@ export const PracticeMode: React.FC = () => {
 
   // Auto-play audio
   useEffect(() => {
-    if (targetWord && !showCelebration && !showFailure && !showAnswerState && !showCorrectMark) {
+    if (started && targetWord && !showCelebration && !showFailure && !showAnswerState && !showCorrectMark) {
       const timer = setTimeout(() => {
         speak(targetWord.english);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [targetWord, showCelebration, showFailure, showAnswerState, showCorrectMark, speak]);
+  }, [started, targetWord, showCelebration, showFailure, showAnswerState, showCorrectMark, speak]);
 
   const moveToNextQuestion = (nextQC: number) => {
     generateQuestion(nextQC, shuffledWords);
@@ -268,6 +272,21 @@ export const PracticeMode: React.FC = () => {
   }
 
   if (!targetWord) return null;
+
+  if (!started) {
+    return (
+      <div className="flex-col flex-center gap-lg" style={{ minHeight: '60vh', textAlign: 'center' }}>
+        <h1 className="text-primary" style={{ margin: 0 }}>{isHard ? '選択モード（ハード）' : '選択モード'}：{decodedCategory}</h1>
+        <p style={{ fontSize: '1.1rem', color: '#475569', margin: 0 }}>英語の音を聞いて、合う絵を 選ぼう。音が出るよ 🔊</p>
+        <button
+          onClick={() => { setStarted(true); setStartTime(Date.now()); speak(targetWord.english); }}
+          style={{ padding: '1rem 3rem', fontSize: '1.6rem', fontWeight: 'bold', borderRadius: '999px', border: 'none',
+            background: 'var(--color-primary)', color: 'white', cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.2)' }}>
+          ▶ スタート
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-col flex-center gap-lg" style={{ minHeight: '100%', width: '100%' }}>

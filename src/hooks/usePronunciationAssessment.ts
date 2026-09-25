@@ -291,6 +291,13 @@ export const usePronunciationAssessment = () => {
           SpeechSDK.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
           '1500'
         );
+        // 言葉の途中で少し間があいても「言い終わった」と判定しない（子どもの声 2026-09-24
+        // 「しゃべり切る前にミスになる」）。1回で聞き取るときの区切りは、こちらの「間」で決まる
+        // （既定は0.5秒ほど。ゆっくり・区切って言う子には短すぎた）。
+        speechConfig.setProperty(
+          SpeechSDK.PropertyId.Speech_SegmentationSilenceTimeoutMs,
+          '1200'
+        );
 
         const format = SpeechSDK.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
         const pushStream = SpeechSDK.AudioInputStream.createPushStream(format);
