@@ -1,3 +1,4 @@
+import { ReflectionTableCard } from './ReflectionTableCard';
 import { SpendPinCard } from './SpendPinCard';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -1004,6 +1005,8 @@ export const TeacherDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ReflectionTableCard students={students} />
 
       <div className="glass-card" style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
