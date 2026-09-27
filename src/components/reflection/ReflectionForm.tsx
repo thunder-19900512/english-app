@@ -1,3 +1,4 @@
+import { checkReflection } from '../../lib/reflectionCheck';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSafeBack } from '../../hooks/useSafeBack';
@@ -29,10 +30,14 @@ export const ReflectionForm: React.FC = () => {
   // サイコロが振れる長さ。「3行以上」だと90字相当で重すぎたので、文字数で数える。
   // 改行や空白は数えない（改行だけ入れて水増しできないように）。
   const DICE_CHARS = 50;
-  const countChars = (text: string) => text.replace(/\s/g, '').length;
-  const BASE_POINTS = 2;        // 3行未満でも、書いたことは認める
+  // 数える文字数は「空白・同じ文字の連打」をのぞいたもの。でたらめな文字列は数えない（lib/reflectionCheck）
+  const check = checkReflection(comment);
+  const countChars = (_text: string) => check.length;
+  const BASE_POINTS = 2;        // 短くても、読める文で書いたことは認める
   const diceToPoints = (d: number) => d + 2; // 🎲1〜6 → 3〜8P（1Pにはならない）
-  const qualifies = countChars(comment) >= DICE_CHARS;
+  const qualifies = check.ok && check.length >= DICE_CHARS;
+  // でたらめな文字列（キーボードを適当にたたいた等）にはポイントを出さない（2026-09-28）
+  const nonsense = comment.trim() !== '' && !check.ok;
 
   const HALF_DAY_MS = 12 * 60 * 60 * 1000;
   const lastReflectionDate = reflections.length > 0 ? new Date(reflections[0].date) : null;
@@ -55,6 +60,11 @@ export const ReflectionForm: React.FC = () => {
         setDice(d); setRolling(false);
         const pts = await addFixedPoints('daily_reflection', diceToPoints(d));
         setEarnedPoints(pts);
+        return;
+      }
+      if (nonsense) {          // 記録は残すが、ポイントは出さない
+        setEarnedPoints(0);
+        setSubmitted(true);
         return;
       }
       const pts = await addFixedPoints('daily_reflection', BASE_POINTS);
@@ -85,7 +95,9 @@ export const ReflectionForm: React.FC = () => {
         )}
         {!rolling && earnedPoints === 0 && (
           <p style={{ fontSize: '1rem', color: '#94a3b8', margin: 0 }}>
-            {currentIsTrial() ? '（お試しでは ポイントは たまりません）' : '（ポイントは12時間に1回だよ。記録は のこったよ）'}
+            {currentIsTrial() ? '（お試しでは ポイントは たまりません）'
+              : nonsense ? '（読める文に なっていなかったので、今回は ポイントなし。記録は のこったよ）'
+              : '（ポイントは12時間に1回だよ。記録は のこったよ）'}
           </p>
         )}
         <p style={{ fontSize: '1.5rem' }}>えらい！今日もがんばったね！</p>
@@ -178,6 +190,11 @@ export const ReflectionForm: React.FC = () => {
             ? `🎲 ${DICE_CHARS}字以上！ 送るとサイコロで 3〜8ポイント（出た目＋2）`
             : `${DICE_CHARS}字以上書くと、サイコロで ポイントが決まるよ（いま ${countChars(comment)}字）`}
         </p>
+        {check.hint && (
+          <p style={{ fontSize: '0.95rem', color: 'var(--color-error)', fontWeight: 'bold', margin: '-0.5rem 0 1rem', textAlign: 'center' }}>
+            ⚠️ {check.hint}
+          </p>
+        )}
 
         <textarea
           value={comment}
