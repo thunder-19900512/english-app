@@ -49,7 +49,7 @@ export const ReflectionForm: React.FC = () => {
       document.getElementById('reflection-stars')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    saveReflection(stars, comment);
+    saveReflection(stars, comment, nonsense);   // でたらめな文字列には自動👍を付けない
     
     if (canEarnPoints) {
       if (qualifies) {

@@ -8,6 +8,8 @@ export interface Reflection {
   comment: string;
   teacherComment?: string; // 先生からの一言（双方向）
   teacherStamp?: string;   // 先生のスタンプ（絵文字）
+  autoStamp?: boolean;     // 👍が自動で付いたもの（先生が押し直すと false）
+  noStamp?: boolean;       // ポイントが付かなかったもの（でたらめな文字列等）。自動👍を付けない
 }
 
 export const useReflections = () => {
@@ -32,14 +34,16 @@ export const useReflections = () => {
     pullFromSupabase(studentId).then(load).catch(() => {});
   }, [studentId]);
 
-  const saveReflection = useCallback((stars: number, comment: string) => {
+  // noStamp: でたらめな文字列などポイントが付かないふりかえり。自動の👍を付けない印（DBトリガーが見る）
+  const saveReflection = useCallback((stars: number, comment: string, noStamp = false) => {
     if (!studentId) return;
     
     const newReflection: Reflection = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       stars,
-      comment
+      comment,
+      ...(noStamp ? { noStamp: true } : {}),
     };
 
     setReflections(prev => {
