@@ -16,7 +16,7 @@ export const saveTeacherFeedback = async (
     .single();
   const reflections = (data?.reflections || []).map((r: any) =>
     r.id === reflectionId
-      ? { ...r, teacherComment: teacherComment.trim(), teacherStamp: teacherStamp || '' }
+      ? { ...r, teacherComment: teacherComment.trim(), teacherStamp: teacherStamp || '', autoStamp: false }  // 先生が押し直した
       : r
   );
   const { error } = await supabase.from('students').update({ reflections }).eq('id', studentId);

@@ -507,7 +507,7 @@ export const TeacherDashboard: React.FC = () => {
     if (error) return;
     setStudents(prev => prev.map(s => s.id !== studentId ? s : {
       ...s,
-      reflections: (s.reflections || []).map((r: any) => r.id === ref.id ? { ...r, teacherComment: draft.comment.trim(), teacherStamp: draft.stamp } : r),
+      reflections: (s.reflections || []).map((r: any) => r.id === ref.id ? { ...r, teacherComment: draft.comment.trim(), teacherStamp: draft.stamp, autoStamp: false } : r),
     }));
   };
 
@@ -561,7 +561,9 @@ export const TeacherDashboard: React.FC = () => {
           </Button>
         </div>
         {(ref.teacherComment || ref.teacherStamp) && (
-          <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#16a34a' }}>送信済み：{ref.teacherStamp} {ref.teacherComment}</div>
+          <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: ref.autoStamp ? '#94a3b8' : '#16a34a' }}>
+            {ref.autoStamp ? `自動で ${ref.teacherStamp}（押し直すと 先生のスタンプに なります）` : `送信済み：${ref.teacherStamp} ${ref.teacherComment || ''}`}
+          </div>
         )}
       </div>
     );

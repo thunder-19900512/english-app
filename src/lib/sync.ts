@@ -138,8 +138,12 @@ export const pushToSupabase = async (studentId: string): Promise<void> => {
           const prev = reflMap.get(r.id) || {};
           reflMap.set(r.id, {
             ...prev, ...r,
-            teacherComment: r.teacherComment || prev.teacherComment || '',
-            teacherStamp: r.teacherStamp || prev.teacherStamp || '',
+            // 先生の記入はDB（先生の画面が書く側）を優先する。
+            //   以前は端末側を優先していたので、端末に古い自動👍が残っていると、
+            //   先生が押し直したスタンプを子どもの端末が上書きで戻してしまう（2026-09-28）。
+            teacherComment: prev.teacherComment || r.teacherComment || '',
+            teacherStamp: prev.teacherStamp || r.teacherStamp || '',
+            autoStamp: prev.teacherStamp ? !!prev.autoStamp : !!r.autoStamp,
           });
         }
         const mergedReflections = Array.from(reflMap.values())
