@@ -192,7 +192,7 @@ export const DIALOGUES: Dialogue[] = [
     ],
     note: 'あなたはガイド(B)！ {…}は自分のポスターに合わせて変えよう。れい："I like winter." / "You can enjoy skating." / "Come in January! It\'s fun!"。冊子 p.2 に言葉の一覧があるよ。',
     relatedCategories: ['季節', '月', '年中行事', '感想・様子'],
-    aiRoute: '/ai?unit=g5-u7',
+    aiRoute: '/ai?unit=g5-u7s',
     aiLabel: 'AIのLucyに季節をすすめる',
   },
   {
