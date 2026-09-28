@@ -136,7 +136,7 @@ export const DIALOGUES: Dialogue[] = [
     ],
     note: 'あなたはガイド(B)！ {…}は自分のスポットに合わせて変えよう。れい："It\'s about ten minutes." / "It\'s 500 yen." / "You can eat soba there." / "Sorry, no."（ごめんなさい、だめです）。紙の「観光客の質問カード」と同じ文だよ。',
     relatedCategories: ['道案内＋（プラスアルファ）', '町＋（プラスアルファ）'],
-    aiRoute: '/ai?unit=g5-u5',
+    aiRoute: '/ai?unit=g5-u5d',
     aiLabel: 'AIのLucyを案内してみる',
   },
   {
