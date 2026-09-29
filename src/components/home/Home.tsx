@@ -10,6 +10,16 @@ import { useAppSettings } from '../../hooks/useAppSettings';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
 import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
+import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
+
+// 教科書のミッションは、保存された動画URLが無くても、クイズのidから動画を探して出す
+// （2026-09-29「ミッションの教科書クイズを押すと動画ではなくクイズに行く」＝動画ボタンが出ていなかった）
+const missionVideo = (m: { route: string; videoUrl?: string }): string | undefined => {
+  if (m.videoUrl) return m.videoUrl;
+  if (!m.route.startsWith('/textbook')) return undefined;
+  const id = new URLSearchParams(m.route.split('?')[1] || '').get('id');
+  return DEFAULT_QUIZZES.find(q => q.id === id)?.url || undefined;
+};
 import { UnitHub } from './UnitHub';
 
 export const Home: React.FC = () => {
@@ -140,13 +150,13 @@ export const Home: React.FC = () => {
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                {mission.videoUrl && (
+                {missionVideo(mission) && (
                   <button
                     className="hover-scale"
-                    onClick={() => window.open(mission.videoUrl, '_blank')}
+                    onClick={() => window.open(missionVideo(mission), '_blank')}
                     style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.95)', color: '#c0392b', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
-                    📺 動画を見る
+                    ① 📺 動画を見る
                   </button>
                 )}
                 <button
@@ -154,7 +164,7 @@ export const Home: React.FC = () => {
                   onClick={() => navigate(mission.route)}
                   style={{ fontSize: '1.05rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.25)', color: 'white', border: '2px solid white', padding: '0.7rem 1.2rem', borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
-                  {mission.videoUrl ? '✏️ 問題に挑戦' : 'やってみる →'}
+                  {missionVideo(mission) ? '② ✏️ 問題に挑戦' : 'やってみる →'}
                 </button>
               </div>
             </div>
