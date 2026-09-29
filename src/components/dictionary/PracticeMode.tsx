@@ -288,8 +288,9 @@ export const PracticeMode: React.FC = () => {
     );
   }
 
+  // ハードは6択。開いたときに選択肢まで見えるよう、上をつめて選択肢を3列にする（2026-09-29）
   return (
-    <div className="flex-col flex-center gap-lg" style={{ minHeight: '100%', width: '100%' }}>
+    <div className={`flex-col flex-center ${isHard ? 'gap-sm' : 'gap-lg'}`} style={{ minHeight: '100%', width: '100%' }}>
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button variant="outline" onClick={() => navigate(`/dictionary/${category}`)} icon={ArrowLeft}>
           もどる
@@ -298,8 +299,8 @@ export const PracticeMode: React.FC = () => {
         <div style={{ width: '100px' }} /> {/* Spacer */}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--color-primary)', fontFamily: 'monospace' }}>
+      <div style={{ display: 'flex', flexDirection: isHard ? 'row' : 'column', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: isHard ? '0.8rem' : '0.5rem', marginBottom: isHard ? 0 : '1rem' }}>
+        <div style={{ fontSize: isHard ? '1.4rem' : '2rem', fontWeight: 'bold', color: 'var(--color-primary)', fontFamily: 'monospace' }}>
           ⏱️ {(elapsedTime / 1000).toFixed(1)}秒
         </div>
         <div style={{ textAlign: 'center', animation: 'float 3s infinite' }}>
@@ -332,12 +333,12 @@ export const PracticeMode: React.FC = () => {
       <Button 
         onClick={() => speak(targetWord.english)} 
         icon={Volume2}
-        style={{ fontSize: '1.5rem', padding: '1rem 3rem', background: 'var(--color-accent)', color: '#000' }}
+        style={{ fontSize: isHard ? '1.2rem' : '1.5rem', padding: isHard ? '0.6rem 2rem' : '1rem 3rem', background: 'var(--color-accent)', color: '#000' }}
       >
         音をきく
       </Button>
 
-      <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%' }}>
+      <div style={{ minHeight: isHard && !showAnswerState ? 0 : '100px', height: isHard && !showAnswerState ? 0 : undefined, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%', zIndex: 10 }}>
         {showCorrectMark && (
           <div className="animate-pop" style={{ position: 'absolute', fontSize: '8rem', color: 'var(--color-success)', fontWeight: 'bold', zIndex: 10 }}>
             ◯
@@ -356,16 +357,16 @@ export const PracticeMode: React.FC = () => {
       </div>
 
       {!showAnswerState && (
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%', maxWidth: '600px' }}>
+        <div className="grid" style={{ gridTemplateColumns: isHard ? '1fr 1fr 1fr' : '1fr 1fr', gap: isHard ? '0.8rem' : '1.5rem', width: '100%', maxWidth: isHard ? '720px' : '600px' }}>
           {options.map((opt) => (
             <div 
               key={opt.id}
               className="glass-card flex-col flex-center animate-pop"
               style={{ 
-                padding: '2rem', 
+                padding: isHard ? '1rem 0.5rem' : '2rem', 
                 cursor: 'pointer', 
                 background: choiceError ? 'var(--color-error)' : 'rgba(255,255,255,0.8)',
-                minHeight: '150px',
+                minHeight: isHard ? '90px' : '150px',
                 opacity: !isHard && mistakes >= 1 && opt.id !== targetWord.id ? 0.5 : 1
               }}
               onClick={() => handleOptionClick(opt)}
@@ -373,7 +374,7 @@ export const PracticeMode: React.FC = () => {
               {!isHard && mistakes >= 1 && (
                 <div className="animate-pop" style={{ fontSize: '4rem', marginBottom: '1rem' }}>{opt.emoji}</div>
               )}
-              <h2 style={{ fontSize: '1.8rem', margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--color-primary)' }}>
+              <h2 style={{ fontSize: isHard ? '1.4rem' : '1.8rem', margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--color-primary)', textAlign: 'center', wordBreak: 'break-word' }}>
                 {opt.english}
               </h2>
             </div>
