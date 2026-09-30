@@ -14,6 +14,7 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-09-30', text: '🏘️ みんなの町が 絵で見られるようになったよ。土地をタップすると 建物の名前が出るよ。相手チームの町も のぞけるよ', fromVoice: true },
   { date: '2026-09-30', text: '🔥 単元をえらんだときのモード一覧に「選択（ハード）」も出るようにしたよ', fromVoice: true },
   { date: '2026-09-30', text: '⏭ モンスターバトルで、うまく言えないときは「パス」できるようになったよ', fromVoice: true },
   { date: '2026-09-30', text: '🐢 タイピングモードに「ゆっくり」ボタンができたよ。聞き取りにくいときに使ってね', fromVoice: true },

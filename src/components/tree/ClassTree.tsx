@@ -1,4 +1,5 @@
 import { ensureSpendAllowed } from '../../lib/spendPin';
+import { TownScene } from './TownScene';
 import { SpendLockedNotice } from '../ui/SpendGate';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { Button } from '../ui/Button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { showToast } from '../ui/Toast';
 import {
-  FOREST_STAGES, TOWN_OPEN, TOWN_BUILDINGS, pickCandidates, type TownBuilding,
+  FOREST_STAGES, TOWN_OPEN, pickCandidates, type TownBuilding,
 } from '../../data/townItems';
 
 // みんなの町（もと「クラスの木」）。
@@ -30,6 +31,9 @@ export const ClassTree: React.FC = () => {
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [myTeam, setMyTeam] = useState<string | null>(null);
   const [town, setTown] = useState<TownState>({ built: [], funds: {} });
+  // どのチームの町の絵を見るか（相手チームの町ものぞける。子どもの声 2026-09-29）
+  const [allTowns, setAllTowns] = useState<Record<string, string[]>>({});
+  const [viewTeam, setViewTeam] = useState<string | null>(null);
   const [todayGain, setTodayGain] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -86,10 +90,14 @@ export const ClassTree: React.FC = () => {
          build('B', '56B', '🟠', roster.filter(s => s.cls === 'B'))];
     setGroups(g);
 
-    // 町の状態（自分のチームぶん）
+    // 町の状態（全チームぶん。自分のチームは建てる用にも使う）
+    const { data: towns } = await supabase.from('town_state').select('team, built, funds');
+    const byTeam: Record<string, string[]> = {};
+    (towns || []).forEach((t: any) => { byTeam[t.team] = t.built || []; });
+    setAllTowns(byTeam);
     if (team) {
-      const { data: ts } = await supabase.from('town_state').select('built, funds').eq('team', team).maybeSingle();
-      setTown({ built: ts?.built || [], funds: ts?.funds || {} });
+      const mine = (towns || []).find((t: any) => t.team === team);
+      setTown({ built: mine?.built || [], funds: mine?.funds || {} });
     }
 
     // きょうの伸び（この端末で今日入れた分）
@@ -174,6 +182,28 @@ export const ClassTree: React.FC = () => {
         <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>読み込み中…</div>
       ) : (
         <>
+          {/* 町の絵（じぶんのチーム／相手チームを切り替え） */}
+          {(() => {
+            const shownKey = viewTeam || myTeam || groups[0]?.key;
+            const g = groups.find(x => x.key === shownKey) || groups[0];
+            return (
+              <div className="glass-card" style={{ padding: '0.9rem' }}>
+                {groups.length > 1 && (
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+                    {groups.map(x => (
+                      <button key={x.key} onClick={() => setViewTeam(x.key)}
+                        style={{ padding: '0.35rem 1rem', borderRadius: '999px', border: '2px solid var(--color-primary)', cursor: 'pointer', fontWeight: 'bold',
+                          background: g.key === x.key ? 'var(--color-primary)' : 'white', color: g.key === x.key ? 'white' : 'var(--color-primary)' }}>
+                        {x.emoji} {x.label}の{x.total >= TOWN_OPEN ? '町' : '森'}{x.key === myTeam ? '（じぶん）' : ''}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <TownScene built={allTowns[g.key] || []} total={g.total} label={`${g.emoji} ${g.label}`} />
+              </div>
+            );
+          })()}
+
           {/* 森／町の様子 */}
           <div className="grid" style={{ gridTemplateColumns: groups.length > 1 ? '1fr 1fr' : '1fr', gap: '1rem' }}>
             {groups.map(g => {
@@ -212,19 +242,6 @@ export const ClassTree: React.FC = () => {
             全部 合わせて <b style={{ color: 'var(--color-success)' }}>{totalAll.toLocaleString()}P</b>
             {todayGain > 0 && <span style={{ marginLeft: '0.8rem', color: 'var(--color-primary)' }}>きょう あなたは +{todayGain}P</span>}
           </div>
-
-          {/* 建てた建物（町の景色） */}
-          {town.built.length > 0 && (
-            <div className="glass-card" style={{ padding: '1.2rem' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>🏘️ できあがった町（{town.built.length}／{TOWN_BUILDINGS.length}）</div>
-              <div style={{ fontSize: '2rem', lineHeight: 1.4 }}>
-                {town.built.map(id => TOWN_BUILDINGS.find(b => b.id === id)?.emoji).join(' ')}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.3rem' }}>
-                {town.built.map(id => TOWN_BUILDINGS.find(b => b.id === id)?.name).join('・')}
-              </div>
-            </div>
-          )}
 
           {/* 入れる：町ひらき前は森、後は建物3択 */}
           {!townOpened ? (
