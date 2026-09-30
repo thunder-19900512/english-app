@@ -36,7 +36,10 @@ export const markUnitClear = (key: string) => {
 
 export type ItemKind = 'dictionary' | 'textbook' | 'dialogue' | 'ai' | 'other';
 
-export interface ItemProgress { kind: ItemKind; done: number; total: number }
+export interface ItemProgress { kind: ItemKind; done: number; total: number; missing?: string[] }
+
+// 辞書の「あと何をやればマスターか」を見せるための名前（子どもの声 2026-09-26「3/5の下に、何が足りないか書いてほしい」）
+export const DICT_SKILL_NAMES: Record<string, string> = { practice: '🎯選択', wordsearch: '🔍言葉さがし', spelling: '⌨️タイピング', voice: '🎤発音', qa: '❓Q&A' };
 
 export const itemProgress = (route: string, dictProgress: Record<string, DictCategoryProgress>, studentId: string | null): ItemProgress => {
   const counts = clearCountsOf(studentId);
@@ -47,7 +50,8 @@ export const itemProgress = (route: string, dictProgress: Record<string, DictCat
   const seg = path.split('/').filter(Boolean);
   if (seg[0] === 'dictionary' && seg[1]) {
     const p = (dictProgress[seg[1]] || {}) as any;
-    return { kind: 'dictionary', done: DICT_SKILLS.filter(k => p[k]).length, total: DICT_SKILLS.length };
+    return { kind: 'dictionary', done: DICT_SKILLS.filter(k => p[k]).length, total: DICT_SKILLS.length,
+             missing: DICT_SKILLS.filter(k => !p[k]).map(k => DICT_SKILL_NAMES[k as string]) };
   }
   if (seg[0] === 'textbook') {
     const id = q.get('id'); const set = q.get('set');

@@ -94,6 +94,9 @@ export const UnitHub: React.FC<{
                   </span>
                 </div>
               )}
+              {!done && p.missing && p.missing.length > 0 && p.done > 0 && (
+                <div style={{ fontSize: '0.8rem', color: '#b45309' }}>あと：{p.missing.join('・')}</div>
+              )}
             </div>
           );
         })}

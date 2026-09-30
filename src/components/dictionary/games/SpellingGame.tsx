@@ -12,7 +12,7 @@ export const SpellingGame: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
   const decodedCategory = decodeURIComponent(category || '');
-  const { speak } = useSpeechSynthesis();
+  const { speak, speakSlow } = useSpeechSynthesis();
   const { saveProgress } = useDictionaryProgress();
   const { addPoints } = usePoints();
   const vocabulary = useVocabulary();
@@ -367,13 +367,22 @@ export const SpellingGame: React.FC = () => {
         ))}
       </div>
 
-      <Button 
-        onClick={() => speak(targetWord.english)} 
-        icon={Volume2}
-        style={{ fontSize: '1.5rem', padding: '1rem 3rem', background: 'var(--color-accent)', color: '#000' }}
-      >
-        音をきく
-      </Button>
+      <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Button 
+          onClick={() => speak(targetWord.english)} 
+          icon={Volume2}
+          style={{ fontSize: '1.5rem', padding: '1rem 3rem', background: 'var(--color-accent)', color: '#000' }}
+        >
+          音をきく
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => speakSlow(targetWord.english)}
+          style={{ fontSize: '1.2rem', padding: '1rem 1.6rem' }}
+        >
+          🐢 ゆっくり
+        </Button>
+      </div>
 
       <div style={{ minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', width: '100%' }}>
         {showCorrectMark && (

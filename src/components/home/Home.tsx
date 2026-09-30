@@ -413,6 +413,16 @@ export const Home: React.FC = () => {
                     <h3 style={{ margin: 0, fontSize: '1.2rem' }}>選択モード</h3>
                   </div>
 
+                  {/* ハードもここから選べるように（子どもの声 2026-09-30「最初にモードを選ぶときにもハードを出して」） */}
+                  <div 
+                    className="glass-card flex-col flex-center hover-scale" 
+                    style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(238, 82, 83, 0.15)', position: 'relative', border: '2px dashed #ee5253' }}
+                    onClick={() => navigate(`/dictionary/${encodeURIComponent(expandedCategory)}/practice?hard=1`)}
+                  >
+                    <Target size={40} color="#ee5253" style={{ marginBottom: '0.5rem' }} />
+                    <h3 style={{ margin: 0, fontSize: '1.2rem' }}>🔥 選択（ハード）</h3>
+                  </div>
+
                   <div 
                     className="glass-card flex-col flex-center hover-scale" 
                     style={{ padding: '1.5rem', cursor: 'pointer', background: 'rgba(255, 159, 67, 0.2)', position: 'relative' }}

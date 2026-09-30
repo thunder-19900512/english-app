@@ -21,7 +21,7 @@ export const useSpeechSynthesis = () => {
   // onEnd: 読み上げ/再生が「最後まで」終わったときに呼ばれる。
   // 途中で次の音にキャンセルされた場合も end が発火しうるので、呼び出し側で
   // 「今アクティブな単語か」をチェックして連打を弾く想定。
-  const fallbackSpeak = (text: string, onEnd?: () => void) => {
+  const fallbackSpeak = (text: string, onEnd?: () => void, rate = 0.8) => {
     if (!('speechSynthesis' in window)) {
       console.warn('Speech synthesis is not supported in this browser.');
       onEnd?.();
@@ -35,7 +35,7 @@ export const useSpeechSynthesis = () => {
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'en-US';
-    utterance.rate = 0.8;
+    utterance.rate = rate;
     utterance.pitch = 1.1;
 
     // クリアな英語ボイスに固定（無ければ既定）
@@ -68,5 +68,10 @@ export const useSpeechSynthesis = () => {
     }
   }, []);
 
-  return { speak };
+  // ゆっくり読み上げ（子どもの声 2026-09-26「タイピングで聞き取れないとき、ゆっくり話すボタンがほしい」）
+  const speakSlow = useCallback((text: string, onEnd?: () => void) => {
+    fallbackSpeak(text, onEnd, 0.45);
+  }, []);
+
+  return { speak, speakSlow };
 };

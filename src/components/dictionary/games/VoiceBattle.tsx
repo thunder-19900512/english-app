@@ -166,6 +166,13 @@ export const VoiceBattle: React.FC = () => {
     }
   }, [targetWord, monsterState, isAssessing, assess, setTranscript, speak, proceedToNextTurn, mistakes, addScore, PASS_SCORE]);
 
+  const handleSkip = useCallback(() => {
+    if (!targetWord || monsterState !== 'idle') return;
+    if (!azureAvailable && isRecording) stopListening();
+    setMonsterState('attack');
+    setTimeout(() => proceedToNextTurn(false), 600);
+  }, [targetWord, monsterState, azureAvailable, isRecording, stopListening, proceedToNextTurn]);
+
   useEffect(() => {
     // Web Speech APIでの判定はAzure未設定のときだけ動かす
     if (!azureAvailable && transcript && targetWord && monsterState === 'idle') {
@@ -397,6 +404,14 @@ export const VoiceBattle: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* パス（子どもの声 2026-09-25「発音がうまくできないときにパスしたい」）。
+          その1体は「倒せなかった」あつかいで次へ進む＝ポイントは正解した数で決まるので、パスで得はしない */}
+      {monsterState === 'idle' && !(azureAvailable && isAssessing) && (
+        <Button variant="outline" onClick={handleSkip} style={{ marginTop: '0.5rem' }}>
+          ⏭ パスする（次のモンスターへ）
+        </Button>
+      )}
 
     </div>
   );
