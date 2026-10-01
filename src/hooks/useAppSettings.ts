@@ -8,6 +8,7 @@ export interface TodayMission {
   label: string;
   route: string;
   videoUrl?: string; // 教科書モードのとき、動画へのリンク
+  afterSign?: boolean; // ミッションロック中、スタッフのサイン（合言葉）のあとに使えるもの
 }
 
 export const useAppSettings = () => {
@@ -16,7 +17,7 @@ export const useAppSettings = () => {
   // 旧設定の isScreenLocked（真偽）も読める。lockMode があればそちらを優先
   // 先生が「発音チェックをオフ」にしたら、全端末でかんたんな聞き取り（Web Speech）に切り替える
   const [azureDisabled, setAzureDisabled] = useState<boolean>(false);
-  const [lockMode, setLockMode] = useState<'none' | 'screen' | 'reflection'>('none');
+  const [lockMode, setLockMode] = useState<'none' | 'screen' | 'reflection' | 'missions'>('none');
   // 今日のミッション（複数対応）。旧データの todayMission（単数）も読めるようにする。
   const [todayMissions, setTodayMissions] = useState<TodayMission[]>([]);
   const [geminiDailyCap, setGeminiDailyCap] = useState<number>(getCap('gemini'));

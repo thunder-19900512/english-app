@@ -148,6 +148,7 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
+                {mission.afterSign && <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.95 }}>✍️ 制作物にスタッフのサインをもらってから</div>}
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                 {missionVideo(mission) && (
