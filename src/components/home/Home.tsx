@@ -7,6 +7,7 @@ import { useVocabulary } from '../../hooks/useVocabulary';
 import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { useAppSettings } from '../../hooks/useAppSettings';
+import { isSignUnlocked } from '../../lib/signUnlock';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
 import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
@@ -35,7 +36,9 @@ export const Home: React.FC = () => {
     setSearchParams(tab ? { tab } : {});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
-  const { todayMissions, currentUnit } = useAppSettings();
+  const { todayMissions, currentUnit, lockMode } = useAppSettings();
+  // ✍️ のミッションが閉じているのは、ミッションだけロック中で、まだ合言葉であいていない端末だけ
+  const signLocked = lockMode === 'missions' && !isSignUnlocked();
   const { shop } = useShop();
   const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
   const studentId = localStorage.getItem('studentId');
@@ -148,7 +151,7 @@ export const Home: React.FC = () => {
                   </span>
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
-                {mission.afterSign && <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.95 }}>✍️ 制作物にスタッフのサインをもらってから</div>}
+                {mission.afterSign && signLocked && <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.95 }}>✍️ 制作物にスタッフのサインをもらってから</div>}
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                 {missionVideo(mission) && (

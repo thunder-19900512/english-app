@@ -4,22 +4,15 @@ import { Lock, PenLine } from 'lucide-react';
 import { STAFF_TEST_ID } from '../../lib/trial';
 import type { TodayMission } from '../../hooks/useAppSettings';
 import { isOnMission } from '../../lib/missionBonus';
-import { supabase } from '../../lib/supabase';
+import { isSignUnlocked, unlockWithSignPin, SIGN_FREE_MINUTES } from '../../lib/signUnlock';
 
 export type LockMode = 'none' | 'screen' | 'reflection' | 'missions';
-
-// ミッションロック：その日の「サインのあと」ミッションを、この端末で解除したか（日付ごと）
-// 合言葉（サインのあと用）を入れた端末は、30分だけミッションロックが外れる（みんなの町なども使える）
-const FREE_MINUTES = 30;
-const signKey = () => `signUnlockUntil_${localStorage.getItem('studentId')}`;
-const unlockedUntil = () => { try { return Number(localStorage.getItem(signKey()) || 0); } catch { return 0; } };
-export const isSignUnlocked = () => Date.now() < unlockedUntil();
 
 // 全員の画面にかぶせるロック。
 //   screen     … 何もできない（スタッフの話を聞く）
 //   reflection … ふりかえりを書く画面だけ使える。ほかの画面ではこのロックが出て、ボタンで ふりかえりへ
-//   missions   … 今日のミッションの画面（とトップ・ふりかえり）だけ使える。
-//                「サインのあと」のミッションは、スタッフが端末で合言葉（スタッフPIN）を入れると、その日その端末で開く
+//   missions   … 今日のミッションの画面（とトップ・ふりかえり）だけ使える。✍️（afterSign）のミッションは閉じたまま。
+//                サインのあと、スタッフがその端末で「サインの合言葉」を入れると、30分ロックが外れる（lib/signUnlock）
 export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMission[] }> = ({ mode, missions = [] }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,18 +36,17 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
   let signBlocked: TodayMission | null = null;
   if (mode === 'missions') {
     if (onReflection || location.pathname === '/home' || location.pathname === '/') return null;
-    if (isSignUnlocked()) return null; // 合言葉を入れた端末は30分自由
+    if (isSignUnlocked()) return null;
     const here = location.pathname + location.search;
     const hit = missions.find(m => m.route && isOnMission(here, m.route));
-    if (hit && (!hit.afterSign || isSignUnlocked())) return null;
-    if (hit && hit.afterSign) signBlocked = hit;
+    if (hit && !hit.afterSign) return null;
+    if (hit) signBlocked = hit;
   }
   const unlock = async () => {
-    // サインのあと用の合言葉（DB の check_sign_pin。スタッフ画面のPINとは別に決められる。スタッフPINでも開く）
-    const { data, error } = await supabase.rpc('check_sign_pin', { pin });
-    const ok = !error && data === true;
-    if (ok) { try { localStorage.setItem(signKey(), String(Date.now() + FREE_MINUTES * 60 * 1000)); } catch { /* 保存できないと開かない */ } setPin(''); setPinMsg(''); force(x => x + 1); }
-    else { setPin(''); setPinMsg('ちがうよ（スタッフが入れてね）'); }
+    const ok = await unlockWithSignPin(pin);
+    setPin('');
+    if (ok) { setPinMsg(''); force(x => x + 1); }
+    else setPinMsg('ちがうよ（スタッフが入れてね）');
   };
 
   return (
@@ -76,56 +68,43 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
       padding: '1rem',
     }}>
       {mode === 'missions' ? (
-        signBlocked ? (
-          <>
-            <div style={{ fontSize: '4rem' }}>✍️</div>
-            <h1 style={{ fontSize: '2.6rem', margin: 0 }}>スタッフのサインのあとで 使えるよ</h1>
-            <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>
-              「{signBlocked.label}」は、制作物にサインをもらってから。<br />スタッフに 端末で 合言葉を入れてもらおう（入れると30分、ほかの画面も使えるよ）。
-            </p>
-            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {/* type="password" にすると、子どもの端末のブラウザが「パスワードを保存しますか？」と聞いてくる。
-                  文字欄＋伏せ字（-webkit-text-security）にして、保存・自動入力の対象にしない */}
-              <input type="text" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
-                onKeyDown={e => { if (e.key === 'Enter') unlock(); }} placeholder="スタッフの合言葉"
-                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-                data-lpignore="true" data-1p-ignore="true" data-form-type="other"
-                style={{ fontSize: '1.3rem', padding: '0.6rem 1rem', borderRadius: '12px', border: 'none', width: '14rem', WebkitTextSecurity: 'disc' } as React.CSSProperties} />
-              <button onClick={unlock} style={{ padding: '0.7rem 1.6rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'var(--color-accent)', color: '#222' }}>ひらく</button>
-            </div>
-            {pinMsg && <p style={{ color: '#ff7675', fontWeight: 'bold' }}>{pinMsg}</p>}
-            <button onClick={() => navigate('/home')} style={{ marginTop: '1.2rem', padding: '0.7rem 2rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: '2px solid white', cursor: 'pointer', background: 'transparent', color: 'white' }}>← トップにもどる</button>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: '4rem' }}>🎯</div>
-            <h1 style={{ fontSize: '2.8rem', margin: 0 }}>今は 今日のミッションだけ 使えるよ</h1>
-            <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>トップの「今日のミッション」から選んでね。</p>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-              <span style={{ color: '#ccc' }}>✍️ サインをもらった人：スタッフの合言葉で30分自由</span>
-              <input type="text" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
-                onKeyDown={e => { if (e.key === 'Enter') unlock(); }} placeholder="スタッフの合言葉"
-                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-                data-lpignore="true" data-1p-ignore="true" data-form-type="other"
-                style={{ fontSize: '1.1rem', padding: '0.4rem 0.8rem', borderRadius: '10px', border: 'none', width: '11rem', WebkitTextSecurity: 'disc' } as React.CSSProperties} />
-              <button onClick={unlock} style={{ padding: '0.45rem 1.2rem', fontSize: '1.05rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'white', color: '#222' }}>ひらく</button>
-            </div>
-            {pinMsg && <p style={{ color: '#ff7675', fontWeight: 'bold', margin: '0.4rem 0 0' }}>{pinMsg}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '1.2rem' }}>
+        <>
+          <div style={{ fontSize: '4rem' }}>{signBlocked ? '✍️' : '🎯'}</div>
+          <h1 style={{ color: 'white', fontSize: '2.6rem', margin: 0 }}>{signBlocked ? 'スタッフのサインのあとで 使えるよ' : '今は 今日のミッションだけ 使えるよ'}</h1>
+          <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>
+            {signBlocked ? `「${signBlocked.label}」は、制作物にサインをもらってから。` : 'ミッションを選んでね。'}
+          </p>
+          {!signBlocked && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.4rem' }}>
               {missions.map(m => (
                 <button key={m.route} onClick={() => navigate(m.route)}
                   style={{ padding: '0.8rem 1.6rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'var(--color-accent)', color: '#222' }}>
-                  {m.afterSign && !isSignUnlocked() ? '✍️ ' : '🎯 '}{m.label}{m.afterSign && !isSignUnlocked() ? '（サインのあと）' : ''}
+                  {m.afterSign ? '✍️ ' : '🎯 '}{m.label}{m.afterSign ? '（サインのあと）' : ''}
                 </button>
               ))}
-              <button onClick={() => navigate('/home')} style={{ padding: '0.7rem 1.6rem', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '999px', border: '2px solid white', cursor: 'pointer', background: 'transparent', color: 'white' }}>← トップにもどる</button>
             </div>
-          </>
-        )
+          )}
+          {/* サインの合言葉はここ1か所。スタッフが子どもの端末で入れる */}
+          <p style={{ color: '#ccc', margin: '1.6rem 0 0.5rem' }}>
+            ✍️ サインをもらったら、スタッフが合言葉を入れるよ（{SIGN_FREE_MINUTES}分、ほかの画面も使える）
+          </p>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* type="password" にすると、子どもの端末のブラウザが「パスワードを保存しますか？」と聞いてくる。
+                文字欄＋伏せ字（-webkit-text-security）にして、保存・自動入力の対象にしない */}
+            <input type="text" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
+              onKeyDown={e => { if (e.key === 'Enter') unlock(); }} placeholder="サインの合言葉"
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+              data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+              style={{ fontSize: '1.2rem', padding: '0.5rem 1rem', borderRadius: '12px', border: 'none', width: '12rem', WebkitTextSecurity: 'disc' } as React.CSSProperties} />
+            <button onClick={unlock} style={{ padding: '0.6rem 1.5rem', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'white', color: '#222' }}>ひらく</button>
+          </div>
+          {pinMsg && <p style={{ color: '#ff7675', fontWeight: 'bold', margin: '0.5rem 0 0' }}>{pinMsg}</p>}
+          <button onClick={() => navigate('/home')} style={{ marginTop: '1.4rem', padding: '0.7rem 2rem', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '999px', border: '2px solid white', cursor: 'pointer', background: 'transparent', color: 'white' }}>← トップにもどる</button>
+        </>
       ) : mode === 'reflection' ? (
         <>
           <PenLine size={80} color="var(--color-accent)" className="animate-pop" style={{ marginBottom: '2rem' }} />
-          <h1 style={{ fontSize: '3.2rem', margin: 0 }}>✏️ ふりかえりの時間です</h1>
+          <h1 style={{ color: 'white', fontSize: '3.2rem', margin: 0 }}>✏️ ふりかえりの時間です</h1>
           <p style={{ fontSize: '1.4rem', marginTop: '1rem', color: '#ccc' }}>
             今は ふりかえりだけ 書けます。ほかの画面は 使えません。
           </p>
@@ -140,7 +119,7 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
       ) : (
         <>
           <Lock size={80} color="var(--color-accent)" className="animate-pop" style={{ marginBottom: '2rem' }} />
-          <h1 style={{ fontSize: '4rem', margin: 0 }}>👀 スタッフのお話を聞きましょう！</h1>
+          <h1 style={{ color: 'white', fontSize: '4rem', margin: 0 }}>👀 スタッフのお話を聞きましょう！</h1>
           <p style={{ fontSize: '1.5rem', marginTop: '1rem', color: '#ccc' }}>
             画面がロックされています。スタッフの指示を待ってください。
           </p>

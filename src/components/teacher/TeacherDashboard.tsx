@@ -664,7 +664,7 @@ export const TeacherDashboard: React.FC = () => {
             {currentMissions.map((m, i) => (
               <div key={m.route} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1rem', background: 'rgba(238,82,83,0.1)', borderRadius: '8px', fontWeight: 'bold', color: '#c0392b' }}>
                 <span style={{ flex: 1 }}>🎯 {i + 1}. {m.label}</span>
-                <label title="ミッションだけロックのとき、スタッフの合言葉で開く" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
+                <label title="ミッションだけロックのとき、サインの合言葉を入れた端末だけ開く" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
                   <input type="checkbox" checked={!!m.afterSign}
                     onChange={() => persistMissions(currentMissions.map(x => x.route === m.route ? { ...x, afterSign: !x.afterSign } : x), m.afterSign ? 'サインのあと を外しました' : 'サインのあと にしました')} />
                   ✍️ サインのあと
@@ -799,8 +799,8 @@ export const TeacherDashboard: React.FC = () => {
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
             全員の画面を強制的に切り替えます。<b>画面ロック</b>＝何もできない（注目モード）。
             <b>ふりかえりロック</b>＝「ふりかえりを書く」だけ使える（ほかの画面ではふりかえりへ行くボタンだけ出る）。
-            <b>ミッションだけ</b>＝今日のミッション（とトップ・ふりかえり）だけ使える。✍️ をつけたミッションは、スタッフがその端末でスタッフの合言葉を入れると、その日だけ開く（制作物のサインのあと用）。
-            Test（00）はどちらのロックもかかりません。おためし（99）はかかります。
+            <b>ミッションだけ</b>＝今日のミッション（とトップ・ふりかえり）だけ使える。✍️ をつけたミッションは閉じたまま。制作物にサインをしたら、スタッフがその端末で<b>サインの合言葉</b>（このページのPINとは別）を入れる → その端末は30分ロックが外れる（✍️ のミッションも、ほかの画面も）。
+            Test（00）はどのロックもかかりません。おためし（99）はかかります。
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
