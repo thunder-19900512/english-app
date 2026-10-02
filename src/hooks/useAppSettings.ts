@@ -9,6 +9,7 @@ export interface TodayMission {
   route: string;
   videoUrl?: string; // 教科書モードのとき、動画へのリンク
   afterSign?: boolean; // ミッションロック中、スタッフのサイン（合言葉）のあとに使えるもの
+  final?: boolean;     // ミッションロック中、ほかを全部クリアしたら開く「さいご」。クリアするとその日ロックが外れる（lib/missionGate）
 }
 
 export const useAppSettings = () => {

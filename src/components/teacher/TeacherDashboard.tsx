@@ -204,7 +204,7 @@ const VoiceLogCard: React.FC<{ students: any[] }> = ({ students }) => {
 };
 
 // 今日のミッションに設定できる候補（ダイアログ＋教科書の全Unit）
-interface MissionOption { label: string; route: string; videoUrl?: string; afterSign?: boolean }
+interface MissionOption { label: string; route: string; videoUrl?: string; afterSign?: boolean; final?: boolean }
 const MISSION_OPTIONS: MissionOption[] = [
   // ※アーカイブ中の単元も先生には残す（📦付き）。配信すれば今までどおり使える。
   ...DIALOGUES.map(d => {
@@ -664,10 +664,19 @@ export const TeacherDashboard: React.FC = () => {
             {currentMissions.map((m, i) => (
               <div key={m.route} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1rem', background: 'rgba(238,82,83,0.1)', borderRadius: '8px', fontWeight: 'bold', color: '#c0392b' }}>
                 <span style={{ flex: 1 }}>🎯 {i + 1}. {m.label}</span>
-                <label title="ミッションだけロックのとき、サインの合言葉を入れた端末だけ開く" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!m.afterSign}
-                    onChange={() => persistMissions(currentMissions.map(x => x.route === m.route ? { ...x, afterSign: !x.afterSign } : x), m.afterSign ? 'サインのあと を外しました' : 'サインのあと にしました')} />
-                  ✍️ サインのあと
+                <label title="ミッションだけロックのとき、いつ開くか" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  開くとき
+                  <select value={m.afterSign ? 'sign' : m.final ? 'final' : 'open'}
+                    onChange={e => {
+                      const v = e.target.value;
+                      persistMissions(currentMissions.map(x => x.route === m.route ? { ...x, afterSign: v === 'sign' || undefined, final: v === 'final' || undefined } : x),
+                        v === 'sign' ? '✍️ サインのあと にしました' : v === 'final' ? '🏁 さいご にしました' : 'はじめから開く にしました');
+                    }}
+                    style={{ fontSize: '0.85rem', padding: '0.2rem', borderRadius: '6px', border: '1px solid #ccc' }}>
+                    <option value="open">はじめから</option>
+                    <option value="final">🏁 さいご（ほかを全部クリアしたら）</option>
+                    <option value="sign">✍️ サインのあと</option>
+                  </select>
                 </label>
                 <button
                   onClick={() => handleRemoveMission(m.route)}
@@ -799,7 +808,9 @@ export const TeacherDashboard: React.FC = () => {
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
             全員の画面を強制的に切り替えます。<b>画面ロック</b>＝何もできない（注目モード）。
             <b>ふりかえりロック</b>＝「ふりかえりを書く」だけ使える（ほかの画面ではふりかえりへ行くボタンだけ出る）。
-            <b>ミッションだけ</b>＝今日のミッション（とトップ・ふりかえり）だけ使える。✍️ をつけたミッションは閉じたまま。制作物にサインをしたら、スタッフがその端末で<b>サインの合言葉</b>（このページのPINとは別）を入れる → その端末は30分ロックが外れる（✍️ のミッションも、ほかの画面も）。
+            <b>ミッションだけ</b>＝今日のミッション（とトップ・ふりかえり）だけ使える。ミッションごとの「開くとき」：
+            <b>🏁 さいご</b>＝ほかのミッションを全部クリアすると開き、クリアするとその端末はその日ロックが外れる（スタッフの手はいらない）。
+            <b>✍️ サインのあと</b>＝閉じたまま。制作物にサインをしたら、スタッフがその端末で<b>サインの合言葉</b>（このページのPINとは別）を入れる → その端末は30分ロックが外れる。
             Test（00）はどのロックもかかりません。おためし（99）はかかります。
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

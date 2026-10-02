@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { pushToSupabase, pullFromSupabase } from '../lib/sync';
 import { showToast } from '../components/ui/Toast';
-import { currentMission, MISSION_MULTIPLIER } from '../lib/missionBonus';
+import { currentMission, markMissionDone, MISSION_MULTIPLIER } from '../lib/missionBonus';
 import { isTrialId } from '../lib/trial';
 import { dictPolicy } from '../lib/dictDepth';
 
@@ -57,6 +57,7 @@ export const usePoints = () => {
     // 代わりに「子どもならいくらもらえるか（1回目の点）」を見せる。サーバとのやり取りもしない
     if (isTrialId(studentId)) {
       const mission = currentMission();
+      if (mission) markMissionDone(mission.route); // おためしでも「さいご」の流れは見られるように
       const mul = Math.min((options.multiplier !== undefined ? options.multiplier : 1) * (mission ? MISSION_MULTIPLIER : 1), MAX_MULTIPLIER);
       let earned = 20 + (options.isPerfect ? 5 : 0) + (options.isNewRecord ? 10 : 0);
       if (mul !== 1) earned = Math.max(1, Math.round(earned * mul));
@@ -122,6 +123,7 @@ export const usePoints = () => {
     // 「増やす倍率」の両方に効く。
     // ※ earnedが0のとき（逓減しきった後）はMath.maxで1に復活させない＝連打で稼げない。
     const mission = currentMission();
+    if (mission) markMissionDone(mission.route);
     const missionMul = mission ? MISSION_MULTIPLIER : 1;
     // ボーナスが重なっても最大2倍まで。1回のクリアで稼ぎすぎて、
     // 他の活動やショップ・町のバランスが壊れないようにする。

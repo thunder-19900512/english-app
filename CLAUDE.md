@@ -32,6 +32,7 @@ Supabaseをデータベースとして使用。GitHub Pagesにデプロイ済み
   - `azure-token` … 発音チェック用の10分で切れるトークン
   - `staff-check` … スタッフPINの照合（PINは `staff_secret` テーブル。コードに書かない）
 - **ミッションだけロックの「サインの合言葉」**：`staff_secret` の k='sign_pin' を DB関数 `check_sign_pin`（ログイン済みのみ）で照合。スタッフPINとは別（スタッフPINは子どもの端末で入れない）。合言葉を入れた端末は30分ロックが外れる（`src/lib/signUnlock.ts`）。値はコードにもチャットにも書かない
+- **ミッションの「開くとき」**（`src/lib/missionGate.ts`）：はじめから／🏁 さいご（ほかを全部クリアしたら開く。クリアした端末はその日ロックなし）／✍️ サインのあと。「クリア」＝その日その端末でミッションの画面で addPoints（合格）したこと（`markMissionDone`）
   - キーは Supabase Secrets（`GEMINI_API_KEY` ほか）。値は山田が管理画面で入れる
 - クラス全体の1日の上限は `api_usage` ＋ `consume_api_quota`。端末ごとの上限（localStorage）も併用
 - なりすまし対策の応急処置：ポイントを使うときの合言葉（`spend_pins` ＋ `set/check/reset_spend_pin`）。

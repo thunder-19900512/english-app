@@ -3,16 +3,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Lock, PenLine } from 'lucide-react';
 import { STAFF_TEST_ID } from '../../lib/trial';
 import type { TodayMission } from '../../hooks/useAppSettings';
-import { isOnMission } from '../../lib/missionBonus';
+import { isMissionDone, isOnMission } from '../../lib/missionBonus';
 import { isSignUnlocked, unlockWithSignPin, SIGN_FREE_MINUTES } from '../../lib/signUnlock';
+import { finishedToday, isMissionOpen } from '../../lib/missionGate';
 
 export type LockMode = 'none' | 'screen' | 'reflection' | 'missions';
 
 // 全員の画面にかぶせるロック。
 //   screen     … 何もできない（スタッフの話を聞く）
 //   reflection … ふりかえりを書く画面だけ使える。ほかの画面ではこのロックが出て、ボタンで ふりかえりへ
-//   missions   … 今日のミッションの画面（とトップ・ふりかえり）だけ使える。✍️（afterSign）のミッションは閉じたまま。
-//                サインのあと、スタッフがその端末で「サインの合言葉」を入れると、30分ロックが外れる（lib/signUnlock）
+//   missions   … 今日のミッションの画面（とトップ・ふりかえり）だけ使える。ミッションごとの「開くとき」は lib/missionGate
+//                （🏁 さいご＝ほかを全部クリアしたら開き、クリアでその日ロックなし／✍️ サインのあと＝合言葉で30分ロックなし）
 export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMission[] }> = ({ mode, missions = [] }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,15 +34,16 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
   if (mode === 'reflection' && onReflection) return null;
 
   // ── ミッションロック
-  let signBlocked: TodayMission | null = null;
+  let blocked: TodayMission | null = null;
   if (mode === 'missions') {
     if (onReflection || location.pathname === '/home' || location.pathname === '/') return null;
-    if (isSignUnlocked()) return null;
+    if (isSignUnlocked() || finishedToday(missions)) return null;
     const here = location.pathname + location.search;
     const hit = missions.find(m => m.route && isOnMission(here, m.route));
-    if (hit && !hit.afterSign) return null;
-    if (hit) signBlocked = hit;
+    if (hit && isMissionOpen(hit, missions)) return null;
+    if (hit) blocked = hit;
   }
+  const signBlocked = blocked?.afterSign ? blocked : null;
   const unlock = async () => {
     const ok = await unlockWithSignPin(pin);
     setPin('');
@@ -69,19 +71,25 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
     }}>
       {mode === 'missions' ? (
         <>
-          <div style={{ fontSize: '4rem' }}>{signBlocked ? '✍️' : '🎯'}</div>
-          <h1 style={{ color: 'white', fontSize: '2.6rem', margin: 0 }}>{signBlocked ? 'スタッフのサインのあとで 使えるよ' : '今は 今日のミッションだけ 使えるよ'}</h1>
+          <div style={{ fontSize: '4rem' }}>{signBlocked ? '✍️' : blocked ? '🏁' : '🎯'}</div>
+          <h1 style={{ color: 'white', fontSize: '2.6rem', margin: 0 }}>{signBlocked ? 'スタッフのサインのあとで 使えるよ' : blocked ? 'ほかのミッションを 全部クリアしたら 使えるよ' : '今は 今日のミッションだけ 使えるよ'}</h1>
           <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>
-            {signBlocked ? `「${signBlocked.label}」は、制作物にサインをもらってから。` : 'ミッションを選んでね。'}
+            {signBlocked ? `「${signBlocked.label}」は、制作物にサインをもらってから。`
+              : blocked ? `「${blocked.label}」は さいごのミッション。クリアすると、ほかのモードも使えるよ。`
+              : 'ミッションを選んでね。'}
           </p>
           {!signBlocked && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.4rem' }}>
-              {missions.map(m => (
-                <button key={m.route} onClick={() => navigate(m.route)}
-                  style={{ padding: '0.8rem 1.6rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'var(--color-accent)', color: '#222' }}>
-                  {m.afterSign ? '✍️ ' : '🎯 '}{m.label}{m.afterSign ? '（サインのあと）' : ''}
-                </button>
-              ))}
+              {missions.map(m => {
+                const open = isMissionOpen(m, missions);
+                return (
+                  <button key={m.route} onClick={() => navigate(m.route)}
+                    style={{ padding: '0.8rem 1.6rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: open ? 'var(--color-accent)' : '#b2bec3', color: '#222' }}>
+                    {isMissionDone(m.route) ? '✅ ' : !open ? (m.afterSign ? '✍️ ' : '🏁 ') : '🎯 '}{m.label}
+                    {!open && (m.afterSign ? '（サインのあと）' : '（ほかを全部クリアしたら）')}
+                  </button>
+                );
+              })}
             </div>
           )}
           {/* サインの合言葉はここ1か所。スタッフが子どもの端末で入れる */}

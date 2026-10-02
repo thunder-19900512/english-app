@@ -6,11 +6,11 @@ import { Button } from '../ui/Button';
 import { useVocabulary } from '../../hooks/useVocabulary';
 import { pushToSupabase } from '../../lib/sync';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
-import { useAppSettings } from '../../hooks/useAppSettings';
-import { isSignUnlocked } from '../../lib/signUnlock';
+import { useAppSettings, type TodayMission } from '../../hooks/useAppSettings';
+import { finishedToday, isMissionOpen } from '../../lib/missionGate';
 import { useShop } from '../../hooks/useShop';
 import { findTitle } from '../../data/shopItems';
-import { MISSION_MULTIPLIER } from '../../lib/missionBonus';
+import { isMissionDone, MISSION_MULTIPLIER } from '../../lib/missionBonus';
 import { DEFAULT_QUIZZES } from '../textbook/textbookQuizData';
 
 // 教科書のミッションは、保存された動画URLが無くても、クイズのidから動画を探して出す
@@ -37,8 +37,13 @@ export const Home: React.FC = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const { progress } = useDictionaryProgress();
   const { todayMissions, currentUnit, lockMode } = useAppSettings();
-  // ✍️ のミッションが閉じているのは、ミッションだけロック中で、まだ合言葉であいていない端末だけ
-  const signLocked = lockMode === 'missions' && !isSignUnlocked();
+  // 「開くとき」（🏁 さいご／✍️ サインのあと）が効くのは、ミッションだけロックの間だけ
+  const missionLock = lockMode === 'missions';
+  const gateNote = (m: TodayMission): string => {
+    if (!missionLock || isMissionDone(m.route)) return '';
+    if (!isMissionOpen(m, todayMissions)) return m.afterSign ? '✍️ 制作物にスタッフのサインをもらってから' : m.final ? '🏁 さいご：ほかのミッションを全部クリアしたら開くよ' : '';
+    return m.final ? '🏁 さいご：クリアすると、ほかのモードも使えるよ' : '';
+  };
   const { shop } = useShop();
   const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
   const studentId = localStorage.getItem('studentId');
@@ -127,6 +132,11 @@ export const Home: React.FC = () => {
 
       {!activeTab && todayMissions.length > 0 && (
         <div style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          {missionLock && finishedToday(todayMissions) && (
+            <div className="animate-pop" style={{ padding: '0.9rem 1.2rem', borderRadius: '16px', background: '#00b894', color: 'white', fontWeight: 'bold', fontSize: '1.15rem', textAlign: 'center' }}>
+              🎉 さいごのミッションまでクリア！ 今日は ほかのモードも 使えるよ
+            </div>
+          )}
           {todayMissions.map((mission, i) => (
             <div
               key={mission.route + i}
@@ -145,13 +155,16 @@ export const Home: React.FC = () => {
                   <span style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.9 }}>
                     今日のミッション{todayMissions.length > 1 ? `（${i + 1}つ目）` : ''}
                   </span>
+                  {isMissionDone(mission.route) && (
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold', background: '#00b894', color: 'white', borderRadius: '999px', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>✅ 今日クリア</span>
+                  )}
                   {/* ここをやると得だと一目で分かるようにする（誘導のかなめ） */}
                   <span style={{ fontSize: '0.85rem', fontWeight: 'bold', background: 'white', color: '#c0392b', borderRadius: '999px', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>
                     ⭐ ポイント {MISSION_MULTIPLIER}倍
                   </span>
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mission.label}</div>
-                {mission.afterSign && signLocked && <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.95 }}>✍️ 制作物にスタッフのサインをもらってから</div>}
+                {gateNote(mission) && <div style={{ fontSize: '0.95rem', fontWeight: 'bold', opacity: 0.95 }}>{gateNote(mission)}</div>}
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                 {missionVideo(mission) && (

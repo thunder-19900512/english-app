@@ -37,6 +37,22 @@ const parse = (url: string) => {
   return { path: decoded.replace(/\/+$/, ''), params: new URLSearchParams(query || '') };
 };
 
+// 今日クリアしたミッション（この端末。日付が変わったら空にもどる）。
+// ミッションの画面で合格（addPoints）したら記録する。ミッションだけロックの「🏁 さいご」に使う（lib/missionGate）
+const doneKey = () => `missionDone_${localStorage.getItem('studentId')}`;
+const doneToday = (): string[] => {
+  try {
+    const d = JSON.parse(localStorage.getItem(doneKey()) || '{}');
+    return d.day === new Date().toDateString() && Array.isArray(d.routes) ? d.routes : [];
+  } catch { return []; }
+};
+export const markMissionDone = (route: string) => {
+  const routes = doneToday();
+  if (routes.includes(route)) return;
+  try { localStorage.setItem(doneKey(), JSON.stringify({ day: new Date().toDateString(), routes: [...routes, route] })); } catch { /* 記録できなくても加点はする */ }
+};
+export const isMissionDone = (route: string): boolean => doneToday().includes(route);
+
 /**
  * いまの画面が、そのミッションの中かどうか。
  * ミッションより深い画面（例：ミッション=辞書「町」、いま=町の言葉さがし）も「中」とみなす。
