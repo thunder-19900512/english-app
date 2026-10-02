@@ -72,9 +72,13 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
               「{signBlocked.label}」は、制作物にサインをもらってから。<br />スタッフに 端末で 合言葉を入れてもらおう。
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <input type="password" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
+              {/* type="password" にすると、子どもの端末のブラウザが「パスワードを保存しますか？」と聞いてくる。
+                  文字欄＋伏せ字（-webkit-text-security）にして、保存・自動入力の対象にしない */}
+              <input type="text" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
                 onKeyDown={e => { if (e.key === 'Enter') unlock(); }} placeholder="スタッフの合言葉"
-                style={{ fontSize: '1.3rem', padding: '0.6rem 1rem', borderRadius: '12px', border: 'none', width: '14rem' }} />
+                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                style={{ fontSize: '1.3rem', padding: '0.6rem 1rem', borderRadius: '12px', border: 'none', width: '14rem', WebkitTextSecurity: 'disc' } as React.CSSProperties} />
               <button onClick={unlock} style={{ padding: '0.7rem 1.6rem', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'var(--color-accent)', color: '#222' }}>ひらく</button>
             </div>
             {pinMsg && <p style={{ color: '#ff7675', fontWeight: 'bold' }}>{pinMsg}</p>}
