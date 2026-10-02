@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Lock, PenLine } from 'lucide-react';
 import { STAFF_TEST_ID } from '../../lib/trial';
@@ -9,8 +9,11 @@ import { supabase } from '../../lib/supabase';
 export type LockMode = 'none' | 'screen' | 'reflection' | 'missions';
 
 // ミッションロック：その日の「サインのあと」ミッションを、この端末で解除したか（日付ごと）
-const signKey = () => `signUnlock_${localStorage.getItem('studentId')}_${new Date().toDateString()}`;
-export const isSignUnlocked = () => { try { return localStorage.getItem(signKey()) === '1'; } catch { return false; } };
+// 合言葉（サインのあと用）を入れた端末は、30分だけミッションロックが外れる（みんなの町なども使える）
+const FREE_MINUTES = 30;
+const signKey = () => `signUnlockUntil_${localStorage.getItem('studentId')}`;
+const unlockedUntil = () => { try { return Number(localStorage.getItem(signKey()) || 0); } catch { return 0; } };
+export const isSignUnlocked = () => Date.now() < unlockedUntil();
 
 // 全員の画面にかぶせるロック。
 //   screen     … 何もできない（スタッフの話を聞く）
@@ -21,6 +24,12 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
   const location = useLocation();
   const navigate = useNavigate();
   const [pin, setPin] = useState(''); const [pinMsg, setPinMsg] = useState(''); const [, force] = useState(0);
+  // 30分たったらロックにもどす（画面を開いたままでも）
+  useEffect(() => {
+    if (mode !== 'missions') return;
+    const t = setInterval(() => force(x => x + 1), 20000);
+    return () => clearInterval(t);
+  }, [mode]);
 
   // Test（00）はロック対象外（ロック中にスタッフがデモを見せられるように）。
   // TestのログインにはPINが必要なので、子どもがここを抜け道にはできない。
@@ -34,6 +43,7 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
   let signBlocked: TodayMission | null = null;
   if (mode === 'missions') {
     if (onReflection || location.pathname === '/home' || location.pathname === '/') return null;
+    if (isSignUnlocked()) return null; // 合言葉を入れた端末は30分自由
     const here = location.pathname + location.search;
     const hit = missions.find(m => m.route && isOnMission(here, m.route));
     if (hit && (!hit.afterSign || isSignUnlocked())) return null;
@@ -43,7 +53,7 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
     // サインのあと用の合言葉（DB の check_sign_pin。スタッフ画面のPINとは別に決められる。スタッフPINでも開く）
     const { data, error } = await supabase.rpc('check_sign_pin', { pin });
     const ok = !error && data === true;
-    if (ok) { try { localStorage.setItem(signKey(), '1'); } catch { /* 保存できなくても今回は開く */ } setPin(''); setPinMsg(''); force(x => x + 1); }
+    if (ok) { try { localStorage.setItem(signKey(), String(Date.now() + FREE_MINUTES * 60 * 1000)); } catch { /* 保存できないと開かない */ } setPin(''); setPinMsg(''); force(x => x + 1); }
     else { setPin(''); setPinMsg('ちがうよ（スタッフが入れてね）'); }
   };
 
@@ -71,7 +81,7 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
             <div style={{ fontSize: '4rem' }}>✍️</div>
             <h1 style={{ fontSize: '2.6rem', margin: 0 }}>スタッフのサインのあとで 使えるよ</h1>
             <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>
-              「{signBlocked.label}」は、制作物にサインをもらってから。<br />スタッフに 端末で 合言葉を入れてもらおう。
+              「{signBlocked.label}」は、制作物にサインをもらってから。<br />スタッフに 端末で 合言葉を入れてもらおう（入れると30分、ほかの画面も使えるよ）。
             </p>
             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               {/* type="password" にすると、子どもの端末のブラウザが「パスワードを保存しますか？」と聞いてくる。
@@ -91,6 +101,16 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
             <div style={{ fontSize: '4rem' }}>🎯</div>
             <h1 style={{ fontSize: '2.8rem', margin: 0 }}>今は 今日のミッションだけ 使えるよ</h1>
             <p style={{ fontSize: '1.3rem', marginTop: '1rem', color: '#ccc' }}>トップの「今日のミッション」から選んでね。</p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+              <span style={{ color: '#ccc' }}>✍️ サインをもらった人：スタッフの合言葉で30分自由</span>
+              <input type="text" value={pin} onChange={e => { setPin(e.target.value); setPinMsg(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') unlock(); }} placeholder="スタッフの合言葉"
+                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                style={{ fontSize: '1.1rem', padding: '0.4rem 0.8rem', borderRadius: '10px', border: 'none', width: '11rem', WebkitTextSecurity: 'disc' } as React.CSSProperties} />
+              <button onClick={unlock} style={{ padding: '0.45rem 1.2rem', fontSize: '1.05rem', fontWeight: 'bold', borderRadius: '999px', border: 'none', cursor: 'pointer', background: 'white', color: '#222' }}>ひらく</button>
+            </div>
+            {pinMsg && <p style={{ color: '#ff7675', fontWeight: 'bold', margin: '0.4rem 0 0' }}>{pinMsg}</p>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '1.2rem' }}>
               {missions.map(m => (
                 <button key={m.route} onClick={() => navigate(m.route)}
