@@ -4,7 +4,7 @@ import { Lock, PenLine } from 'lucide-react';
 import { STAFF_TEST_ID } from '../../lib/trial';
 import type { TodayMission } from '../../hooks/useAppSettings';
 import { isOnMission } from '../../lib/missionBonus';
-import { checkStaffPin } from '../../lib/aiProxy';
+import { supabase } from '../../lib/supabase';
 
 export type LockMode = 'none' | 'screen' | 'reflection' | 'missions';
 
@@ -40,7 +40,9 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
     if (hit && hit.afterSign) signBlocked = hit;
   }
   const unlock = async () => {
-    const ok = await checkStaffPin(pin);
+    // サインのあと用の合言葉（DB の check_sign_pin。スタッフ画面のPINとは別に決められる。スタッフPINでも開く）
+    const { data, error } = await supabase.rpc('check_sign_pin', { pin });
+    const ok = !error && data === true;
     if (ok) { try { localStorage.setItem(signKey(), '1'); } catch { /* 保存できなくても今回は開く */ } setPin(''); setPinMsg(''); force(x => x + 1); }
     else { setPin(''); setPinMsg('ちがうよ（スタッフが入れてね）'); }
   };
