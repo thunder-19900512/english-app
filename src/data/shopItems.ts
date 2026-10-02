@@ -54,6 +54,12 @@ export const FRAMES: FrameItem[] = [
 ];
 export const findFrame = (id: string | null | undefined) => FRAMES.find(f => f.id === id) || null;
 
+// 今月限定の着せ替え（2026-10〜）。称号と同じく、その月だけ買えて、買ったものはずっと使える。
+export const SEASONAL_THEMES: SeasonalTitle[] = [
+  { month: 10, id: 'th-halloween', emoji: '🎃', name: 'ハロウィンテーマ', desc: 'オレンジとむらさきの、ちょっとこわい夜', price: 400 },
+];
+export const seasonalThemesThisMonth = () => SEASONAL_THEMES.filter(t => t.month === currentMonth());
+
 export const currentMonth = () => new Date().getMonth() + 1;
 export const seasonalThisMonth = () => SEASONAL_TITLES.filter(t => t.month === currentMonth());
 
@@ -78,7 +84,8 @@ export const THEMES: ShopItem[] = [
 // カタログからidで引く（表示や称号絵文字の解決に使う）
 export const findTitle = (id: string | null | undefined) =>
   TITLES.find(t => t.id === id) || SEASONAL_TITLES.find(t => t.id === id) || null;
-export const findTheme = (id: string | null | undefined) => THEMES.find(t => t.id === id) || null;
+export const findTheme = (id: string | null | undefined) =>
+  THEMES.find(t => t.id === id) || SEASONAL_THEMES.find(t => t.id === id) || null;
 
 // 背景画像を使えるようにするポイント（最初の1回だけ）。
 // 買ったあとは「つける／けす」も「写真の入れかえ」も無料。

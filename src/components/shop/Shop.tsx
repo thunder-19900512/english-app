@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { findTitle, FRAMES, findFrame, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
+import { SEASONAL_THEMES, seasonalThemesThisMonth, findTheme, findTitle, FRAMES, findFrame, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 import { ensureSpendAllowed } from '../../lib/spendPin';
 import { SpendLockedNotice } from '../ui/SpendGate';
@@ -60,8 +60,14 @@ export const Shop: React.FC = () => {
   const [previewFrame, setPreviewFrame] = useState<string | null>(null);   // 名前のわくのおためし
   useEffect(() => {
     const root = document.documentElement;
+    // グラデーションの着せ替えは、背景の絵としても敷く（おためし中も見えるように）
+    const applyGradient = () => {
+      const has = getComputedStyle(root).getPropertyValue('--theme-gradient').trim() !== '';
+      document.body.classList.toggle('has-theme-gradient', has && !!root.dataset.theme && !(shop.bgImage && shop.bgOn));
+    };
     root.dataset.theme = previewTheme ?? (shop.equippedTheme || '');
-    return () => { root.dataset.theme = shop.equippedTheme || ''; }; // ページを出たら元にもどす
+    applyGradient();
+    return () => { root.dataset.theme = shop.equippedTheme || ''; applyGradient(); }; // ページを出たら元にもどす
   }, [previewTheme, shop.equippedTheme]);
   useEffect(() => { if (tab !== 'theme') setPreviewTheme(null); }, [tab]);
   useEffect(() => { if (tab !== 'frame') setPreviewFrame(null); }, [tab]);
@@ -227,9 +233,28 @@ export const Shop: React.FC = () => {
           </p>
           {previewTheme && (
             <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-              👀 おためし中：{THEMES.find(t => t.id === previewTheme)?.name}（このページを出ると もとにもどるよ）
+              👀 おためし中：{findTheme(previewTheme)?.name}（このページを出ると もとにもどるよ）
             </div>
           )}
+          {/* 今月だけの着せ替え（買ったものは月が変わっても使える） */}
+          {seasonalThemesThisMonth().length > 0 && (
+            <div style={{ border: '2px dashed var(--color-accent)', borderRadius: '14px', padding: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div style={{ fontWeight: 'bold', textAlign: 'center' }}>🗓️ {currentMonth()}月だけの 限定着せ替え</div>
+              {seasonalThemesThisMonth().map(t => (
+                <ItemCard key={t.id} item={t} equipped={shop.equippedTheme === t.id}
+                  previewing={previewTheme === t.id}
+                  onPreview={() => setPreviewTheme(prev => prev === t.id ? null : t.id)}
+                  onEquip={() => { setPreviewTheme(null); equipTheme(t.id); }} onUnequip={() => equipTheme(null)} />
+              ))}
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>手に入れたものは ずっと使えるよ</div>
+            </div>
+          )}
+          {SEASONAL_THEMES.filter(t => t.month !== currentMonth() && owned(t.id)).map(t => (
+            <ItemCard key={t.id} item={{ ...t, desc: `${t.month}月の限定着せ替え（持っているよ）` }} equipped={shop.equippedTheme === t.id}
+              previewing={previewTheme === t.id}
+              onPreview={() => setPreviewTheme(prev => prev === t.id ? null : t.id)}
+              onEquip={() => { setPreviewTheme(null); equipTheme(t.id); }} onUnequip={() => equipTheme(null)} />
+          ))}
           {THEMES.map(t => (
             <ItemCard key={t.id} item={t} equipped={shop.equippedTheme === t.id}
               previewing={previewTheme === t.id}
