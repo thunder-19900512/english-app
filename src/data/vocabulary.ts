@@ -718,5 +718,26 @@ export const vocabulary: Vocabulary[] = [
   { id: 'v648', english: 'refuse', japanese: 'ことわる（もらわない）', category: '生き物の問題・できること', page: 17, emoji: '🚫', keyPhrase: "We can ◯◯." },
   { id: 'v649', english: 'reduce', japanese: 'へらす', category: '生き物の問題・できること', page: 17, emoji: '🔽', keyPhrase: "We can ◯◯." },
   { id: 'v650', english: 'reuse', japanese: 'くり返し使う', category: '生き物の問題・できること', page: 17, emoji: '🔁', keyPhrase: "We can ◯◯." },
-  { id: 'v651', english: 'recycle', japanese: 'リサイクルする', category: '生き物の問題・できること', page: 17, emoji: '♻️', keyPhrase: "We can ◯◯." }
+  { id: 'v651', english: 'recycle', japanese: 'リサイクルする', category: '生き物の問題・できること', page: 17, emoji: '♻️', keyPhrase: "We can ◯◯." },
+  // 世界の国（子どもの声 2026-10-03）。「行きたい国」の単元で使う
+  { id: 'v729', english: 'Japan', japanese: '日本', category: '国＋（プラスアルファ）', page: 0, emoji: '🇯🇵', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v730', english: 'America', japanese: 'アメリカ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇺🇸', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v731', english: 'Canada', japanese: 'カナダ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇨🇦', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v732', english: 'Mexico', japanese: 'メキシコ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇲🇽', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v733', english: 'Brazil', japanese: 'ブラジル', category: '国＋（プラスアルファ）', page: 0, emoji: '🇧🇷', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v734', english: 'Peru', japanese: 'ペルー', category: '国＋（プラスアルファ）', page: 0, emoji: '🇵🇪', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v735', english: 'the UK', japanese: 'イギリス', category: '国＋（プラスアルファ）', page: 0, emoji: '🇬🇧', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v736', english: 'France', japanese: 'フランス', category: '国＋（プラスアルファ）', page: 0, emoji: '🇫🇷', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v737', english: 'Italy', japanese: 'イタリア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇮🇹', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v738', english: 'Germany', japanese: 'ドイツ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇩🇪', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v739', english: 'Spain', japanese: 'スペイン', category: '国＋（プラスアルファ）', page: 0, emoji: '🇪🇸', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v740', english: 'Egypt', japanese: 'エジプト', category: '国＋（プラスアルファ）', page: 0, emoji: '🇪🇬', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v741', english: 'Kenya', japanese: 'ケニア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇰🇪', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v742', english: 'India', japanese: 'インド', category: '国＋（プラスアルファ）', page: 0, emoji: '🇮🇳', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v743', english: 'China', japanese: '中国', category: '国＋（プラスアルファ）', page: 0, emoji: '🇨🇳', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v744', english: 'Korea', japanese: '韓国', category: '国＋（プラスアルファ）', page: 0, emoji: '🇰🇷', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v745', english: 'Thailand', japanese: 'タイ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇹🇭', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v746', english: 'Vietnam', japanese: 'ベトナム', category: '国＋（プラスアルファ）', page: 0, emoji: '🇻🇳', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v747', english: 'Australia', japanese: 'オーストラリア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇦🇺', keyPhrase: "I want to go to ◯◯." },
+  { id: 'v748', english: 'New Zealand', japanese: 'ニュージーランド', category: '国＋（プラスアルファ）', page: 0, emoji: '🇳🇿', keyPhrase: "I want to go to ◯◯." }
 ];

@@ -7,6 +7,7 @@ import { Button } from "../../ui/Button";
 import { ArrowLeft, Volume2, Star, Trophy, RefreshCw } from 'lucide-react';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { usePoints } from '../../../hooks/usePoints';
+import { useLockPause } from '../../../lib/lockPause';
 
 export const SpellingGame: React.FC = () => {
   const { category } = useParams<{ category: string }>();
@@ -32,6 +33,7 @@ export const SpellingGame: React.FC = () => {
   
   const [startTime, setStartTime] = useState<number | null>(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
+  const lockPaused = useLockPause(setStartTime); // ロック中は時計を止める
   const [bestTime, setBestTime] = useState<{ name: string; time: number } | null>(null);
   const [newRecordMsg, setNewRecordMsg] = useState('');
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
@@ -59,13 +61,13 @@ export const SpellingGame: React.FC = () => {
 
   // Live timer
   useEffect(() => {
-    if (difficulty !== 'select' && startTime && !showCelebration && !showFailure) {
+    if (!lockPaused && difficulty !== 'select' && startTime && !showCelebration && !showFailure) {
       const interval = setInterval(() => {
         setElapsedTime(Date.now() - startTime);
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [difficulty, startTime, showCelebration, showFailure]);
+  }, [difficulty, startTime, showCelebration, showFailure, lockPaused]);
 
   useEffect(() => {
     if (words.length > 0 && shuffledWords.length === 0) {

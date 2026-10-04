@@ -9,6 +9,7 @@ import { usePoints } from '../../../hooks/usePoints';
 import { useDictionaryProgress } from '../../../hooks/useDictionaryProgress';
 import { useLeaderboard } from '../../../hooks/useLeaderboard';
 import { Timer, Crown } from 'lucide-react';
+import { useLockPause } from '../../../lib/lockPause';
 
 // --- Logic to Generate the Word Search Grid ---
 // 盤の大きさ。ふつうは8マスだが、「年中行事」のように長い語が多い単元では
@@ -119,6 +120,7 @@ export const WordSearch: React.FC = () => {
   // Time Attack State
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number>(0);
+  const lockPaused = useLockPause(setStartTime); // ロック中は時計を止める
   const [finalTime, setFinalTime] = useState<number | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
 
@@ -162,14 +164,14 @@ export const WordSearch: React.FC = () => {
 
   // Timer loop
   useEffect(() => {
-    if (!startTime || showCelebration) return;
+    if (!startTime || showCelebration || lockPaused) return;
     
     const interval = setInterval(() => {
       setElapsedMs(Date.now() - startTime);
     }, 100);
     
     return () => clearInterval(interval);
-  }, [startTime, showCelebration]);
+  }, [startTime, showCelebration, lockPaused]);
 
   useEffect(() => {
     initGame();

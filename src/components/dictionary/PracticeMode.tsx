@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 import { ArrowLeft, Volume2, Star, Trophy, RefreshCw } from 'lucide-react';
 import { useDictionaryProgress } from '../../hooks/useDictionaryProgress';
 import { usePoints } from '../../hooks/usePoints';
+import { useLockPause } from '../../lib/lockPause';
 
 export const PracticeMode: React.FC = () => {
   const { category } = useParams<{ category: string }>();
@@ -39,6 +40,7 @@ export const PracticeMode: React.FC = () => {
   const [started, setStarted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const lockPaused = useLockPause(setStartTime); // ロック中は時計を止める
   const [bestTime, setBestTime] = useState<{ name: string; time: number } | null>(null);
   const [newRecordMsg, setNewRecordMsg] = useState('');
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
@@ -66,13 +68,13 @@ export const PracticeMode: React.FC = () => {
 
   // Live timer
   useEffect(() => {
-    if (startTime && !showCelebration && !showFailure) {
+    if (!lockPaused && startTime && !showCelebration && !showFailure) {
       const interval = setInterval(() => {
         setElapsedTime(Date.now() - startTime);
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [startTime, showCelebration, showFailure]);
+  }, [startTime, showCelebration, showFailure, lockPaused]);
 
   useEffect(() => {
     if (words.length > 0 && shuffledWords.length === 0) {

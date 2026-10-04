@@ -6,6 +6,7 @@ import type { TodayMission } from '../../hooks/useAppSettings';
 import { isMissionDone, isOnMission } from '../../lib/missionBonus';
 import { isSignUnlocked, unlockWithSignPin, SIGN_FREE_MINUTES } from '../../lib/signUnlock';
 import { finishedToday, isMissionOpen } from '../../lib/missionGate';
+import { LockActiveMarker } from '../../lib/lockPause';
 
 export type LockMode = 'none' | 'screen' | 'reflection' | 'missions';
 
@@ -69,6 +70,7 @@ export const GlobalLockScreen: React.FC<{ mode: LockMode; missions?: TodayMissio
       textAlign: 'center',
       padding: '1rem',
     }}>
+      <LockActiveMarker />
       {mode === 'missions' ? (
         <>
           <div style={{ fontSize: '4rem' }}>{signBlocked ? '✍️' : blocked ? '🏁' : '🎯'}</div>

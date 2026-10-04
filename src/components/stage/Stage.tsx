@@ -10,6 +10,7 @@ import { ArrowLeft, Trophy, Star, Volume2, RefreshCw } from 'lucide-react';
 import { usePoints } from '../../hooks/usePoints';
 import { pushToSupabase } from '../../lib/sync';
 import { TypingTrainer } from '../common/TypingTrainer';
+import { useLockPause } from '../../lib/lockPause';
 
 const phonicsEmojis: Record<string, string> = {
   A: '🍎', B: '🐻', C: '🐱', D: '🐶', E: '🐘', F: '🐸', G: '🦍', H: '🎩', I: '🧊', J: '🧃', K: '🐨', L: '🦁', M: '🐒', N: '🥜', O: '🐙', P: '🐷', Q: '👑', R: '🐰', S: '☀️', T: '🐯', U: '☂️', V: '🎻', W: '🍉', X: '❌', Y: '🛥️', Z: '🦓',
@@ -157,6 +158,7 @@ export const Stage: React.FC = () => {
 
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const lockPaused = useLockPause(setStartTime); // ロック中は時計を止める
   const [bestTime, setBestTime] = useState<{ name: string; time: number } | null>(null);
   const [newRecordMsg, setNewRecordMsg] = useState('');
   const [showCorrectMark, setShowCorrectMark] = useState(false);
@@ -281,13 +283,13 @@ export const Stage: React.FC = () => {
 
   // Live timer
   useEffect(() => {
-    if (startTime && !showCelebration && !showFailure && ['choice', 'typing'].includes(mode)) {
+    if (!lockPaused && startTime && !showCelebration && !showFailure && ['choice', 'typing'].includes(mode)) {
       const interval = setInterval(() => {
         setElapsedTime(Date.now() - startTime);
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [startTime, showCelebration, showFailure, mode]);
+  }, [startTime, showCelebration, showFailure, mode, lockPaused]);
 
   useEffect(() => {
     if (['quiz', 'story'].includes(mode) && transcript) {
