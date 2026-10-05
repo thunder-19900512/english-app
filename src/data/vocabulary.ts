@@ -739,5 +739,10 @@ export const vocabulary: Vocabulary[] = [
   { id: 'v745', english: 'Thailand', japanese: 'タイ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇹🇭', keyPhrase: "I want to go to ◯◯." },
   { id: 'v746', english: 'Vietnam', japanese: 'ベトナム', category: '国＋（プラスアルファ）', page: 0, emoji: '🇻🇳', keyPhrase: "I want to go to ◯◯." },
   { id: 'v747', english: 'Australia', japanese: 'オーストラリア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇦🇺', keyPhrase: "I want to go to ◯◯." },
-  { id: 'v748', english: 'New Zealand', japanese: 'ニュージーランド', category: '国＋（プラスアルファ）', page: 0, emoji: '🇳🇿', keyPhrase: "I want to go to ◯◯." }
+  { id: 'v748', english: 'New Zealand', japanese: 'ニュージーランド', category: '国＋（プラスアルファ）', page: 0, emoji: '🇳🇿', keyPhrase: "I want to go to ◯◯." },
+  // P7 Fashion Show のタグ調査で出てくる国（服の生産国）。2026-10-05
+  { id: 'v749', english: 'Bangladesh', japanese: 'バングラデシュ', category: '国＋（プラスアルファ）', page: 0, emoji: '🇧🇩', keyPhrase: "It's from ◯◯." },
+  { id: 'v750', english: 'Cambodia', japanese: 'カンボジア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇰🇭', keyPhrase: "It's from ◯◯." },
+  { id: 'v751', english: 'Myanmar', japanese: 'ミャンマー', category: '国＋（プラスアルファ）', page: 0, emoji: '🇲🇲', keyPhrase: "It's from ◯◯." },
+  { id: 'v752', english: 'Indonesia', japanese: 'インドネシア', category: '国＋（プラスアルファ）', page: 0, emoji: '🇮🇩', keyPhrase: "It's from ◯◯." }
 ];
