@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { pushToSupabase } from '../lib/sync';
 import { usePoints } from './usePoints';
 import { showToast } from '../components/ui/Toast';
-import { BG_PRICE, BG_UNLOCK_ID } from '../data/shopItems';
+import { BG_PRICE, BG_REPLACE_PRICE, BG_UNLOCK_ID } from '../data/shopItems';
 import type { ShopItem } from '../data/shopItems';
 
 // ショップ状態。points（累計・単調増加）からは絶対に引かず、使った額を
@@ -95,12 +95,18 @@ export const useShop = () => {
     writeShop(studentId, next); setShop(next);
   }, [studentId]);
 
-  // 写真を登録する。登録できるのは1回だけ（あとから入れ替えはできない）。
-  // このとき BG_PRICE を消費する。
+  // 写真を登録する。最初は BG_PRICE、すでに写真を持っているときは BG_REPLACE_PRICE で買い直し（上書き）。
   const setBackgroundImage = useCallback((url: string): boolean => {
     if (!studentId) return false;
     const cur = readShop(studentId);
-    if (cur.bgImage) { showToast('背景の写真は 1枚だけだよ', 'fail'); return false; }
+    if (cur.bgImage) {
+      const bal = totalPoints - cur.spent - cur.donated;
+      if (bal < BG_REPLACE_PRICE) { showToast('ポイントが 足りないよ！', 'fail'); return false; }
+      const next: ShopState = { ...cur, spent: cur.spent + BG_REPLACE_PRICE, bgImage: url, bgOn: true, bgSetAt: Date.now() };
+      writeShop(studentId, next); setShop(next);
+      showToast(`🖼️ 背景を 買い直したよ！（−${BG_REPLACE_PRICE}P）`, 'points');
+      return true;
+    }
     // すでに買っている（＝先生に消してもらった後の登録し直し）なら、もう払わない
     const unlocked = cur.owned.includes(BG_UNLOCK_ID);
     if (!unlocked) {

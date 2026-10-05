@@ -14,6 +14,7 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-10-05', text: '🖼️ 背景の写真を、1000Pで 新しい写真に 買い直せるようになったよ', fromVoice: true },
   { date: '2026-10-04', text: '🌍 辞書に「国＋」が ふえたよ。Japan や Brazil など 20の国を、I want to go to ◯◯. で練習できるよ', fromVoice: true },
   { date: '2026-10-04', text: '⏸ 先生がロックしている間は、選択モードなどの時間が 止まるようにしたよ。ロックが終わったら続きから数えるよ', fromVoice: true },
   { date: '2026-10-04', text: '💠 着せ替えに 青系の「しんかい」「ラムネ」「サファイアグラデ」が ふえたよ', fromVoice: true },

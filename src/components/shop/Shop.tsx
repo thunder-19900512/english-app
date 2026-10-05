@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useShop } from '../../hooks/useShop';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Star } from 'lucide-react';
-import { SEASONAL_THEMES, seasonalThemesThisMonth, findTheme, findTitle, FRAMES, findFrame, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
+import { SEASONAL_THEMES, seasonalThemesThisMonth, findTheme, findTitle, FRAMES, findFrame, TITLES, THEMES, SEASONAL_TITLES, seasonalThisMonth, currentMonth, BG_PRICE, BG_REPLACE_PRICE, BG_UNLOCK_ID, BG_MAX_INPUT_MB, BG_MAX_STORED_KB, type ShopItem } from '../../data/shopItems';
 import { supabase } from '../../lib/supabase';
 import { ensureSpendAllowed } from '../../lib/spendPin';
 import { SpendLockedNotice } from '../ui/SpendGate';
@@ -94,15 +94,18 @@ export const Shop: React.FC = () => {
       setUploadMsg(`この写真は大きすぎるよ（${BG_MAX_INPUT_MB}MBまで）。ちがう写真を選んでね`);
       setTimeout(() => setUploadMsg(''), 6000); return;
     }
-    if (shop.bgImage) return; // すでに1枚持っている（入れ替えはできない）
-    if (!bgUnlocked && balance < BG_PRICE) { setUploadMsg(`ポイントが 足りないよ！（${BG_PRICE}P 必要）`); setTimeout(() => setUploadMsg(''), 5000); return; }
+    // すでに写真を持っている＝買い直し（前の写真は消えて、新しい写真に入れ替わる）
+    const replacing = !!shop.bgImage;
+    const cost = replacing ? BG_REPLACE_PRICE : bgUnlocked ? 0 : BG_PRICE;
+    if (balance < cost) { setUploadMsg(`ポイントが 足りないよ！（${cost}P 必要）`); setTimeout(() => setUploadMsg(''), 5000); return; }
     if (!window.confirm(
-      (bgUnlocked ? 'この写真を 背景にするよ。（ポイントは かからないよ）\n\n'
-                  : `この写真を 背景にすると ${BG_PRICE}P つかうよ。\n\n`)
-      + '★ 登録できるのは 1枚だけ。あとから 写真を 変えることは できません。\n'
+      (replacing ? `この写真に 買い直すと ${cost}P 使うよ。\n今の写真は 消えて、もとに もどせないよ。\n\n`
+        : cost === 0 ? 'この写真を 背景にするよ。（ポイントは かからないよ）\n\n'
+        : `この写真を 背景にすると ${cost}P 使うよ。\n\n`)
+      + `★ あとで 変えたくなったら、${BG_REPLACE_PRICE}P で 買い直せるよ。\n`
       + '（つけたり 消したりは、いつでも 無料でできるよ）\n\n'
       + 'この写真で いい？')) return;
-    if (!bgUnlocked && !(await ensureSpendAllowed())) return;   // ポイントを使うときだけ合言葉
+    if (cost > 0 && !(await ensureSpendAllowed())) return;   // ポイントを使うときだけ合言葉
     setUploading(true); setUploadMsg('');
     try {
       const blob = await compressImage(file);
@@ -111,7 +114,7 @@ export const Shop: React.FC = () => {
       if (error) throw error;
       const { data } = supabase.storage.from('backgrounds').getPublicUrl(path);
       const ok = setBackgroundImage(`${data.publicUrl}?t=${Date.now()}`);
-      setUploadMsg(ok ? '背景を 変えたよ！🎉' : 'ポイントが 足りなかった…');
+      setUploadMsg(ok ? (replacing ? '新しい写真に 買い直したよ！🎉' : '背景を 変えたよ！🎉') : 'ポイントが 足りなかった…');
     } catch (e) {
       setUploadMsg('アップロードできなかった…もう一度試してね');
     } finally {
@@ -301,7 +304,7 @@ export const Shop: React.FC = () => {
               <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
                 すきな写真を 1枚 えらぶと、アプリの背景に なるよ。<br />
                 買ったあとは、<b>つけたり 消したり いつでも 無料</b>。<br />
-                <b style={{ color: '#c0392b' }}>★ 登録できるのは 1枚だけ。あとから 変えられないよ。</b><br />
+                <b style={{ color: '#c0392b' }}>★ 持てる写真は 1枚。変えたくなったら {BG_REPLACE_PRICE}P で 買い直せるよ。</b><br />
                 <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>※ 自分だけに見えるよ。学校にふさわしい写真を選ぼう！</span>
               </p>
             </>
@@ -309,7 +312,7 @@ export const Shop: React.FC = () => {
             <>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--color-success)' }}>✅ 背景（持っているよ）</div>
               <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                つけたり 消したりは <b>いつでも 無料</b>。写真は この1枚だよ。
+                つけたり 消したりは <b>いつでも 無料</b>。写真を変えたいときは {BG_REPLACE_PRICE}P で 買い直せるよ。
               </p>
             </>
           )}
@@ -360,14 +363,17 @@ export const Shop: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                写真は 変えられないよ。困ったときは 先生に 伝えてね
-              </div>
+              <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading || balance < BG_REPLACE_PRICE}>
+                {uploading ? 'アップロード中…' : `📷 新しい写真に 買い直す（${BG_REPLACE_PRICE}P）`}
+              </Button>
+              {balance < BG_REPLACE_PRICE && (
+                <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>あと {BG_REPLACE_PRICE - balance}P たまったら 買い直せるよ</div>
+              )}
             </>
           )}
 
           <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-            写真は {BG_MAX_INPUT_MB}MBまで。小さくして ほぞんするよ（1人1枚・入れ替え不可）
+            写真は {BG_MAX_INPUT_MB}MBまで。小さくして 保存するよ（1人1枚。買い直すと 前の写真と 入れ替わるよ）
           </div>
         </div>
       )}

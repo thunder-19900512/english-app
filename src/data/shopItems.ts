@@ -92,10 +92,12 @@ export const findTheme = (id: string | null | undefined) =>
   THEMES.find(t => t.id === id) || SEASONAL_THEMES.find(t => t.id === id) || null;
 
 // 背景画像を使えるようにするポイント（最初の1回だけ）。
-// 買ったあとは「つける／けす」も「写真の入れかえ」も無料。
+// 買ったあとは「つける／けす」は無料。写真の入れかえは BG_REPLACE_PRICE。
 // ※ 以前は“つけるたび”に消費していたので、けすと再課金になり、
 //   実質つけっぱなしにするしかなかった（子どもからの要望で変更）。
 export const BG_PRICE = 1000;
+// 写真を新しい写真に買い直すときのポイント（子どもの声 2026-10-05）。前の写真は上書きされる。
+export const BG_REPLACE_PRICE = 1000;
 
 // 背景の持ち物は「1人1枚」。保存先も {studentId}.jpg の上書きなので増えない。
 export const BG_UNLOCK_ID = 'bg-unlock';       // 買ったかどうかの印（owned に入る）
