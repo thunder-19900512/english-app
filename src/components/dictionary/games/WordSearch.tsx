@@ -34,55 +34,51 @@ interface WordLocation {
   endC: number;
 }
 
-const generateGrid = (words: string[], size: number) => {
+// 1回分の盤を作る。長い語から置き、はみ出さない開始位置だけを試す。置けなかった語があれば null。
+const tryPlace = (words: string[], size: number) => {
   const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
   const locations: WordLocation[] = [];
+  const sorted = words
+    .map(word => word.toUpperCase().replace(/[^A-Z0-9]/g, '')) // 記号・空白は詰めて1マス1文字にする
+    .sort((x, y) => y.length - x.length);
 
-  for (const word of words) {
-    const w = word.toUpperCase().replace(/[^A-Z0-9]/g, ''); // 記号・空白は詰めて1マス1文字にする
+  for (const w of sorted) {
     let placed = false;
-    let attempts = 0;
-
-    while (!placed && attempts < 100) {
-      attempts++;
+    for (let attempts = 0; !placed && attempts < 300; attempts++) {
       const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
-      const startR = Math.floor(Math.random() * size);
-      const startC = Math.floor(Math.random() * size);
-
-      const endR = startR + dir.dr * (w.length - 1);
-      const endC = startC + dir.dc * (w.length - 1);
-
-      if (endR < size && endC < size) {
-        // Check if path is clear
-        let clear = true;
-        for (let i = 0; i < w.length; i++) {
-          const r = startR + dir.dr * i;
-          const c = startC + dir.dc * i;
-          if (grid[r][c] !== '' && grid[r][c] !== w[i]) {
-            clear = false;
-            break;
-          }
-        }
-
-        // Place word
-        if (clear) {
-          for (let i = 0; i < w.length; i++) {
-            const r = startR + dir.dr * i;
-            const c = startC + dir.dc * i;
-            grid[r][c] = w[i];
-          }
-          locations.push({
-            word: w,
-            startR,
-            startC,
-            endR,
-            endC
-          });
-          placed = true;
-        }
+      const maxR = size - 1 - dir.dr * (w.length - 1);
+      const maxC = size - 1 - dir.dc * (w.length - 1);
+      if (maxR < 0 || maxC < 0) break;
+      const startR = Math.floor(Math.random() * (maxR + 1));
+      const startC = Math.floor(Math.random() * (maxC + 1));
+      let clear = true;
+      for (let i = 0; i < w.length; i++) {
+        const cell = grid[startR + dir.dr * i][startC + dir.dc * i];
+        if (cell !== '' && cell !== w[i]) { clear = false; break; }
       }
+      if (!clear) continue;
+      for (let i = 0; i < w.length; i++) grid[startR + dir.dr * i][startC + dir.dc * i] = w[i];
+      locations.push({ word: w, startR, startC, endR: startR + dir.dr * (w.length - 1), endC: startC + dir.dc * (w.length - 1) });
+      placed = true;
     }
+    if (!placed) return null;
   }
+  return { grid, locations };
+};
+
+// 全部の語が置けた盤だけを使う（以前は12文字の SEEREDLEAVES などが置けずに、一覧にだけ残ることがあった）。
+// 何回やっても置けない組み合わせのときは、置けた語だけで盤を作る（一覧もそれに合わせる）。
+const generateGrid = (words: string[], size: number) => {
+  let result: { grid: string[][]; locations: WordLocation[] } | null = null;
+  for (let tries = 0; !result && tries < 50; tries++) result = tryPlace(words, size);
+  if (!result) {
+    const kept: string[] = [];
+    for (const w of words) {
+      if (tryPlace([...kept, w], size)) kept.push(w);
+    }
+    for (let tries = 0; !result && tries < 50; tries++) result = tryPlace(kept, size);
+  }
+  const { grid, locations } = result || { grid: Array(size).fill(null).map(() => Array(size).fill('')), locations: [] };
 
   // Fill empty spaces
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -148,9 +144,11 @@ export const WordSearch: React.FC = () => {
     const needed = Math.max(GRID_MIN, ...selected.map(gridLen));
     const size = Math.min(GRID_MAX, needed);
     setGridSize(size);
-    const { grid: newGrid } = generateGrid(selected, size);
-    
-    setTargetWords(selected.map(w => w.toUpperCase().replace(/[^A-Z0-9]/g, '')));
+    const { grid: newGrid, locations } = generateGrid(selected, size);
+
+    // 探す語の一覧は、盤に実際に置けた語だけにする
+    const placedWords = new Set(locations.map(l => l.word));
+    setTargetWords(selected.map(w => w.toUpperCase().replace(/[^A-Z0-9]/g, '')).filter(w => placedWords.has(w)));
     setGrid(newGrid);
     setFoundWords([]);
     setSelectionStart(null);

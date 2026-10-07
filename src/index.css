@@ -449,6 +449,31 @@ h3 { letter-spacing: -0.01em; }
   --theme-gradient: linear-gradient(160deg, #bfdbfe 0%, #93c5fd 45%, #818cf8 100%);
 }
 
+:root[data-theme='th-yuki'] {
+  --color-primary: #3b82c4; --color-primary-hover: #2f6ea8;
+  --color-secondary: #9fd3f0; --color-accent: #cfe8f7;
+  --color-bg-primary: #ffffff;
+  --theme-gradient: linear-gradient(180deg, #ffffff 0%, #f4f9fd 60%, #e6f2fb 100%);
+}
+:root[data-theme='th-aurora'] {
+  --color-primary: #0f766e; --color-primary-hover: #115e59;
+  --color-secondary: #34d399; --color-accent: #a78bfa;
+  --color-bg-primary: #effaf6;
+  --theme-gradient: linear-gradient(160deg, #b9f5d8 0%, #9fd8f5 50%, #c4b5fd 100%);
+}
+:root[data-theme='th-momo'] {
+  --color-primary: #db5a7b; --color-primary-hover: #c44867;
+  --color-secondary: #fb9fb1; --color-accent: #fecaca;
+  --color-bg-primary: #fff4f2;
+  --theme-gradient: linear-gradient(160deg, #ffe0cc 0%, #ffc9d4 55%, #f9b8d0 100%);
+}
+:root[data-theme='th-soda'] {
+  --color-primary: #0e8fb8; --color-primary-hover: #0b789b;
+  --color-secondary: #facc15; --color-accent: #bae6fd;
+  --color-bg-primary: #fbfdf0;
+  --theme-gradient: linear-gradient(160deg, #fff6b0 0%, #d9f7c9 45%, #b8e6fb 100%);
+}
+
 /* グラデーションのテーマは、背景の絵として敷く（背景写真をつけている子は写真が優先） */
 body.has-theme-gradient {
   background-image: var(--theme-gradient) !important;

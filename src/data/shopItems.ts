@@ -83,6 +83,11 @@ export const THEMES: ShopItem[] = [
   { id: 'th-shinkai', emoji: '🌃', name: 'しんかいテーマ', desc: '深い紺色のダーク画面', price: 400 },
   { id: 'th-ramune', emoji: '🫧', name: 'ラムネテーマ', desc: '明るい水色〜青緑', price: 250 },
   { id: 'th-sapphire', emoji: '💠', name: 'サファイアグラデ', desc: '青→あい色の宝石', price: 500 },
+  // 白い冬のテーマ・グラデーションをもっと（子どもの声 2026-10-07）
+  { id: 'th-yuki', emoji: '❄️', name: 'ゆきテーマ', desc: '白と水色の 冬の画面', price: 300 },
+  { id: 'th-aurora', emoji: '🌌', name: 'オーロラグラデ', desc: '緑→青→むらさきの夜空', price: 600 },
+  { id: 'th-momo', emoji: '🍑', name: 'ももグラデ', desc: 'もも色→ピンクの やさしい色', price: 500 },
+  { id: 'th-soda', emoji: '🍋', name: 'レモンソーダグラデ', desc: '黄色→水色の しゅわしゅわ', price: 500 },
 ];
 
 // カタログからidで引く（表示や称号絵文字の解決に使う）
