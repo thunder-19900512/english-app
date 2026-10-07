@@ -21,6 +21,7 @@ export const TITLES: ShopItem[] = [
   { id: 't-panda', emoji: '🐼', name: 'Sleepy Panda', desc: 'sleepy＝ねむい。ねむねむパンダ', price: 250 },
   { id: 't-heart', emoji: '🎀', name: 'Sweet Heart', desc: 'sweetheart＝大切な人', price: 250 },
   { id: 't-cat', emoji: '🐱', name: 'Little Kitty', desc: 'kitty＝子ねこ。ちいさな子ねこ', price: 300 },
+  { id: 't-dog', emoji: '🐶', name: 'Lovely Puppy', desc: 'puppy＝子犬。かわいい子犬', price: 300 }, // 子どもの声 2026-10-07
 ];
 
 // 今月限定の称号。その月のあいだだけ買える。買ったら月が変わっても持ったまま・つけられる。

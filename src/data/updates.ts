@@ -14,6 +14,7 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-10-07', text: '🐶 称号に「Lovely Puppy」（かわいい子犬）が ふえたよ', fromVoice: true },
   { date: '2026-10-07', text: '❄️ 着せ替えに 白い「ゆきテーマ」と、グラデーション3つ（オーロラ・もも・レモンソーダ）が ふえたよ', fromVoice: true },
   { date: '2026-10-07', text: '🔍 言葉さがしで、長い言葉（see red leaves など）が 盤に出てこないことがあったのを なおしたよ', fromVoice: true },
   { date: '2026-10-05', text: '🖼️ 背景の写真を、1000Pで 新しい写真に 買い直せるようになったよ', fromVoice: true },
