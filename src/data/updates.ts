@@ -14,6 +14,9 @@ export interface AppUpdate {
 }
 
 export const UPDATES: AppUpdate[] = [
+  { date: '2026-10-09', text: '🧩 辞書に「文をつくることば」（I・you・this・is・what など21こ）が ふえたよ', fromVoice: true },
+  { date: '2026-10-09', text: '🏅 称号が 名前の上に 出るようになったよ', fromVoice: true },
+  { date: '2026-10-09', text: '🔥 選択（ハード）をクリアすると、ハードのほうに ✅ が付くようにしたよ', fromVoice: true },
   { date: '2026-10-09', text: '👗 辞書に「衣類＋」（poncho・crown・kimono など20こ）、ダイアログに「ファッションショー」と「本番の司会（MC）」が ふえたよ' },
   { date: '2026-10-07', text: '🐶 称号に「Lovely Puppy」（かわいい子犬）が ふえたよ', fromVoice: true },
   { date: '2026-10-07', text: '❄️ 着せ替えに 白い「ゆきテーマ」と、グラデーション3つ（オーロラ・もも・レモンソーダ）が ふえたよ', fromVoice: true },

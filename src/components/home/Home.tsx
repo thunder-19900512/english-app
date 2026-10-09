@@ -45,7 +45,8 @@ export const Home: React.FC = () => {
     return m.final ? '🏁 さいご：クリアすると、ほかのモードも使えるよ' : '';
   };
   const { shop } = useShop();
-  const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
+  // 称号は名前の上に小さく出す（子どもの声 2026-10-09「Pumpkin Ghost／Ao のように」）
+  const title = findTitle(shop.equippedTitle);
   const studentId = localStorage.getItem('studentId');
 
   useEffect(() => {
@@ -91,7 +92,10 @@ export const Home: React.FC = () => {
     <div className="flex-col gap-lg" style={{ flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '900px', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div className="flex-col gap-sm">
-          <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}{titleEmoji}さん！</h1>
+          {title && (
+            <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#64748b', marginBottom: '-0.4rem', letterSpacing: '0.03em' }}>{title.emoji} {title.name}</div>
+          )}
+          <h1 className="text-primary" style={{ fontSize: '2.5rem', margin: 0 }}>こんにちは、{studentName}さん！</h1>
           <p style={{ fontSize: '1.2rem', color: '#666', margin: 0 }}>今日も英語を楽しもう！</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>

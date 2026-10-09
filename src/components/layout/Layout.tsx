@@ -54,7 +54,7 @@ export const Layout: React.FC = () => {
     };
   }, [shop.equippedTheme, shop.bgImage, shop.bgOn]);
 
-  const titleEmoji = findTitle(shop.equippedTitle)?.emoji || '';
+  const title = findTitle(shop.equippedTitle);   // 名前の上に小さく出す（子どもの声 2026-10-09）
 
   const handleLogout = () => {
     localStorage.removeItem('studentId');
@@ -77,9 +77,14 @@ export const Layout: React.FC = () => {
               <Home size={20} />
               ホーム
             </button>
-            <h2 className="text-primary" style={{ margin: 0 }}>
-              こんにちは、{localStorage.getItem('studentName')}{titleEmoji}さん！
-            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+              {title && (
+                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#64748b' }}>{title.emoji} {title.name}</span>
+              )}
+              <h2 className="text-primary" style={{ margin: 0 }}>
+                こんにちは、{localStorage.getItem('studentName')}さん！
+              </h2>
+            </div>
             {/* ポイントは2種類ある。ひとつの帯に並べると読み違えるので、
                 「これまでの合計（減らない記録）」と「いま 使える（残高）」を
                 別々のカードにして、ラベルを数字の上に置く。 */}

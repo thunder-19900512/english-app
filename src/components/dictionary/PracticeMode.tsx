@@ -129,7 +129,7 @@ export const PracticeMode: React.FC = () => {
 
     if (newQC >= TOTAL_QUESTIONS) {
       if (newCC >= PASS_MARK) {
-        saveProgress(decodedCategory, { practice: true });
+        saveProgress(decodedCategory, isHard ? { practice: true, practiceHard: true } : { practice: true });
         
         let isNewBest = false;
 

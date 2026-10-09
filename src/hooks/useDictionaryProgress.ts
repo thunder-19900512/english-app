@@ -4,6 +4,7 @@ import { pushToSupabase } from '../lib/sync';
 export interface DictCategoryProgress {
   learn?: boolean;
   practice: boolean;
+  practiceHard?: boolean;   // 選択（ハード）を合格（2026-10-09〜。practice も true にする＝単元の進み具合は今までどおり）
   spelling: boolean;
   voice: boolean;
   wordsearch: boolean;
