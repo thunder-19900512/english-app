@@ -179,6 +179,43 @@ export const DIALOGUES: Dialogue[] = [
     ],
   },
   {
+    // P7 World Fashion Show & Shop（2026-10-09）。ショーのセリフ。A＝観客、B＝モデル（自分）
+    id: 'p7-show', grade: 6, unitName: '👗 P7 ファッションショー（ショーのセリフ）', targetPhrase: "This is my blue cap. It's from Vietnam.",
+    lines: [
+      { speaker: 'A', en: 'Wow! Tell me about your clothes!', ja: 'わあ！服のことを教えて！' },
+      { speaker: 'B', en: 'This is my {blue cap}.', ja: 'これはわたしの【青いぼうし】です。' },
+      { speaker: 'A', en: 'Where is it from?', ja: 'どこで作られたの？' },
+      { speaker: 'B', en: "It's from {Vietnam}.", ja: '【ベトナム】で作られました。' },
+      { speaker: 'B', en: 'I like {the color}.', ja: '【この色】が好きです。' },
+      { speaker: 'B', en: 'Look! I made a {poncho}.', ja: '見て！【ポンチョ】を作ったよ。' },
+      { speaker: 'A', en: 'Nice!', ja: 'いいね！' },
+    ],
+    note: 'あなたはB（モデル）！ {…}はデザイナーシートに合わせて変えよう。服の国は自分の服のタグで。「Look! I made a ◯◯.」は手作りの小物（➕1）。言葉は辞書「衣類」「衣類＋」「国＋」「色」。',
+    relatedCategories: ['衣類', '衣類＋（プラスアルファ）', '国＋（プラスアルファ）', '色'],
+    aiRoute: '/ai?unit=p7-show',
+    aiLabel: 'AIの観客にショーのセリフを言う',
+  },
+  {
+    // P7 本番の司会（MC）。A＝MC-A、B＝MC-B（P7_司会MCカード の台本と同じ順）
+    id: 'p7-mc', grade: 6, unitName: '🎤 P7 本番の司会（MC）', targetPhrase: 'Welcome to the World Fashion Show & Shop!',
+    lines: [
+      { speaker: 'A', en: 'Hello, everyone!', ja: 'みなさん、こんにちは！' },
+      { speaker: 'B', en: 'Welcome to the World Fashion Show & Shop!', ja: 'ワールド・ファッションショー＆ショップへようこそ！' },
+      { speaker: 'A', en: 'First, the fashion show. Then, our shops.', ja: 'まずファッションショー。そのあと、お店です。' },
+      { speaker: 'B', en: 'Please enjoy!', ja: '楽しんでください！' },
+      { speaker: 'A', en: 'Here is our first model!', ja: '最初のモデルです！' },
+      { speaker: 'B', en: "Next is {Lucy}! Let's give a big hand!", ja: '次は【ルーシー】さん！大きな拍手を！（【】にモデルの名前）' },
+      { speaker: 'B', en: "That's all for the show. Thank you, models!", ja: 'ショーはここまで。モデルのみなさん、ありがとう！' },
+      { speaker: 'A', en: "Now, it's shop time! Let's go shopping!", ja: 'さあ、お店の時間！買いものに行こう！' },
+      { speaker: 'B', en: 'Round 1. The shops are on the right.', ja: 'ラウンド1。お店は右半分です。' },
+      { speaker: 'A', en: 'Change! Round 2. The shops are on the left.', ja: '交代！ラウンド2。お店は左半分です。' },
+      { speaker: 'B', en: 'Shop time is over. Thank you!', ja: 'お店の時間はおしまい。ありがとう！' },
+      { speaker: 'A', en: 'Grade 7, 8 and 9, please give us a comment.', ja: '789年生のみなさん、一言お願いします。' },
+      { speaker: 'B', en: 'Thank you for coming! See you!', ja: '来てくれてありがとう！またね！' },
+    ],
+    note: '司会をやる人の練習。MC-A の人は A、MC-B の人は B を選んで読もう。大きな声で、ゆっくり、顔を上げて。台本は「P7 司会MCカード」と同じ。',
+  },
+  {
     // P6 Seasons Guide：観光客Lucyに、おすすめの季節を紹介する（冊子 p.3 観光客カード・ポスターと同じ4行）。あなたはガイド(B)。
     id: 'g5-u7s', grade: 5, unitName: 'Unit 7: Welcome to Japan!（季節ガイド話型）', targetPhrase: 'I like autumn. You can see red leaves.',
     lines: [
