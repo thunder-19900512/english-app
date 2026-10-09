@@ -179,7 +179,7 @@ export const DIALOGUES: Dialogue[] = [
     ],
   },
   {
-    // P7 World Fashion Show & Shop（2026-10-09）。ショーのセリフ。A＝観客、B＝モデル（自分）
+    // P7 World Fashion Show & Shop（2026-10-09）。ショーのセリフ（3人1組で歩き、1人ずつ言う）。A＝観客、B＝モデル（自分）
     id: 'p7-show', grade: 6, unitName: '👗 P7 ファッションショー（ショーのセリフ）', targetPhrase: "This is my blue cap. It's from Vietnam.",
     lines: [
       { speaker: 'A', en: 'Wow! Tell me about your clothes!', ja: 'わあ！服のことを教えて！' },
@@ -203,8 +203,8 @@ export const DIALOGUES: Dialogue[] = [
       { speaker: 'B', en: 'Welcome to the World Fashion Show & Shop!', ja: 'ワールド・ファッションショー＆ショップへようこそ！' },
       { speaker: 'A', en: 'First, the fashion show. Then, our shops.', ja: 'まずファッションショー。そのあと、お店です。' },
       { speaker: 'B', en: 'Please enjoy!', ja: '楽しんでください！' },
-      { speaker: 'A', en: 'Here is our first model!', ja: '最初のモデルです！' },
-      { speaker: 'B', en: "Next is {Lucy}! Let's give a big hand!", ja: '次は【ルーシー】さん！大きな拍手を！（【】にモデルの名前）' },
+      { speaker: 'A', en: 'Here is our first team!', ja: '最初のチームです！' },
+      { speaker: 'B', en: "Next is {Team Blue}! Let's give a big hand!", ja: '次は【チーム・ブルー】！大きな拍手を！（【】にチーム名）' },
       { speaker: 'B', en: "That's all for the show. Thank you, models!", ja: 'ショーはここまで。モデルのみなさん、ありがとう！' },
       { speaker: 'A', en: "Now, it's shop time! Let's go shopping!", ja: 'さあ、お店の時間！買いものに行こう！' },
       { speaker: 'B', en: 'Round 1. The shops are on the right.', ja: 'ラウンド1。お店は右半分です。' },
